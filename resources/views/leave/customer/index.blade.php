@@ -25,7 +25,7 @@
         </div>
 
         <div class="search-bar-section">
-            <form method="POST" action="{{ route('employee.find') }}" class="search-form" autocomplete="off">
+            <form method="POST" action="{{ route('customer.find') }}" class="search-form" autocomplete="off">
                 @csrf
                 <div class="search-box">
                     <button type="submit" class="search-icon">
@@ -34,25 +34,25 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </button>
-                    <input type="text" name="name" id="employee-search" autocomplete="off" required placeholder="Find Employee...">
+                    <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Customer...">
                     <div id="suggestions"></div>
                 </div>
             </form>
-            <button class="add-employee-btn" id="showAddEmpModal">
+            <button class="add-customer-btn" id="showAddEmpModal">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                <span>Add Employee</span>
+                <span>Add Customer</span>
             </button>
         </div>
     </div>
 
-    <!-- Add Employee Modal -->
+    <!-- Add Customer Modal -->
     <div class="modal-bg" id="addEmpModal">
         <div class="modal-content">
             <button class="close" id="closeAddEmpModal">&times;</button>
-            <form method="POST" action="{{ route('employee.add') }}">
+            <form method="POST" action="{{ route('customer.add') }}">
                 @csrf
                 <div class="emp-form">
                     <div class="form-left">
@@ -80,48 +80,48 @@
                         <input type="number" step="0.01" name="balance_forwarded_sl" required>
 <div style="height: 1rem;"></div>
 
-                        <button type="submit">Add Employee</button>
+                        <button type="submit">Add Customer</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Employee Details Table -->
-    @if($employee)
+    <!-- Customer Details Table -->
+    @if($customer)
         @php
-            $latestApp = $employee->leaveApplications->last();
+            $latestApp = $customer->leaveApplications->last();
         @endphp
 
         <div class="emp-details-table">
-            <table class="employee-info-table">
+            <table class="customer-info-table">
                 <tr>
                     <td class="label">SURNAME</td>
-                    <td class="value">{{ strtoupper($employee->surname) }}</td>
+                    <td class="value">{{ strtoupper($customer->surname) }}</td>
                     <td class="label">DIVISION</td>
-                    <td class="value">{{ strtoupper($employee->division) }}</td>
+                    <td class="value">{{ strtoupper($customer->office->office) }}</td>
                     <td class="label">BASIC SALARY</td>
-                    <td class="value">{{ number_format($employee->salary, 2) }}</td>
+                    <td class="value">{{ number_format($customer->salary, 2) }}</td>
                     <td class="label"> FORCE LEAVE BALANCE </td>
-                    <td class="value">{{ strtoupper($employee->fl) }}</td>
+                    <td class="value">{{ strtoupper($customer->fl) }}</td>
                 </tr>
                 <tr>
                     <td class="label">GIVEN NAME</td>
-                    <td class="value">{{ strtoupper($employee->given_name) }}</td>
+                    <td class="value">{{ strtoupper($customer->given_name) }}</td>
                     <td class="label">DESIGNATION</td>
-                    <td class="value">{{ strtoupper($employee->designation) }}</td>
+                    <td class="value">{{ strtoupper($customer->position->position) }}</td>
                     <td class="label">VACATION LEAVE BALANCE</td>
-                    <td class="value">{{ $latestApp ? $latestApp->current_vl : ($employee->balance_forwarded_vl ?? 0) }}</td>
+                    <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
                     <td class="label">SPECIAL PRIVILEGE LEAVE BALANCE</td>
-                    <td class="value">{{ $employee->spl ?? 0 }}</td>
+                    <td class="value">{{ $customer->spl ?? 0 }}</td>
                 </tr>
                 <tr>
                     <td class="label">MIDDLE NAME</td>
-                    <td class="value">{{ strtoupper($employee->middle_name) }}</td>
+                    <td class="value">{{ strtoupper($customer->middle_name) }}</td>
                     <td class="label">ORIGINAL APPOINTMENT</td>
-                    <td class="value">{{ $employee->original_appointment ?? '' }}</td>
+                    <td class="value">{{ $customer->origappnt_date ?? '' }}</td>
                     <td class="label">SICK LEAVE BALANCE</td>
-                    <td class="value">{{ $latestApp ? $latestApp->current_sl : ($employee->balance_forwarded_sl ?? 0) }}</td>
+                    <td class="value">{{ $latestApp ? $latestApp->current_sl : ($customer->balance_forwarded_sl ?? 0) }}</td>
                     <td class="label"> VIEW OTHER LEAVE BALANCES </td>
                     <td class="value">
                         <button type="button" id="viewAllBtn" onclick="showOtherCreditsModal()">View All</button>
@@ -136,7 +136,7 @@
                 <button class="close" onclick="closeOtherCreditsModal()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:20px;">&times;</button>
                 <h3>Other Leave Credits</h3>
                 @php
-                    $balances = app(\App\Services\LeaveService::class)->getCurrentBalances($employee);
+                    $balances = app(\App\Services\LeaveService::class)->getCurrentBalances($customer);
                 @endphp
 
                 <ul style="list-style:none; padding:0;">
@@ -153,12 +153,12 @@
    
 
     <!-- Bottom: Add Leave Type and Add Earned Credits -->
-    @if($employee)
+    @if($customer)
         <div class="bottom-section">
             <!-- Add Leave Type -->
             <form method="POST" action="{{ route('leave.submit') }}" id="leave-form" class="leave-form">
                 @csrf
-                <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                 <input type="hidden" name="edit_id" id="edit_id" value="">
                 <input type="hidden" name="_method" id="form_method" value="POST">
                 <input type="hidden" name="is_cancellation" id="is_cancellation" value="0">
@@ -189,7 +189,7 @@
             <!-- Add Earned Credits -->
             <form method="POST" action="{{ route('leave.credits') }}">
                 @csrf
-                <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                 <div class="emp-form">
                     <label>Earned Date:</label>
                     <input type="date" name="earned_date" required>
@@ -198,7 +198,7 @@
             </form>
             <form method="POST" action="{{ route('leave.otherCredits') }}">
                 @csrf
-                <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                 <div class="emp-form">
                     <label>Leave Type:</label>
                     <select name="leave_type" class="form-control" required>
@@ -219,7 +219,7 @@
     @endif
 
      <!-- Leave Records Table -->
-    @if($employee)
+    @if($customer)
         <table class="leave-table">
             <thead>
                 <tr>
@@ -257,12 +257,12 @@
                     <td data-label="SOLO PARENT"></td>
                     <td data-label="OTHERS"></td>
                     <td data-label="REMARKS"></td>
-                    <td data-label="VL BALANCE">{{ number_format($employee->balance_forwarded_vl, 2) }}</td>
-                    <td data-label="SL BALANCE">{{ number_format($employee->balance_forwarded_sl, 2) }}</td>
+                    <td data-label="VL BALANCE">{{ number_format($customer->balance_forwarded_vl, 2) }}</td>
+                    <td data-label="SL BALANCE">{{ number_format($customer->balance_forwarded_sl, 2) }}</td>
                     <td data-label="ACTIONS"></td>
                 </tr>
-                @if($employee->leaveApplications && $employee->leaveApplications->count())
-                    @foreach($employee->leaveApplications->sortBy([
+                @if($customer->leaveApplications && $customer->leaveApplications->count())
+                    @foreach($customer->leaveApplications->sortBy([
                         fn($a, $b) => ($a->earned_date ?? $a->date_filed) <=> ($b->earned_date ?? $b->date_filed),
                         'date_filed'
                     ]) as $app)
@@ -424,7 +424,7 @@
 
     <script>
         // Make Laravel routes available to JavaScript
-        window.autocompleteRoute = '{{ route("employee.autocomplete") }}';
+        window.autocompleteRoute = '{{ route("customer.autocomplete") }}';
         window.leaveUpdateRoute = '{{ route("leave.update") }}';
         window.deleteRoute = '{{ route("leave.delete") }}';
         window.csrfToken = '{{ csrf_token() }}';

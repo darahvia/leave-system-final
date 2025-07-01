@@ -2,7 +2,7 @@
 // app/Services/LeaveService.php
 namespace App\Services;
 
-use App\Employee;
+use App\Customer;
 use App\LeaveApplication;
 use Carbon\Carbon;
 
@@ -11,16 +11,16 @@ class LeaveService
     /**
      * Process leave application and calculate balances
      */
-    public function processLeaveApplication(Employee $employee, array $leaveData, LeaveApplication $leaveApplication = null)
+    public function processLeaveApplication(Customer $customer, array $leaveData, LeaveApplication $leaveApplication = null)
     {
         $leaveType = strtolower($leaveData['leave_type']);
         $workingDays = $leaveData['working_days'];
         $leaveDate = $leaveData['inclusive_date_start'] ?? $leaveData['date_filed'];
 
-        // For new applications, check if employee has sufficient leave balance
-        if (!$leaveApplication && !$this->hasSufficientBalance($employee, $leaveType, $workingDays, $leaveDate)) {
+        // For new applications, check if customer has sufficient leave balance
+        if (!$leaveApplication && !$this->hasSufficientBalance($customer, $leaveType, $workingDays, $leaveDate)) {
             throw new \Exception("Insufficient {$leaveType} balance. Available: " .
-                $this->getAvailableBalanceAtDate($employee, $leaveType, $leaveDate) . " days");
+                $this->getAvailableBalanceAtDate($customer, $leaveType, $leaveDate) . " days");
         }
 
         if ($leaveApplication) {
@@ -37,7 +37,7 @@ class LeaveService
         } else {
             // Create new leave
             $leaveApplication = LeaveApplication::create([
-                'employee_id' => $employee->id,
+                'employee_id' => $customer->id,
                 'leave_type' => $leaveData['leave_type'],
                 'leave_details' => $leaveData['leave_details'] ?? null,
                 'working_days' => $workingDays,
@@ -49,9 +49,9 @@ class LeaveService
         }
 
         // Handle different leave type deductions
-        $this->recalculateBalancesFromDate($employee, $leaveDate);
+        $this->recalculateBalancesFromDate($customer, $leaveDate);
 
-        $this->processLeaveDeductions($employee, $leaveType, $workingDays, $leaveDate);
+        $this->processLeaveDeductions($customer, $leaveType, $workingDays, $leaveDate);
 
         return $leaveApplication;
     }
@@ -59,60 +59,60 @@ class LeaveService
     /**
      * Process leave deductions based on leave type
      */
-    private function processLeaveDeductions(Employee $employee, string $leaveType, int $workingDays, $leaveDate)
+    private function processLeaveDeductions(Customer $customer, string $leaveType, int $workingDays, $leaveDate)
     {
         switch ($leaveType) {
             case 'vl':
                 // Recalculate VL balances from the affected date onwards
-                $this->recalculateBalancesFromDate($employee, $leaveDate);
+                $this->recalculateBalancesFromDate($customer, $leaveDate);
                 break;
                 
             case 'sl':
                 // Recalculate SL balances from the affected date onwards
-                $this->recalculateBalancesFromDate($employee, $leaveDate);
+                $this->recalculateBalancesFromDate($customer, $leaveDate);
                 break;
                 
             case 'spl':
                 // Deduct from SPL balance
-                $employee->deductLeave('spl', $workingDays);
+                $customer->deductLeave('spl', $workingDays);
                 break;
             case 'fl':
                 // Force Leave: Deduct from both FL and VL
-                $employee->deductLeave('fl', $workingDays);
-                $employee->deductLeave('vl', $workingDays); 
+                $customer->deductLeave('fl', $workingDays);
+                $customer->deductLeave('vl', $workingDays); 
                 // Also recalculate VL balances since FL affects VL too
-                $this->recalculateBalancesFromDate($employee, $leaveDate);
+                $this->recalculateBalancesFromDate($customer, $leaveDate);
                 break;
                 
             case 'solo parent':
-                $employee->deductLeave('solo_parent', $workingDays);
+                $customer->deductLeave('solo_parent', $workingDays);
                 break;
                 
             case 'ml':
-                $employee->deductLeave('ml', $workingDays);
+                $customer->deductLeave('ml', $workingDays);
                 break;
                 
             case 'pl':
-                $employee->deductLeave('pl', $workingDays);
+                $customer->deductLeave('pl', $workingDays);
                 break;
                 
             case 'ra9710':
-                $employee->deductLeave('ra9710', $workingDays);
+                $customer->deductLeave('ra9710', $workingDays);
                 break;
                 
             case 'rl':
-                $employee->deductLeave('rl', $workingDays);
+                $customer->deductLeave('rl', $workingDays);
                 break;
                 
             case 'sel':
-                $employee->deductLeave('sel', $workingDays);
+                $customer->deductLeave('sel', $workingDays);
                 break;
                 
             case 'study_leave':
-                $employee->deductLeave('study_leave', $workingDays);
+                $customer->deductLeave('study_leave', $workingDays);
                 break;
             case 'vawc':
-                $employee->deductLeave('vawc', $workingDays);
+                $customer->deductLeave('vawc', $workingDays);
                 break;
                 
             default:
@@ -124,9 +124,9 @@ class LeaveService
     /**
      * Deduct from current VL balance (for Force Leave)
      */
-    private function deductFromCurrentVL(Employee $employee, int $workingDays)
+    private function deductFromCurrentVL(Customer $customer, int $workingDays)
     {
-        $latestApplication = $employee->leaveApplications()
+        $latestApplication = $customer->leaveApplications()
             ->orderBy('inclusive_date_start', 'desc')
             ->orderBy('earned_date', 'desc')
             ->orderBy('date_filed', 'desc')
@@ -142,18 +142,18 @@ class LeaveService
     /**
      * Enhanced balance checking with proper validations
      */
-    private function hasSufficientBalance(Employee $employee, string $leaveType, int $workingDays, $atDate = null)
+    private function hasSufficientBalance(Customer $customer, string $leaveType, int $workingDays, $atDate = null)
     {
         $availableBalance = $atDate
-            ? $this->getAvailableBalanceAtDate($employee, $leaveType, $atDate)
-            : $this->getAvailableBalance($employee, $leaveType);
+            ? $this->getAvailableBalanceAtDate($customer, $leaveType, $atDate)
+            : $this->getAvailableBalance($customer, $leaveType);
         
         // Special case for Force Leave - check both FL and VL balances
         if ($leaveType === 'fl') {
-            $flBalance = $employee->getCurrentLeaveBalance('fl');
+            $flBalance = $customer->getCurrentLeaveBalance('fl');
             $vlBalance = $atDate 
-                ? $this->getAvailableBalanceAtDate($employee, 'vl', $atDate)
-                : $this->getAvailableBalance($employee, 'vl');
+                ? $this->getAvailableBalanceAtDate($customer, 'vl', $atDate)
+                : $this->getAvailableBalance($customer, 'vl');
             
             return ($flBalance >= $workingDays) && ($vlBalance >= $workingDays);
         }
@@ -164,24 +164,24 @@ class LeaveService
     /**
      * Get available balance for a specific leave type at a specific date
      */
-    private function getAvailableBalanceAtDate(Employee $employee, string $leaveType, $atDate)
+    private function getAvailableBalanceAtDate(Customer $customer, string $leaveType, $atDate)
     {
         if (in_array($leaveType, ['vl', 'sl'])) {
-            $balances = $this->getBalancesBeforeDate($employee, $atDate);
+            $balances = $this->getBalancesBeforeDate($customer, $atDate);
             return $balances[$leaveType] ?? 0;
         }
 
-        // For other leave types, use current balance from employee model
-        return $employee->getCurrentLeaveBalance($leaveType);
+        // For other leave types, use current balance from customer model
+        return $customer->getCurrentLeaveBalance($leaveType);
     }
 
     /**
      * Recalculate all VL/SL balances from a specific date onwards
      */
-    private function recalculateBalancesFromDate(Employee $employee, $fromDate)
+    private function recalculateBalancesFromDate(Customer $customer, $fromDate)
     {
         // Get all leave applications (including credits) from the specified date onwards
-        $leaves = LeaveApplication::where('employee_id', $employee->id)
+        $leaves = LeaveApplication::where('employee_id', $customer->id)
             ->where(function($query) use ($fromDate) {
                 $query->whereDate('inclusive_date_start', '>=', $fromDate)
                       ->orWhereDate('earned_date', '>=', $fromDate);
@@ -206,7 +206,7 @@ class LeaveService
             });
 
         // Get the balance just before this date
-        $balances = $this->getBalancesBeforeDate($employee, $fromDate);
+        $balances = $this->getBalancesBeforeDate($customer, $fromDate);
 
         // Recalculate each leave application's current_vl and current_sl
     foreach ($leaves as $leave) {
@@ -252,10 +252,10 @@ class LeaveService
     /**
      * Get VL/SL balances just before a specific date
      */
-    private function getBalancesBeforeDate(Employee $employee, $beforeDate)
+    private function getBalancesBeforeDate(Customer $customer, $beforeDate)
     {
         // Get all leave applications before the specified date
-        $leaves = LeaveApplication::where('employee_id', $employee->id)
+        $leaves = LeaveApplication::where('employee_id', $customer->id)
             ->where(function($query) use ($beforeDate) {
                 $query->whereDate('inclusive_date_start', '<', $beforeDate)
                     ->orWhereDate('earned_date', '<', $beforeDate);
@@ -279,8 +279,8 @@ class LeaveService
 
         // Start with forwarded balances
         $balances = [
-            'vl' => $employee->balance_forwarded_vl ?? 0,
-            'sl' => $employee->balance_forwarded_sl ?? 0,
+            'vl' => $customer->balance_forwarded_vl ?? 0,
+            'sl' => $customer->balance_forwarded_sl ?? 0,
         ];
 
         // Apply all leave applications chronologically
@@ -307,12 +307,12 @@ class LeaveService
     /**
      * Get balance before a specific leave (for editing purposes)
      */
-    public function getBalanceBeforeLeave(Employee $employee, LeaveApplication $leaveToEdit, $type = 'vl')
+    public function getBalanceBeforeLeave(Customer $customer, LeaveApplication $leaveToEdit, $type = 'vl')
     {
         $leaveDate = $leaveToEdit->inclusive_date_start ?? $leaveToEdit->date_filed;
        
         // Get all leave applications before this one (by date, not ID)
-        $leaves = LeaveApplication::where('employee_id', $employee->id)
+        $leaves = LeaveApplication::where('employee_id', $customer->id)
             ->where('id', '!=', $leaveToEdit->id) // Exclude the leave being edited
             ->where(function($query) use ($leaveDate) {
                 $query->where('inclusive_date_start', '<', $leaveDate)
@@ -329,7 +329,7 @@ class LeaveService
             ->get();
 
         // Start with forwarded balance
-        $balance = $type === 'vl' ? $employee->balance_forwarded_vl : $employee->balance_forwarded_sl;
+        $balance = $type === 'vl' ? $customer->balance_forwarded_vl : $customer->balance_forwarded_sl;
 
         foreach ($leaves as $leave) {
             if ($leave->is_credit_earned) {
@@ -351,9 +351,9 @@ class LeaveService
     /**
      * Get current balances for all leave types
      */
-    public function getCurrentBalances(Employee $employee)
+    public function getCurrentBalances(Customer $customer)
     {
-        $lastApplication = $employee->leaveApplications()
+        $lastApplication = $customer->leaveApplications()
             ->orderBy('inclusive_date_start', 'desc')
             ->orderBy('earned_date', 'desc')
             ->orderBy('date_filed', 'desc')
@@ -361,18 +361,18 @@ class LeaveService
             ->first();
 
         return [
-            'vl' => $lastApplication ? $lastApplication->current_vl : $employee->balance_forwarded_vl,
-            'sl' => $lastApplication ? $lastApplication->current_sl : $employee->balance_forwarded_sl,
-            'spl' => $employee->spl,
-            'fl' => $employee->fl,
-            'solo_parent' => $employee->solo_parent,
-            'ml' => $employee->ml,
-            'pl' => $employee->pl,
-            'ra9710' => $employee->ra9710,
-            'rl' => $employee->rl,
-            'sel' => $employee->sel,
-            'study_leave' => $employee->study_leave,
-            'vawc' => $employee->vawc,
+            'vl' => $lastApplication ? $lastApplication->current_vl : $customer->balance_forwarded_vl,
+            'sl' => $lastApplication ? $lastApplication->current_sl : $customer->balance_forwarded_sl,
+            'spl' => $customer->spl,
+            'fl' => $customer->fl,
+            'solo_parent' => $customer->solo_parent,
+            'ml' => $customer->ml,
+            'pl' => $customer->pl,
+            'ra9710' => $customer->ra9710,
+            'rl' => $customer->rl,
+            'sel' => $customer->sel,
+            'study_leave' => $customer->study_leave,
+            'vawc' => $customer->vawc,
 
         ];
     }
@@ -380,18 +380,18 @@ class LeaveService
     /**
      * Get available balance for a specific leave type (current balance)
      */
-    private function getAvailableBalance(Employee $employee, string $leaveType)
+    private function getAvailableBalance(Customer $customer, string $leaveType)
     {
-        return $employee->getCurrentLeaveBalance($leaveType);
+        return $customer->getCurrentLeaveBalance($leaveType);
     }
 
     /**
      * Add credits earned (monthly leave credits)
      */
-    public function addCreditsEarned(Employee $employee, $earnedDate, $vlCredits = 1.25, $slCredits = 1.25)
+    public function addCreditsEarned(Customer $customer, $earnedDate, $vlCredits = 1.25, $slCredits = 1.25)
     {
         $leaveApplication = LeaveApplication::create([
-            'employee_id' => $employee->id,
+            'employee_id' => $customer->id,
             'is_credit_earned' => true,
             'earned_date' => $earnedDate,
             'earned_vl' => $vlCredits,
@@ -399,7 +399,7 @@ class LeaveService
         ]);
 
         // Recalculate balances from this date onwards
-        $this->recalculateBalancesFromDate($employee, $earnedDate);
+        $this->recalculateBalancesFromDate($customer, $earnedDate);
 
         return $leaveApplication;
     }
@@ -409,14 +409,14 @@ class LeaveService
      */
     public function deleteLeaveApplication(LeaveApplication $leaveApplication)
     {
-        $employee = $leaveApplication->employee;
+        $customer = $leaveApplication->customer;
         $leaveDate = $leaveApplication->inclusive_date_start ?? $leaveApplication->earned_date ?? $leaveApplication->date_filed;
         $leaveType = strtolower($leaveApplication->leave_type ?? '');
         $workingDays = $leaveApplication->working_days ?? 0;
         
-        // If it's a non-VL/SL leave type, restore the balance back to employee model
+        // If it's a non-VL/SL leave type, restore the balance back to customer model
         if (!in_array($leaveType, ['vl', 'sl']) && !$leaveApplication->is_credit_earned) {
-            $this->restoreLeaveBalance($employee, $leaveType, $workingDays);
+            $this->restoreLeaveBalance($customer, $leaveType, $workingDays);
         }
        
         // Delete the leave application
@@ -424,49 +424,49 @@ class LeaveService
        
         // Recalculate VL/SL balances from this date onwards
         if (in_array($leaveType, ['vl', 'sl', 'fl']) || $leaveApplication->is_credit_earned) {
-            $this->recalculateBalancesFromDate($employee, $leaveDate);
+            $this->recalculateBalancesFromDate($customer, $leaveDate);
         }
     }
 
     /**
      * Restore leave balance when deleting a leave application
      */
-    private function restoreLeaveBalance(Employee $employee, string $leaveType, int $workingDays)
+    private function restoreLeaveBalance(Customer $customer, string $leaveType, int $workingDays)
     {
         switch ($leaveType) {
             case 'spl':
-                $employee->spl = ($employee->spl ?? 0) + $workingDays;
+                $customer->spl = ($customer->spl ?? 0) + $workingDays;
                 break;
             case 'fl':
-                $employee->fl = ($employee->fl ?? 0) + $workingDays;
+                $customer->fl = ($customer->fl ?? 0) + $workingDays;
                 break;
             case 'solo_parent':
-                $employee->solo_parent = ($employee->solo_parent ?? 0) + $workingDays;
+                $customer->solo_parent = ($customer->solo_parent ?? 0) + $workingDays;
                 break;
             case 'ml':
-                $employee->ml = ($employee->ml ?? 0) + $workingDays;
+                $customer->ml = ($customer->ml ?? 0) + $workingDays;
                 break;
             case 'pl':
-                $employee->pl = ($employee->pl ?? 0) + $workingDays;
+                $customer->pl = ($customer->pl ?? 0) + $workingDays;
                 break;
             case 'ra9710':
-                $employee->ra9710 = ($employee->ra9710 ?? 0) + $workingDays;
+                $customer->ra9710 = ($customer->ra9710 ?? 0) + $workingDays;
                 break;
             case 'rl':
-                $employee->rl = ($employee->rl ?? 0) + $workingDays;
+                $customer->rl = ($customer->rl ?? 0) + $workingDays;
                 break;
             case 'sel':
-                $employee->sel = ($employee->sel ?? 0) + $workingDays;
+                $customer->sel = ($customer->sel ?? 0) + $workingDays;
                 break;
             case 'study_leave':
-                $employee->study_leave = ($employee->study_leave ?? 0) + $workingDays;
+                $customer->study_leave = ($customer->study_leave ?? 0) + $workingDays;
                 break;
             case 'vawc':
-                $employee->vawc = ($employee->vawc ?? 0) + $workingDays;
+                $customer->vawc = ($customer->vawc ?? 0) + $workingDays;
                 break;
         }
         
-        $employee->save();
+        $customer->save();
     }
 
     /**
@@ -490,7 +490,7 @@ class LeaveService
             'ADOPT' => 'Adoption Leave',
         ];
     }
-    public function processCancellation(Employee $employee, array $cancellationData)
+    public function processCancellation(Customer $customer, array $cancellationData)
     {
         $leaveType = strtolower($cancellationData['leave_type']);
         $workingDays = $cancellationData['working_days']; // Credits to restore
@@ -500,7 +500,7 @@ class LeaveService
         // Create a new leave application record for the cancellation
         // This will appear as a new row in the table
         $cancellationApplication = LeaveApplication::create([
-            'employee_id' => $employee->id,
+            'employee_id' => $customer->id,
             'leave_type' => $cancellationData['leave_type'],
             'leave_details' => 'CANCELLED - Credits Restored',
             'working_days' => -$workingDays, // Negative value to indicate credit restoration
@@ -512,11 +512,11 @@ class LeaveService
         ]);
 
         // Recalculate all balances from the effective date onwards
-        $this->recalculateBalancesFromDate($employee, $effectiveDate);
+        $this->recalculateBalancesFromDate($customer, $effectiveDate);
 
-        // For non-VL/SL leave types, add credits back to employee balance
+        // For non-VL/SL leave types, add credits back to customer balance
         if (!in_array($leaveType, ['vl', 'sl'])) {
-            $employee->addLeave($leaveType, $workingDays); // Add credits back
+            $customer->addLeave($leaveType, $workingDays); // Add credits back
         }
 
         return $cancellationApplication;

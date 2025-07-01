@@ -15,8 +15,8 @@ class TeachingLeaveApplication extends Migration
     {
         Schema::create('teaching_leave_applications', function (Blueprint $table) {
             $table->increments('id');
-$table->unsignedInteger('employee_id');
-$table->foreign('employee_id')->references('id')->on('teaching');
+            $table->unsignedInteger('customer_id');
+            $table->foreign('customer_id')->references('id')->on('customers');
             $table->date('leave_incurred_date')->nullable();
             $table->integer('leave_incurred_days')->nullable(); // Fixed: Should be integer, not string
             $table->timestamps();

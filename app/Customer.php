@@ -1,19 +1,43 @@
 <?php
+
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
+    protected $table = 'customers';
 
     protected $fillable = [
-        'surname', 'given_name', 'middle_name', 'division', 'designation', 'origappnt_date',
+        'nama', 'alamat', 'email', 'telepon', 'district', 'office_id', 'position_id',
+        'customer_id', 'role', 'lastprmtn_date', 'origappnt_date', 'step_array', 'loyalty_array',         
         'vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl',
         'ra9710', 'rl', 'sel', 'study_leave', 'vawc', 'adopt',
         'balance_forwarded_vl', 'balance_forwarded_sl',
-        'salary' // Add salary to fillable if not already there
     ];
 
+    protected $hidden = ['created_at', 'updated_at'];
+
+    protected $casts = [
+        'step_array' => 'array',
+        'loyalty_array' => 'array',
+    ];
+
+    public function office()
+    {
+        return $this->belongsTo(Office::class);
+    }
+    
+
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
     public function leaveApplications()
     {
         return $this->hasMany(LeaveApplication::class);
@@ -142,4 +166,5 @@ class Customer extends Model
        
         $this->save();
     }
+
 }

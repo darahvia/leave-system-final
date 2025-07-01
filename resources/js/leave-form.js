@@ -11,11 +11,11 @@ let originalFormAction = '';
 document.addEventListener('DOMContentLoaded', function() {
     initializeModal();
     initializeDateCalculation();
-    initializeEmployeeSearch();
+    initializeCustomerSearch();
     initializeDeleteFunctionality();
 });
 
-// Modal functionality for Add Employee
+// Modal functionality for Add Customer
 function initializeModal() {
     const showModal = document.getElementById('showAddEmpModal');
     const closeModal = document.getElementById('closeAddEmpModal');
@@ -182,19 +182,19 @@ function cancelEdit() {
     if (cancelTitle) cancelTitle.remove();
 }
 
-// Employee search functionality
-function initializeEmployeeSearch() {
+// Customer search functionality
+function initializeCustomerSearch() {
     // Wait for jQuery to be loaded
     if (typeof $ !== 'undefined') {
-        setupEmployeeSearch();
+        setupCustomerSearch();
     } else {
         // If jQuery isn't loaded yet, wait for it
-        setTimeout(initializeEmployeeSearch, 100);
+        setTimeout(initializeCustomerSearch, 100);
     }
 }
 
-function setupEmployeeSearch() {
-    $('#employee-search').on('input', function() {
+function setupCustomerSearch() {
+    $('#customer-search').on('input', function() {
         console.log('Input event fired');
         let query = $(this).val();
         
@@ -239,12 +239,12 @@ function setupEmployeeSearch() {
     });
 
     $(document).on('click', '.suggestion-item', function() {
-        $('#employee-search').val($(this).text());
+        $('#customer-search').val($(this).text());
         $('#suggestions').hide();
     });
 
     $(document).click(function(e) {
-        if (!$(e.target).closest('#employee-search, #suggestions').length) {
+        if (!$(e.target).closest('#customer-search, #suggestions').length) {
             $('#suggestions').hide();
         }
     });

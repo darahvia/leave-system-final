@@ -6,6 +6,32 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
+    <!-- Tab Navigation -->
+    <div class="tab-nav" style="margin-bottom: 1.5rem;">
+        <a href="{{ route('leave.index') }}{{ $employee ? '?employee_id=' . $employee->id : '' }}" class="tab-link{{ request()->routeIs('leave.index') ? ' active' : '' }}">Leave</a>
+        <a href="{{ route('cto.index') }}{{ $employee ? '?employee_id=' . $employee->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
+    </div>
+    <style>
+        /* Inline styles from original blade, kept for direct compatibility */
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 1.5rem;
+        }
+        .tab-link {
+            padding: 0.5rem 1.5rem;
+            text-decoration: none;
+            color: #333;
+            border-bottom: 2px solid transparent;
+            transition: border 0.2s, color 0.2s;
+        }
+        .tab-link.active, .tab-link:hover {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+        }
+    </style>
+
     @if(session('success'))
         <div class="success">{{ session('success') }}</div>
     @endif
@@ -27,6 +53,7 @@
         <div class="search-bar-section">
             <form method="POST" action="{{ route('employee.find') }}" class="search-form" autocomplete="off">
                 @csrf
+                <input type="hidden" name="redirect_to" value="leave">
                 <div class="search-box">
                     <button type="submit" class="search-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -78,7 +105,7 @@
                         <input type="number" step="0.01" name="balance_forwarded_vl" required>
                         <label>Sick Leave Forwarded Balance:</label>
                         <input type="number" step="0.01" name="balance_forwarded_sl" required>
-<div style="height: 1rem;"></div>
+                        <div style="height: 1rem;"></div>
 
                         <button type="submit">Add Employee</button>
                     </div>
@@ -136,12 +163,16 @@
                 <button class="close" onclick="closeOtherCreditsModal()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:20px;">&times;</button>
                 <h3>Other Leave Credits</h3>
                 @php
+                    // Ensure the LeaveService is correctly resolved if it's not globally available
+                    // or if the alias is different in this environment.
+                    // For PHP 7.4/Laravel 7/8, app() helper is fine.
                     $balances = app(\App\Services\LeaveService::class)->getCurrentBalances($employee);
                 @endphp
 
                 <ul style="list-style:none; padding:0;">
                     @foreach ($balances as $type => $value)
-                        @if (!in_array($type, ['vl', 'sl'])) {{-- exclude VL/SL if showing elsewhere --}}
+                        {{-- Added 'vawc' to the exclusion list as per your provided code --}}
+                        @if (!in_array($type, ['vl', 'sl', 'vawc'])) 
                             <li>{{ \App\Services\LeaveService::getLeaveTypes()[strtoupper($type)] ?? ucfirst(str_replace('_', ' ', $type)) }}: <strong>{{ $value }}</strong></li>
                         @endif
                     @endforeach
@@ -150,7 +181,7 @@
         </div>
     @endif
 
-   
+    
 
     <!-- Bottom: Add Leave Type and Add Earned Credits -->
     @if($employee)
@@ -218,7 +249,7 @@
         </div>
     @endif
 
-     <!-- Leave Records Table -->
+      <!-- Leave Records Table -->
     @if($employee)
         <table class="leave-table">
             <thead>
@@ -263,6 +294,7 @@
                 </tr>
                 @if($employee->leaveApplications && $employee->leaveApplications->count())
                     @foreach($employee->leaveApplications->sortBy([
+                        // PHP 7.4 supports arrow functions for sorting
                         fn($a, $b) => ($a->earned_date ?? $a->date_filed) <=> ($b->earned_date ?? $b->date_filed),
                         'date_filed'
                     ]) as $app)
@@ -326,6 +358,7 @@
                                 @endif
                             </td>
                             @php
+                                // Added 'VAWC' to the list of other leave types
                                 $otherLeaveTypes = ['ML', 'PL', 'RA9710', 'RL', 'SEL', 'STUDY_LEAVE', 'ADOPT', 'VAWC'];
                             @endphp
                             <td data-label="OTHERS">
@@ -420,8 +453,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <!-- Pass Laravel routes to JavaScript -->
-    <script src="{{ asset('js/leave-form.js') }}"></script>
-
     <script>
         // Make Laravel routes available to JavaScript
         window.autocompleteRoute = '{{ route("employee.autocomplete") }}';
@@ -431,6 +462,7 @@
     </script>
     
     <!-- Include the external JavaScript file -->
+    <script src="{{ asset('js/leave-form.js') }}"></script>
 
 </body>
 </html>

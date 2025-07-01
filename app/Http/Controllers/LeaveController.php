@@ -1,9 +1,9 @@
 <?php
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Employee; 
-use App\LeaveApplication; 
+use Illuminate\Http\Request;  
+use App\Employee; // Assuming Employee model is directly under App namespace for this project structure
+use App\LeaveApplication; // Assuming LeaveApplication model is directly under App namespace for this project structure
 use App\Services\LeaveService;
 use Carbon\Carbon;
 
@@ -55,7 +55,7 @@ class LeaveController extends Controller
         $employeeData['rl'] = $employeeData['rl'] ?? 0;
         $employeeData['sel'] = $employeeData['sel'] ?? 0;
         $employeeData['study_leave'] = $employeeData['study_leave'] ?? 0;
-        $employeeData['vawc'] = $employeeData['vawc'] ?? 0;
+        $employeeData['vawc'] = $employeeData['vawc'] ?? 0; // Added 'vawc' as per your provided code
         $employeeData['adopt'] = $employeeData['adopt'] ?? 0;
 
         $employee = Employee::create($employeeData);
@@ -72,10 +72,22 @@ class LeaveController extends Controller
                 ->first();
 
             if ($employee) {
-                return redirect()->route('leave.employee.index', ['employee_id' => $employee->id]);
+                // Preserving the dynamic redirect based on 'redirect_to' input
+                $redirectTo = $request->input('redirect_to', 'leave');
+                
+                if ($redirectTo === 'cto') {
+                    return redirect()->route('cto.index', ['employee_id' => $employee->id]);
+                } else {
+                    // Changed to 'leave.index' as per your previous route definition for leave page
+                    return redirect()->route('leave.index', ['employee_id' => $employee->id]);
+                }
             }
 
-            return redirect()->route('leave.employee.index')
+            // If employee not found, redirect back to the appropriate page
+            $redirectTo = $request->input('redirect_to', 'leave');
+            $routeName = $redirectTo === 'cto' ? 'cto.index' : 'leave.index';
+            
+            return redirect()->route($routeName)
                 ->with('error', '❌ Employee not found.');
         }
 
@@ -105,7 +117,8 @@ class LeaveController extends Controller
                     
                     $leaveTypeName = LeaveService::getLeaveTypes()[$request->leave_type] ?? $request->leave_type;
                     
-                    return redirect()->route('leave.employee.index', ['employee_id' => $request->employee_id])
+                    // Changed to 'leave.index' as per your previous route definition for leave page
+                    return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
                         ->with('success', "✅ {$leaveTypeName} cancellation processed! {$request->working_days} credits restored.");
                 } else {
                     // Handle regular leave application
@@ -116,12 +129,14 @@ class LeaveController extends Controller
 
                     $leaveTypeName = LeaveService::getLeaveTypes()[$request->leave_type] ?? $request->leave_type;
                     
-                    return redirect()->route('leave.employee.index', ['employee_id' => $request->employee_id])
+                    // Changed to 'leave.index' as per your previous route definition for leave page
+                    return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
                         ->with('success', "✅ {$leaveTypeName} application submitted successfully!");
                 }
 
             } catch (\Exception $e) {
-                return redirect()->route('leave.employee.index', ['employee_id' => $request->employee_id])
+                // Changed to 'leave.index' as per your previous route definition for leave page
+                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
                     ->with('error', '❌ ' . $e->getMessage());
             }
         }
@@ -214,11 +229,13 @@ class LeaveController extends Controller
                     1.25  // SL credits
                 );
 
-                return redirect()->route('leave.employee.index', ['employee_id' => $request->employee_id])
+                // Changed to 'leave.index' as per your previous route definition for leave page
+                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
                     ->with('success', '✅ Leave credits added successfully!');
 
             } catch (\Exception $e) {
-                return redirect()->route('leave.employee.index', ['employee_id' => $request->employee_id])
+                // Changed to 'leave.index' as per your previous route definition for leave page
+                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
                     ->with('error', '❌ ' . $e->getMessage());
             }
         }
@@ -245,11 +262,13 @@ class LeaveController extends Controller
                 $employee->{$leaveType} += $credits;
                 $employee->save();
 
-                return redirect()->route('leave.employee.index', ['employee_id' => $employee->id])
+                // Changed to 'leave.index' as per your previous route definition for leave page
+                return redirect()->route('leave.index', ['employee_id' => $employee->id])
                     ->with('success', '✅ Other leave credits added successfully!');
                     
             } catch (\Exception $e) {
-                return redirect()->route('leave.employee.index', ['employee_id' => $request->employee_id])
+                // Changed to 'leave.index' as per your previous route definition for leave page
+                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
                     ->with('error', '❌ ' . $e->getMessage());
             }
         }
@@ -257,20 +276,20 @@ class LeaveController extends Controller
     // unused
     // public function getEmployeeLeaveBalances($employeeId)
     // {
-    //     $employee = Employee::find($employeeId);
+    //      $employee = Employee::find($employeeId);
         
-    //     if (!$employee) {
-    //         return response()->json(['error' => 'Employee not found'], 404);
-    //     }
+    //      if (!$employee) {
+    //          return response()->json(['error' => 'Employee not found'], 404);
+    //      }
 
-    //     $balances = [];
-    //     $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
+    //      $balances = [];
+    //      $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
         
-    //     foreach ($leaveTypes as $type) {
-    //         $balances[$type] = $employee->getCurrentLeaveBalance($type);
-    //     }
+    //      foreach ($leaveTypes as $type) {
+    //          $balances[$type] = $employee->getCurrentLeaveBalance($type);
+    //      }
 
-    //     return response()->json($balances);
+    //      return response()->json($balances);
     // }
 
     public function employeeAutocomplete(Request $request)
@@ -287,9 +306,9 @@ class LeaveController extends Controller
 
         try {
             $results = Employee::where(function ($query) use ($search) {
-                    $query->where('surname', 'LIKE', "%{$search}%")
-                        ->orWhere('given_name', 'LIKE', "%{$search}%")
-                        ->orWhere('middle_name', 'LIKE', "%{$search}%");
+                        $query->where('surname', 'LIKE', "%{$search}%")
+                            ->orWhere('given_name', 'LIKE', "%{$search}%")
+                            ->orWhere('middle_name', 'LIKE', "%{$search}%");
                 })
                 ->limit(10)
                 ->get(['surname', 'given_name', 'middle_name', 'id'])

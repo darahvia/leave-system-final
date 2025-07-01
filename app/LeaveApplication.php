@@ -1,12 +1,13 @@
 <?php
-namespace App;
+namespace App; // Assuming your models are now directly in the 'app' directory
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+// Removed 'use Illuminate\Database\Eloquent\Factories\HasFactory;'
 use Illuminate\Database\Eloquent\Model;
+
 
 class LeaveApplication extends Model
 {
-    use HasFactory;
+    // Removed 'use HasFactory;' from here as it's not supported in older Laravel versions.
 
     protected $fillable = [
         'employee_id', 'leave_type', 'leave_details', 'working_days',
@@ -27,6 +28,6 @@ class LeaveApplication extends Model
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Employee::class); // Ensure this refers to App\Employee
     }
 }

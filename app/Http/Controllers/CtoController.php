@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Employee; // Updated namespace
-use App\CtoApplication; // Updated namespace
+use App\Customer; // Corrected namespace
+use App\LeaveApplication; // ADDED: If you still need this model here, confirm its namespace is App
+use App\CtoApplication; // Corrected namespace
+use App\CtoCreditUsage; // Corrected namespace
 use App\Services\CtoService;
+use App\Services\LeaveService; // For LeaveService::getLeaveTypes()
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -21,50 +24,54 @@ class CtoController extends Controller
     }
 
     /**
-     * Show CTO management page for an employee.
+     * Show CTO management page for a customer.
      * Recalculates balances on load to ensure data consistency.
      */
     public function index(Request $request)
     {
-        $employee = null;
-        
-        if ($request->has('employee_id')) {
-            $employee = Employee::find($request->employee_id);
+        $customer = null; // Initialize customer as null
+        $leaveTypes = LeaveService::getLeaveTypes(); // Used for tab navigation in Blade, consistent with LeaveController
 
-            if ($employee) {
+        if ($request->has('customer_id')) {
+            $customer = Customer::find($request->customer_id);
+
+            if ($customer) {
                 // Always recalculate balances on page load to ensure data integrity
-                $this->ctoService->recalculateBalancesForEmployee($employee);
-                
-                // Reload the ctoApplications relationship to get updated balances for display
-                // The sorting for display will be handled in the Blade view using effective_date
-                $employee->load('ctoApplications'); 
+                $this->ctoService->recalculateBalancesForCustomer($customer);
+
+                // Reload the ctoApplications relationship on the Customer model
+                // Ensure 'ctoApplications' relationship is defined on your Customer model
+                $customer->load('ctoApplications');
+            } else {
+                // If customer_id is provided but customer not found, redirect with error
+                return redirect()->route('leave.select')->with('error', 'Customer not found.');
             }
         }
 
-        // === CRITICAL CHANGE: Pass $ctoService to the view ===
-        // The $this->ctoService instance is what you want to pass
-        $ctoService = $this->ctoService; 
-        return view('cto.index', compact('employee', 'ctoService'));
+        // CORRECTED LINE: Assign $this->ctoService to a local variable $ctoService
+        $ctoService = $this->ctoService; // <-- THIS IS THE FIX
+
+        return view('cto.index', compact('customer', 'ctoService', 'leaveTypes'));
     }
 
     /**
      * Store CTO activity (credits earned).
      * Relies on CtoService for processing and recalculation.
      */
-    public function storeActivity(Request $request)
+    public function addCtoCreditsEarned(Request $request)
     {
         Log::info('CTO Activity Request Data:', $request->all());
 
-        // Replaced $request->boolean('is_single_day_activity') for older Laravel compatibility
         $isSingleDayActivity = $request->has('is_single_day_activity') && ($request->input('is_single_day_activity') == '1' || $request->input('is_single_day_activity') == 'on');
 
         $validationRules = [
-            'employee_id' => 'required|exists:employees,id',
-            'special_order' => 'required|string|max:255',
-            'activity' => 'required|string',
-            'credits_earned' => 'required|numeric|min:0',
+            'customer_id' => 'required|exists:customers,id',
+            'special_order' => 'nullable|string|max:255',
+            'activity' => 'nullable|string',
+            'hours_earned' => 'required|numeric|min:0', // Matches blade form input name
             'date_of_activity_start' => 'required|date',
             'date_of_activity_end' => $isSingleDayActivity ? 'nullable|date' : 'required|date|after_or_equal:date_of_activity_start',
+            'is_cto_earned' => 'required|boolean',
         ];
 
         try {
@@ -72,7 +79,7 @@ class CtoController extends Controller
 
             Log::info('Validation passed for CTO Activity.');
 
-            $employee = Employee::findOrFail($request->employee_id);
+            $customer = Customer::findOrFail($request->customer_id);
 
             $endDateForStorage = $isSingleDayActivity
                 ? $request->date_of_activity_start
@@ -83,14 +90,16 @@ class CtoController extends Controller
                 'date_of_activity_start' => $request->date_of_activity_start,
                 'date_of_activity_end' => $endDateForStorage,
                 'activity' => $request->activity,
-                'credits_earned' => (float)$request->credits_earned,
+                'credits_earned' => (float)$request->hours_earned, // Store into 'credits_earned' column of CtoApplication
+                'is_activity' => true,
+                'date_filed' => $request->date_of_activity_start, // Add date_filed for sorting
             ];
 
-            $ctoApplication = $this->ctoService->processCtoActivity($employee, $activityData);
+            $ctoApplication = $this->ctoService->processCtoActivity($customer, $activityData);
 
             Log::info('CTO Application Created and Balances Recalculated:', $ctoApplication->toArray());
 
-            return redirect()->route('cto.index', ['employee_id' => $employee->id])
+            return redirect()->route('cto.index', ['customer_id' => $customer->id])
                 ->with('success', 'CTO activity added successfully!');
 
         } catch (ValidationException $e) {
@@ -111,17 +120,20 @@ class CtoController extends Controller
      * Store CTO usage (credits deducted).
      * This method triggers the FIFO deduction and expiration logic in CtoService.
      */
-    public function storeUsage(Request $request)
+    public function submitCto(Request $request)
     {
         Log::info('CTO Usage Request Data:', $request->all());
 
-        // Replaced $request->boolean('is_single_day_absence') for older Laravel compatibility
         $isSingleDayAbsence = $request->has('is_single_day_absence') && ($request->input('is_single_day_absence') == '1' || $request->input('is_single_day_absence') == 'on');
 
         $validationRules = [
-            'employee_id' => 'required|exists:employees,id',
-            'date_of_absence_start' => 'required|date',
-            'date_of_absence_end' => $isSingleDayAbsence ? 'nullable|date' : 'required|date|after_or_equal:date_of_absence_start',
+            'customer_id' => 'required|exists:customers,id',
+            'date_filed' => 'required|date', // From blade form
+            'inclusive_date_start' => 'required|date', // From blade form
+            'inclusive_date_end' => $isSingleDayAbsence ? 'nullable|date' : 'required|date|after_or_equal:inclusive_date_start', // From blade form
+            'hours_applied' => 'required|numeric|min:0.01', // From blade form
+            'cto_details' => 'nullable|string|max:255', // From blade form
+            'is_cto_application' => 'required|boolean',
         ];
 
         try {
@@ -129,34 +141,36 @@ class CtoController extends Controller
 
             Log::info('Validation passed for CTO Usage.');
 
-            $employee = Employee::findOrFail($request->employee_id);
+            $customer = Customer::findOrFail($request->customer_id);
 
-            $startDate = $request->date_of_absence_start;
+            $startDate = Carbon::parse($request->inclusive_date_start);
             $endDateForStorage = $isSingleDayAbsence
-                ? $startDate
-                : $request->date_of_absence_end;
+                ? $startDate->toDateString()
+                : $request->inclusive_date_end;
 
-            $noOfDays = $this->ctoService->calculateWorkingDays($startDate, $endDateForStorage);
+            $hoursToDeduct = (float)$request->hours_applied;
 
-            // Check eligible balance BEFORE calling service to give immediate feedback
-            $eligibleBalance = $this->ctoService->getEligibleCtoBalance($employee, Carbon::parse($startDate));
-            if ($eligibleBalance < $noOfDays) {
+            $eligibleBalance = $this->ctoService->getEligibleCtoBalance($customer, $startDate);
+            if ($eligibleBalance < $hoursToDeduct) {
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', 'Insufficient eligible CTO balance. Available: ' . $eligibleBalance . ' days, Required: ' . $noOfDays . ' days');
+                    ->with('error', 'Insufficient eligible CTO balance. Available: ' . number_format($eligibleBalance, 2) . ' hours, Required: ' . number_format($hoursToDeduct, 2) . ' hours');
             }
 
             $usageData = [
-                'date_of_absence_start' => $startDate,
-                'date_of_absence_end' => $endDateForStorage,
-                'no_of_days' => $noOfDays,
+                'date_of_absence_start' => $startDate->toDateString(), // Corresponds to CtoApplication field
+                'date_of_absence_end' => $endDateForStorage, // Corresponds to CtoApplication field
+                'no_of_days' => $hoursToDeduct, // Stores hours_applied into CtoApplication's 'no_of_days'
+                'cto_details' => $request->cto_details, // Corresponds to CtoApplication field
+                'date_filed' => $request->date_filed, // Corresponds to CtoApplication field
+                'is_activity' => false,
             ];
 
-            $ctoApplication = $this->ctoService->processCtoUsage($employee, $usageData);
+            $ctoApplication = $this->ctoService->processCtoUsage($customer, $usageData);
 
             Log::info('CTO Usage Created and Balances Recalculated:', $ctoApplication->toArray());
 
-            return redirect()->route('cto.index', ['employee_id' => $employee->id])
+            return redirect()->route('cto.index', ['customer_id' => $customer->id])
                 ->with('success', 'CTO usage recorded successfully!');
 
         } catch (ValidationException $e) {
@@ -166,7 +180,6 @@ class CtoController extends Controller
                 ->withInput()
                 ->with('error', 'Validation failed: Please check your input.');
         } catch (\Exception $e) {
-            // Catching insufficient eligible balance exception thrown from service
             Log::error('CTO Usage General Error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return redirect()->back()
                 ->withInput()
@@ -175,20 +188,38 @@ class CtoController extends Controller
     }
 
     /**
-     * Update CTO record.
+     * Update CTO record (activity or usage).
+     * This method expects 'edit_id' in the request body, not route model binding.
      * Relies on CtoService for processing and recalculation.
      */
-    public function update(Request $request, CtoApplication $ctoApplication)
+    public function updateCtoRecord(Request $request)
     {
-        // Replaced $request->boolean() calls
-        $isSingleDayActivity = $request->has('is_single_day_activity') && ($request->input('is_single_day_activity') == '1' || $request->input('is_single_day_activity') == 'on');
-        $isSingleDayAbsence = $request->has('is_single_day_absence') && ($request->input('is_single_day_absence') == '1' || $request->input('is_single_day_absence') == 'on');
+        Log::info('CTO Update Request Data:', $request->all());
 
-        if ($ctoApplication->is_activity) {
+        $request->validate([
+            'edit_id' => 'required|integer',
+            'customer_id' => 'required|exists:customers,id',
+        ]);
+
+        $customer = Customer::findOrFail($request->customer_id);
+
+        // Retrieve the CtoApplication record to identify its type and update
+        $ctoRecord = CtoApplication::findOrFail($request->edit_id);
+
+        // Verify record type to apply correct validation/processing
+        $isCtoEarned = $ctoRecord->is_activity; // Check existing record's type
+        $isCtoApplication = !$ctoRecord->is_activity; // Check existing record's type
+
+        if ($ctoRecord->customer_id != $request->customer_id) {
+            return back()->with('error', 'Unauthorized access to CTO record.');
+        }
+
+        if ($isCtoEarned) { // This is an earned credits update
+            $isSingleDayActivity = $request->has('is_single_day_activity') && ($request->input('is_single_day_activity') == '1' || $request->input('is_single_day_activity') == 'on');
             $validationRules = [
-                'special_order' => 'required|string|max:255',
-                'activity' => 'required|string',
-                'credits_earned' => 'required|numeric|min:0',
+                'special_order' => 'nullable|string|max:255',
+                'activity' => 'nullable|string',
+                'hours_earned' => 'required|numeric|min:0',
                 'date_of_activity_start' => 'required|date',
                 'date_of_activity_end' => $isSingleDayActivity ? 'nullable|date' : 'required|date|after_or_equal:date_of_activity_start',
             ];
@@ -203,31 +234,39 @@ class CtoController extends Controller
                 'date_of_activity_start' => $request->date_of_activity_start,
                 'date_of_activity_end' => $endDateForStorage,
                 'activity' => $request->activity,
-                'credits_earned' => $request->credits_earned,
+                'credits_earned' => (float)$request->hours_earned,
+                'date_filed' => $request->date_of_activity_start, // Update date_filed as well
             ];
 
-            $this->ctoService->processCtoActivity($ctoApplication->employee, $activityData, $ctoApplication);
-        } else {
+            $this->ctoService->processCtoActivity($customer, $activityData, $ctoRecord);
+
+        } elseif ($isCtoApplication) { // This is a usage update
+            $isSingleDayAbsence = $request->has('is_single_day_absence') && ($request->input('is_single_day_absence') == '1' || $request->input('is_single_day_absence') == 'on');
             $validationRules = [
-                'date_of_absence_start' => 'required|date',
-                'date_of_absence_end' => $isSingleDayAbsence ? 'nullable|date' : 'required|date|after_or_equal:date_of_absence_start',
+                'date_filed' => 'required|date',
+                'inclusive_date_start' => 'required|date',
+                'inclusive_date_end' => $isSingleDayAbsence ? 'nullable|date' : 'required|date|after_or_equal:inclusive_date_start',
+                'hours_applied' => 'required|numeric|min:0.01',
+                'cto_details' => 'nullable|string|max:255',
             ];
             $request->validate($validationRules);
 
-            $startDate = $request->date_of_absence_start;
+            $startDate = Carbon::parse($request->inclusive_date_start);
             $endDateForStorage = $isSingleDayAbsence
-                ? $startDate
-                : $request->date_of_absence_end;
+                ? $startDate->toDateString()
+                : $request->inclusive_date_end;
 
-            $noOfDays = $this->ctoService->calculateWorkingDays($startDate, $endDateForStorage);
+            $hoursToDeduct = (float)$request->hours_applied;
 
             $usageData = [
-                'date_of_absence_start' => $startDate,
+                'date_of_absence_start' => $startDate->toDateString(),
                 'date_of_absence_end' => $endDateForStorage,
-                'no_of_days' => $noOfDays,
+                'no_of_days' => $hoursToDeduct,
+                'cto_details' => $request->cto_details,
+                'date_filed' => $request->date_filed,
             ];
 
-            $this->ctoService->processCtoUsage($ctoApplication->employee, $usageData, $ctoApplication);
+            $this->ctoService->processCtoUsage($customer, $usageData, $ctoRecord);
         }
 
         return redirect()->back()->with('success', 'CTO record updated successfully!');
@@ -235,23 +274,35 @@ class CtoController extends Controller
 
     /**
      * Delete CTO record.
+     * This method expects 'id' in the request body, not route model binding.
      * Relies on CtoService for processing and recalculation.
      */
-    public function destroy(CtoApplication $ctoApplication)
+    public function deleteCtoRecord(Request $request)
     {
+        Log::info('CTO Delete Request Data:', $request->all());
+
+        $request->validate([
+            'id' => 'required|integer',
+        ]);
+
         try {
-            $this->ctoService->deleteCtoRecord($ctoApplication); 
-            return redirect()->back()->with('success', 'CTO record deleted successfully!');
+            $ctoApplication = CtoApplication::findOrFail($request->id);
+            $this->ctoService->deleteCtoRecord($ctoApplication);
+            return response()->json(['success' => true, 'message' => 'CTO record deleted successfully!']);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            Log::error('CTO Delete Error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
     /**
      * Get CTO data for editing (AJAX).
+     * This method assumes route model binding is NOT used for edit (ID from request)
      */
-    public function edit(CtoApplication $ctoApplication)
+    public function edit(Request $request)
     {
+        $request->validate(['id' => 'required|integer']);
+        $ctoApplication = CtoApplication::findOrFail($request->id);
         return response()->json($ctoApplication);
     }
 
@@ -268,45 +319,5 @@ class CtoController extends Controller
         $days = $this->ctoService->calculateWorkingDays($request->start_date, $request->end_date);
 
         return response()->json(['days' => $days]);
-    }
-
-    /**
-     * Add employee (redirect to correct route).
-     * NOTE: This method is a duplicate of a method in LeaveController.
-     * Consider refactoring employee management to a dedicated EmployeeController if appropriate.
-     */
-    public function addEmployee(Request $request)
-    {
-        $request->validate([
-            'surname' => 'required|string',
-            'given_name' => 'required|string',
-            'middle_name' => 'required|string',
-            'division' => 'required|string',
-            'designation' => 'required|string',
-            'original_appointment' => 'nullable|string',
-            'salary' => 'required|numeric',
-            'balance_forwarded_vl' => 'required|numeric',
-            'balance_forwarded_sl' => 'required|numeric',
-        ]);
-
-        $employeeData = $request->all();
-        $employeeData['vl'] = $employeeData['balance_forwarded_vl'] ?? 0;
-        $employeeData['sl'] = $employeeData['balance_forwarded_sl'] ?? 0;
-        $employeeData['spl'] = $employeeData['spl'] ?? 3;
-        $employeeData['fl'] = $employeeData['fl'] ?? 0;
-        $employeeData['solo_parent'] = $employeeData['solo_parent'] ?? 7;
-        $employeeData['ml'] = $employeeData['ml'] ?? 105;
-        $employeeData['pl'] = $employeeData['pl'] ?? 7;
-        $employeeData['ra9710'] = 0; // Fixed default value
-        $employeeData['rl'] = 0;    // Fixed default value
-        $employeeData['sel'] = 0;   // Fixed default value
-        $employeeData['study_leave'] = 0; // Fixed default value
-        $employeeData['adopt'] = 0;       // Fixed default value
-
-
-        $employee = Employee::create($employeeData);
-
-        return redirect()->route('cto.index', ['employee_id' => $employee->id])
-            ->with('success', '✅ Employee Added!');
     }
 }

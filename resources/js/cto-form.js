@@ -17,9 +17,9 @@ $(document).ready(function() {
     // window.ctoStoreActivityRoute (NEWLY ADDED IN BLADE FOR EXTERNAL JS)
     // window.ctoStoreUsageRoute (NEWLY ADDED IN BLADE FOR EXTERNAL JS)
 
-    // --- Employee Search (Common for both Leave and CTO pages) ---
+    // --- Customer Search (Common for both Leave and CTO pages) ---
     let debounceTimer;
-    $('#employee-search').on('input', function() {
+    $('#customer-search').on('input', function() {
         clearTimeout(debounceTimer);
         const query = $(this).val();
         
@@ -58,7 +58,7 @@ $(document).ready(function() {
     // Handle suggestion clicks
     $(document).on('click', '.suggestion-item', function() {
         const label = $(this).data('label');
-        $('#employee-search').val(label);
+        $('#customer-search').val(label);
         $('#suggestions').empty().hide();
     });
 
@@ -69,8 +69,8 @@ $(document).ready(function() {
         }
     });
 
-    // --- Modal functionality (Add Employee) ---
-    // These elements always exist regardless of whether an employee is loaded.
+    // --- Modal functionality (Add Customer) ---
+    // These elements always exist regardless of whether an customer is loaded.
     const showAddEmpModalBtn = document.getElementById('showAddEmpModal');
     const closeAddEmpModalBtn = document.getElementById('closeAddEmpModal');
     const addEmpModal = document.getElementById('addEmpModal');
@@ -87,8 +87,8 @@ $(document).ready(function() {
         });
     }
 
-    // --- CTO Specific JavaScript (conditional on employee existence) ---
-    // These elements and functions only apply if an employee is loaded,
+    // --- CTO Specific JavaScript (conditional on customer existence) ---
+    // These elements and functions only apply if an customer is loaded,
     // meaning the forms are actually present in the HTML.
     // The presence check is done implicitly by trying to get the element.
     const singleDayActivityCheckbox = document.getElementById('single-day-activity');
@@ -170,7 +170,7 @@ $(document).ready(function() {
 
     // Function to calculate working days (for CTO usage)
     async function calculateWorkingDaysForUsage() {
-        // Only run if the elements exist (i.e., an employee is loaded)
+        // Only run if the elements exist (i.e., an customer is loaded)
         if (!dateOfAbsenceStartField || !absenceEndDateField || !singleDayAbsenceCheckbox) {
             return;
         }

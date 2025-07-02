@@ -38,69 +38,9 @@
                     <div id="suggestions"></div>
                 </div>
             </form>
-            <button class="add-customer-btn" id="showAddEmpModal">
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span>Add Teaching Customer</span>
-            </button>
         </div>
     </div>
 
-    <!-- Add Customer Modal -->
-    <div class="modal-bg" id="addEmpModal">
-        <div class="modal-content">
-            <button class="close" id="closeAddEmpModal">&times;</button>
-            <form method="POST" action="{{ route('teaching.add') }}">
-                @csrf
-                <div class="emp-form">
-                    <div class="form-left">
-                        <label>Surname:</label>
-                        <input type="text" name="surname" required>
-                        <label>Given name:</label>
-                        <input type="text" name="given_name" required>
-                        <label>Middle name:</label>
-                        <input type="text" name="middle_name" required>
-                        <label>Sex:</label>
-                        <select name="sex" required>
-                            <option value="">Select Sex</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                        <label>Civil Status:</label>
-                        <input type="text" name="civil_status">
-                    </div>
-
-                    <div class="form-right">
-                        <label>Date of Birth:</label>
-                        <input type="date" name="date_of_birth">
-                        <label>Place of Birth:</label>
-                        <input type="text" name="place_of_birth">
-                        <label>Position:</label>
-                        <input type="text" name="position">
-                        <label>Name of School:</label>
-                        <input type="text" name="name_of_school" required>
-                        <label>Permanency:</label>
-                        <select name="permanency" required>
-                            <option value="">Select Permanency</option>
-                            <option value="Permanent">Permanent</option>
-                            <option value="Temporary">Temporary</option>
-                            <option value="Contractual">Contractual</option>
-                        </select>
-                        <label>Customer Number:</label>
-                        <input type="text" name="customer_number">
-                        <label>Salary:</label>
-                        <input type="number" step="0.01" name="salary">
-                        <label>Initial Leave Credits:</label>
-                        <input type="number" step="0.01" name="leave_credits" value="0">
-                        <div style="height: 1rem;"></div>
-                        <button type="submit">Add Teaching Customer</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Customer Details Table -->
     @if($customer)
@@ -112,27 +52,27 @@
                     <td class="label">SEX</td>
                     <td class="value">{{ strtoupper($customer->sex) }}</td>
                     <td class="label">POSITION</td>
-                    <td class="value">{{ strtoupper($customer->position ?? '') }}</td>
+                    <td class="value">{{  strtoupper($customer->position->position) ?? '' }}</td>
                     <td class="label">customer NUMBER</td>
                     <td class="value">{{ $customer->customer_number ?? '' }}</td>
                 </tr>
                 <tr>
                     <td class="label">GIVEN NAME</td>
-                    <td class="value">{{ strtoupper($customer->given_name) }}</td>
+                    <td class="value">{{ strtoupper($customer->given_name)?? ''  }}</td>
                     <td class="label">CIVIL STATUS</td>
                     <td class="value">{{ strtoupper($customer->civil_status ?? '') }}</td>
                     <td class="label">NAME OF SCHOOL</td>
-                    <td class="value">{{ strtoupper($customer->name_of_school ?? '') }}</td>
+                    <td class="value">{{ strtoupper($customer->office->office) ?? ''  }}</td>
                     <td class="label">BASIC SALARY</td>
                     <td class="value">{{ number_format($customer->salary, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="label">MIDDLE NAME</td>
-                    <td class="value">{{ strtoupper($customer->middle_name) }}</td>
+                    <td class="value">{{ strtoupper($customer->middle_name)?? ''  }}</td>
                     <td class="label">DATE OF BIRTH</td>
                     <td class="value">{{ $customer->date_of_birth ? \Carbon\Carbon::parse($customer->date_of_birth)->format('F j, Y') : '' }}</td>
                     <td class="label">PERMANENCY</td>
-                    <td class="value">{{ strtoupper($customer->permanency ?? '') }}</td>
+                    <td class="value">{{ strtoupper($customer->permanency ?? '') }}</td>s
                     <td class="label">LEAVE CREDITS BALANCE</td>
                     <td class="value">{{ $customer->leave_credits ?? 0 }}</td>
                 </tr>
@@ -301,20 +241,28 @@
     <!-- Pass Laravel routes to JavaScript -->
     <script>
         // Make Laravel routes available to JavaScript
-        window.autocompleteRoute = '{{ route("teaching.search") }}';
+        window.autocompleteRoute = '{{ route("teaching.autocomplete") }}';
         window.leaveUpdateRoute = '{{ route("teaching.leave.update") }}';
         window.deleteRoute = '{{ route("teaching.leave.delete") }}';
         window.csrfToken = '{{ csrf_token() }}';
 
-        // Modal functions
-        document.getElementById('showAddEmpModal').addEventListener('click', function() {
-            document.getElementById('addEmpModal').style.display = 'block';
-        });
+// Modal functions using jQuery
+$(document).ready(function() {
+    $('#showAddEmpModal').on('click', function() {
+        $('#addEmpModal').show();
+    });
 
-        document.getElementById('closeAddEmpModal').addEventListener('click', function() {
-            document.getElementById('addEmpModal').style.display = 'none';
-        });
-
+    $('#closeAddEmpModal').on('click', function() {
+        $('#addEmpModal').hide();
+    });
+    
+    // Close modal when clicking outside
+    $(window).on('click', function(event) {
+        if ($(event.target).is('#addEmpModal')) {
+            $('#addEmpModal').hide();
+        }
+    });
+});
         // Close modal when clicking outside
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('addEmpModal');
@@ -381,65 +329,68 @@
             }
         }
 
-        // Auto-complete functionality
-        const searchInput = document.getElementById('customer-search');
-        const suggestionsDiv = document.getElementById('suggestions');
-
-        if (searchInput && suggestionsDiv) {
-            searchInput.addEventListener('input', function() {
-                const query = this.value.trim();
-                
-                if (query.length < 2) {
-                    suggestionsDiv.innerHTML = '';
-                    suggestionsDiv.style.display = 'none';
-                    return;
-                }
-
-                fetch(`${window.autocompleteRoute}?search=${encodeURIComponent(query)}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    suggestionsDiv.innerHTML = '';
-                    
-                    if (data.length > 0) {
-                        data.forEach(customer => {
-                            const div = document.createElement('div');
-                            div.className = 'suggestion-item';
-                            div.innerHTML = `
-                                <strong>${customer.name}</strong><br>
-                                <small>Customer #: ${customer.customer_number || 'N/A'} | Position: ${customer.position || 'N/A'}</small><br>
-                                <small>School: ${customer.school || 'N/A'}</small>
-                            `;
-                            div.addEventListener('click', function() {
-                                searchInput.value = customer.name;
-                                suggestionsDiv.innerHTML = '';
-                                suggestionsDiv.style.display = 'none';
-                            });
-                            suggestionsDiv.appendChild(div);
-                        });
-                        suggestionsDiv.style.display = 'block';
-                    } else {
-                        suggestionsDiv.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    suggestionsDiv.innerHTML = '';
-                    suggestionsDiv.style.display = 'none';
-                });
-            });
-
-            // Hide suggestions when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!searchInput.contains(event.target) && !suggestionsDiv.contains(event.target)) {
-                    suggestionsDiv.style.display = 'none';
-                }
-            });
+// Auto-complete functionality using jQuery
+function setupCustomerSearch() {
+    $('#customer-search').on('input', function() {
+        console.log('Input event fired');
+        let query = $(this).val();
+        
+        if (query.length < 2) {
+            $('#suggestions').hide();
+            return;
         }
+        
+        $.ajax({
+            url: window.autocompleteRoute,
+            method: 'GET',
+            data: { query: query },
+            dataType: 'text',
+            success: function(response) {
+                console.log('Raw response:', response);
+                
+                try {
+                    let data = JSON.parse(response);
+                    console.log('Parsed data:', data);
+                    
+                    let suggestions = '';
+                    if (data && data.length > 0) {
+                        data.forEach(function(item) {
+                            suggestions += '<div class="suggestion-item" data-id="' + item.id + '">' + item.label + '</div>';
+                        });
+                        $('#suggestions').html(suggestions).show();
+                    } else {
+                        $('#suggestions').hide();
+                    }
+                } catch (e) {
+                    console.error('JSON Parse Error:', e);
+                    console.error('Response was:', response);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', error);
+                console.error('Status:', status);
+                console.error('Response Text:', xhr.responseText);
+                console.error('Status Code:', xhr.status);
+            }
+        });
+    });
+
+    $(document).on('click', '.suggestion-item', function() {
+        $('#customer-search').val($(this).text());
+        $('#suggestions').hide();
+    });
+
+    $(document).click(function(e) {
+        if (!$(e.target).closest('#customer-search, #suggestions').length) {
+            $('#suggestions').hide();
+        }
+    });
+}
+
+// Initialize when document is ready
+$(document).ready(function() {
+    setupCustomerSearch();
+});
     </script>
 
 </body>

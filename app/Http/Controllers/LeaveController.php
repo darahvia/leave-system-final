@@ -31,72 +31,21 @@ class LeaveController extends Controller
                 'customer' => $customer,
                 'leaveTypes' => $leaveTypes,
                 'message' => $message
-
             ]);
         }
 
-
-    public function addCustomer(Request $request)
-    {
-        $request->validate([
-            'surname' => 'required|string',
-            'given_name' => 'required|string',
-            'middle_name' => 'required|string',
-            'division' => 'required|string',
-            'designation' => 'required|string',
-            'origappnt_date' => 'required|string',
-            'balance_forwarded_vl' => 'nullable|numeric',
-            'balance_forwarded_sl' => 'nullable|numeric',
-        ]);
-
-        $customerData = $request->all();
-        $customerData['vl'] = $customerData['vl'] ?? 0;
-        $customerData['sl'] = $customerData['sl'] ?? 0;
-        $customerData['spl'] = $customerData['spl'] ?? 3;
-        $customerData['fl'] = $customerData['fl'] ?? 0;
-        $customerData['solo_parent'] = $customerData['solo_parent'] ?? 7;
-        $customerData['ml'] = $customerData['ml'] ?? 105;
-        $customerData['pl'] = $customerData['pl'] ?? 7;
-        $customerData['ra9710'] = $customerData['ra9710'] ?? 0;
-        $customerData['rl'] = $customerData['rl'] ?? 0;
-        $customerData['sel'] = $customerData['sel'] ?? 0;
-        $customerData['study_leave'] = $customerData['study_leave'] ?? 0;
-        $customerData['vawc'] = $customerData['vawc'] ?? 0;
-        $customerData['adopt'] = $customerData['adopt'] ?? 0;
-
-        $customer = Customer::create($customerData);
-
-        $fullName = "{$customer->surname}, {$customer->given_name} {$customer->middle_name}";
-
-        return redirect()->route('customer.find', ['name' => $fullName])
-            ->with('success', '✅ Customer Added!');
-        }
 
         public function findCustomer(Request $request)
         {
             $customer = Customer::whereRaw("CONCAT(surname, ', ', given_name, ' ', middle_name) = ?", [$request->name])
                 ->first();
 
-            if ($customer) { // Keep the $customer variable from main
-                        // Preserving the dynamic redirect based on 'redirect_to' input from your branch
-                        $redirectTo = $request->input('redirect_to', 'leave');
+            if ($customer) {
+                return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
+            }
 
-                        if ($redirectTo === 'cto') {
-                            // Update employee->id to customer->id
-                            return redirect()->route('cto.index', ['customer_id' => $customer->id]);
-                        } else {
-                            // Update employee->id to customer->id and use the new customer route
-                            return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
-                        }
-                    }
-
-                    // If customer not found, redirect back to the appropriate page
-                    // Preserve the dynamic redirect logic but use customer route for 'leave'
-                    $redirectTo = $request->input('redirect_to', 'leave');
-                    $routeName = $redirectTo === 'cto' ? 'cto.index' : 'leave.customer.index'; // Use leave.customer.index here
-
-                    return redirect()->route($routeName)
-                        ->with('error', '❌ Customer not found.'); // Update message for customer
+            return redirect()->route('leave.customer.index')
+                ->with('error', '❌ Customer not found.');
         }
 
 
@@ -114,6 +63,7 @@ class LeaveController extends Controller
 
             try {
                 $customer = Customer::find($request->customer_id);
+
                 $isCancellation = $request->input('is_cancellation', false);
                 
                 if ($isCancellation) {
@@ -226,7 +176,7 @@ class LeaveController extends Controller
 
             try {
                 $customer = Customer::find($request->customer_id);
-                
+
                 $this->leaveService->addCreditsEarned(
                     $customer,
                     $request->earned_date,
@@ -283,14 +233,14 @@ class LeaveController extends Controller
     //         return response()->json(['error' => 'Customer not found'], 404);
     //     }
 
-    //      $balances = [];
-    //      $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
+    //     $balances = [];
+    //     $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
         
     //     foreach ($leaveTypes as $type) {
     //         $balances[$type] = $customer->getCurrentLeaveBalance($type);
     //     }
 
-    //      return response()->json($balances);
+    //     return response()->json($balances);
     // }
 
     public function customerAutocomplete(Request $request)
@@ -311,6 +261,7 @@ class LeaveController extends Controller
                         ->orWhere('given_name', 'LIKE', "%{$search}%")
                         ->orWhere('middle_name', 'LIKE', "%{$search}%");
                 })
+                ->whereBetween('office_id', [1, 14])
                 ->limit(10)
                 ->get(['surname', 'given_name', 'middle_name', 'id'])
                 ->map(function ($customer) {

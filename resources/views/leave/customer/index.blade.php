@@ -6,6 +6,30 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
+    <div class="tab-nav" style="margin-bottom: 1.5rem;">
+        <a href="{{ route('leave.customer.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('leave.customer.index') ? ' active' : '' }}">Leave</a>
+        <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
+    </div>
+    <style>
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 1.5rem;
+        }
+        .tab-link {
+            padding: 0.5rem 1.5rem;
+            text-decoration: none;
+            color: #333;
+            border-bottom: 2px solid transparent;
+            transition: border 0.2s, color 0.2s;
+        }
+        .tab-link.active, .tab-link:hover {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+        }
+    </style>
+
     @if(session('success'))
         <div class="success">{{ session('success') }}</div>
     @endif
@@ -38,17 +62,9 @@
                     <div id="suggestions"></div>
                 </div>
             </form>
-            <button class="add-customer-btn" id="showAddEmpModal">
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span>Add Customer</span>
-            </button>
         </div>
     </div>
 
-    <!-- Add Customer Modal -->
     <div class="modal-bg" id="addEmpModal">
         <div class="modal-content">
             <button class="close" id="closeAddEmpModal">&times;</button>
@@ -78,7 +94,7 @@
                         <input type="number" step="0.01" name="balance_forwarded_vl" required>
                         <label>Sick Leave Forwarded Balance:</label>
                         <input type="number" step="0.01" name="balance_forwarded_sl" required>
-<div style="height: 1rem;"></div>
+                        <div style="height: 1rem;"></div>
 
                         <button type="submit">Add Customer</button>
                     </div>
@@ -87,7 +103,6 @@
         </div>
     </div>
 
-    <!-- Customer Details Table -->
     @if($customer)
         @php
             $latestApp = $customer->leaveApplications->last();
@@ -130,7 +145,6 @@
             </table>
         </div>
 
-        <!-- Modal for Other Credits -->
         <div class="modal-bg" id="otherCreditsModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:999;">
             <div class="modal-content" style="background:#fff; margin:5% auto; padding:20px; border-radius:8px; max-width:400px; position:relative;">
                 <button class="close" onclick="closeOtherCreditsModal()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:20px;">&times;</button>
@@ -141,7 +155,7 @@
 
                 <ul style="list-style:none; padding:0;">
                     @foreach ($balances as $type => $value)
-                        @if (!in_array($type, ['vl', 'sl'])) {{-- exclude VL/SL if showing elsewhere --}}
+                        @if (!in_array($type, ['vl', 'sl', 'vawc']))
                             <li>{{ \App\Services\LeaveService::getLeaveTypes()[strtoupper($type)] ?? ucfirst(str_replace('_', ' ', $type)) }}: <strong>{{ $value }}</strong></li>
                         @endif
                     @endforeach
@@ -150,12 +164,9 @@
         </div>
     @endif
 
-   
 
-    <!-- Bottom: Add Leave Type and Add Earned Credits -->
     @if($customer)
         <div class="bottom-section">
-            <!-- Add Leave Type -->
             <form method="POST" action="{{ route('leave.submit') }}" id="leave-form" class="leave-form">
                 @csrf
                 <input type="hidden" name="customer_id" value="{{ $customer->id }}">
@@ -186,7 +197,6 @@
                     <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                 </div>
             </form>
-            <!-- Add Earned Credits -->
             <form method="POST" action="{{ route('leave.credits') }}">
                 @csrf
                 <input type="hidden" name="customer_id" value="{{ $customer->id }}">
@@ -215,10 +225,38 @@
                     <button type="submit">Add Other Credits</button>
                 </div>
             </form>
+            <form method="POST" action="{{ route('cto.submit') }}" id="cto-form" class="leave-form">
+                @csrf
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                <input type="hidden" name="edit_id" id="cto_edit_id" value="">
+                <input type="hidden" name="_method" id="cto_form_method" value="POST">
+                <div class="emp-form" id="cto-form-container">
+                    <h3>Apply for CTO</h3>
+                    <label>Date of CTO:</label>
+                    <input type="date" name="cto_date" id="cto_date" required>
+                    <label>Hours Applied:</label>
+                    <input type="number" name="hours_applied" id="cto_hours_applied" step="0.01" required>
+                    <label>Remarks:</label>
+                    <input type="text" name="cto_details" id="cto_details">
+                    <button type="submit" id="cto-submit-btn">Add CTO Application</button>
+                    <button type="button" id="cto-cancel-edit-btn" onclick="cancelCtoEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
+                </div>
+            </form>
+            <form method="POST" action="{{ route('cto.credits') }}">
+                @csrf
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                <div class="emp-form">
+                    <h3>Add Earned CTO Credits</h3>
+                    <label>Earned Date:</label>
+                    <input type="date" name="earned_date" required>
+                    <label>Hours Earned:</label>
+                    <input type="number" name="hours_earned" step="0.01" required>
+                    <button type="submit">Add CTO Earned</button>
+                </div>
+            </form>
         </div>
     @endif
 
-     <!-- Leave Records Table -->
     @if($customer)
         <table class="leave-table">
             <thead>
@@ -226,6 +264,7 @@
                     <th>PERIOD</th>
                     <th>VL EARNED</th>
                     <th>SL EARNED</th>
+                    <th>CTO EARNED</th>
                     <th>DATE LEAVE FILED</th>
                     <th>DATE LEAVE INCURRED</th>
                     <th>LEAVE INCURRED</th>
@@ -235,18 +274,20 @@
                     <th>FL</th>
                     <th>SOLO PARENT</th>
                     <th>OTHERS</th>
+                    <th>CTO Hours</th>
                     <th>REMARKS</th>
                     <th>VL BALANCE</th>
                     <th>SL BALANCE</th>
+                    <th>CTO BALANCE</th>
                     <th>ACTIONS</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- BALANCE FORWARDED -->
                 <tr>
                     <td data-label="PERIOD">BALANCE FORWARDED</td>
                     <td data-label="VL EARNED"></td>
                     <td data-label="SL EARNED"></td>
+                    <td data-label="CTO EARNED"></td>
                     <td data-label="DATE LEAVE FILED"></td>
                     <td data-label="DATE LEAVE INCURRED"></td>
                     <td data-label="LEAVE INCURRED"></td>
@@ -256,16 +297,20 @@
                     <td data-label="FL"></td>
                     <td data-label="SOLO PARENT"></td>
                     <td data-label="OTHERS"></td>
+                    <td data-label="CTO Hours"></td>
                     <td data-label="REMARKS"></td>
-                    <td data-label="VL BALANCE">{{ number_format($customer->balance_forwarded_vl, 2) }}</td>
-                    <td data-label="SL BALANCE">{{ number_format($customer->balance_forwarded_sl, 2) }}</td>
+                    <td data-label="VL BALANCE">{{ number_format($customer->balance_forwarded_vl, 3) }}</td>
+                    <td data-label="SL BALANCE">{{ number_format($customer->balance_forwarded_sl, 3) }}</td>
+                    <td data-label="CTO BALANCE">{{ number_format($customer->balance_forwarded_cto ?? 0, 3) }}</td>
                     <td data-label="ACTIONS"></td>
                 </tr>
-                @if($customer->leaveApplications && $customer->leaveApplications->count())
-                    @foreach($customer->leaveApplications->sortBy([
-                        fn($a, $b) => ($a->earned_date ?? $a->date_filed) <=> ($b->earned_date ?? $b->date_filed),
-                        'date_filed'
-                    ]) as $app)
+@if($customer->leaveApplications && $customer->leaveApplications->count())
+    @php
+        $sortedApplications = $customer->leaveApplications->sortBy(function($app) {
+            return $app->earned_date ?? $app->date_filed ?? '1900-01-01';
+        });
+    @endphp
+    @foreach($sortedApplications as $app)
                         <tr>
                             <td data-label="PERIOD">{{ $app->earned_date ? \Carbon\Carbon::parse($app->earned_date)->format('F j, Y') : '' }}</td>
                             <td data-label="VL EARNED">
@@ -282,46 +327,51 @@
                                     @endif
                                 @endif
                             </td>
+                            <td data-label="CTO EARNED">
+                                @if($app->is_cto_earned) {{-- Assuming 'is_cto_earned' flag --}}
+                                    {{ $app->earned_cto_hours ?? '' }}
+                                @endif
+                            </td>
                             <td data-label="DATE LEAVE FILED">{{ $app->date_filed ? \Carbon\Carbon::parse($app->date_filed)->format('F j, Y') : '' }}</td>
-<td data-label="DATE LEAVE INCURRED">
-    @if($app->inclusive_date_start && $app->inclusive_date_end)
-        @if(\Carbon\Carbon::parse($app->inclusive_date_start)->isSameDay(\Carbon\Carbon::parse($app->inclusive_date_end)))
-            {{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('F j, Y') }}
-        @else
-            {{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('F j, Y') }}
-        @endif
-    @elseif($app->date_incurred)
-        {{ \Carbon\Carbon::parse($app->date_incurred)->format('F j, Y') }}
-    @endif
-</td>
+                            <td data-label="DATE LEAVE INCURRED">
+                                @if($app->inclusive_date_start && $app->inclusive_date_end)
+                                    @if(\Carbon\Carbon::parse($app->inclusive_date_start)->isSameDay(\Carbon\Carbon::parse($app->inclusive_date_end)))
+                                        {{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('F j, Y') }}
+                                    @else
+                                        {{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('F j, Y') }}
+                                    @endif
+                                @elseif($app->date_incurred)
+                                    {{ \Carbon\Carbon::parse($app->date_incurred)->format('F j, Y') }}
+                                @endif
+                            </td>
                             <td data-label="LEAVE INCURRED">
-                                @if(!$app->is_credit_earned)
+                                @if(!$app->is_credit_earned && !$app->is_cto_application) {{-- Not earned credit and not CTO application --}}
                                     {{ \App\Services\LeaveService::getLeaveTypes()[$app->leave_type] ?? $app->leave_type }}
                                 @endif
                             </td>
 
                             <td data-label="VL">
-                                @if(!$app->is_credit_earned && $app->leave_type === 'VL')
+                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'VL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="SL">
-                                @if(!$app->is_credit_earned && $app->leave_type === 'SL')
+                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'SL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="SPL">
-                                @if(!$app->is_credit_earned && $app->leave_type === 'SPL')
+                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'SPL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="FL">
-                                @if(!$app->is_credit_earned && $app->leave_type === 'FL')
+                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'FL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="SOLO PARENT">
-                                @if(!$app->is_credit_earned && $app->leave_type === 'SOLO PARENT')
+                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'SOLO PARENT')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
@@ -333,17 +383,35 @@
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
+                            <td data-label="CTO Hours">
+                                @if($app->is_cto_application) {{-- If it's a CTO application --}}
+                                    {{ $app->hours_applied ?? '' }}
+                                @endif
+                            </td>
                             <td data-label="REMARKS">
                                 @if(!$app->is_credit_earned)
-                                    {{ $app->leave_details ?? '' }}
+                                    {{ $app->leave_details ?? $app->cto_details ?? '' }}
                                 @endif
                             </td>
                             <td data-label="VL BALANCE">{{ $app->current_vl ?? '' }}</td>
                             <td data-label="SL BALANCE">{{ $app->current_sl ?? '' }}</td>
+                            <td data-label="CTO BALANCE">{{ $app->current_cto ?? '' }}</td>
                             <td data-label="ACTIONS">
                                 @if ($app->is_credit_earned)
                                     {{-- Credits earned → Only delete --}}
                                     <button type="button" class="delete-btn" onclick="deleteRecord({{ $app->id }}, 'credit')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3,6 5,6 21,6"></polyline>
+                                            <path d="m5,6 1,14c0,1 1,2 2,2h8c1,0 2-1 2-2l1-14"></path>
+                                            <path d="m10,11 0,6"></path>
+                                            <path d="m14,11 0,6"></path>
+                                            <path d="M8,6V4c0-1,1-2,2-2h4c0-1,1-2,2-2v2"></path>
+                                        </svg>
+                                    </button>
+
+                                @elseif ($app->is_cto_earned)
+                                    {{-- CTO Credits earned → Only delete --}}
+                                    <button type="button" class="delete-btn" onclick="deleteRecord({{ $app->id }}, 'cto_credit')">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <polyline points="3,6 5,6 21,6"></polyline>
                                             <path d="m5,6 1,14c0,1 1,2 2,2h8c1,0 2-1 2-2l1-14"></path>
@@ -361,11 +429,35 @@
                                         '{{ \Carbon\Carbon::parse($app->date_filed)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
-                                        '{{ $app->working_days }}'
+                                        '{{ $app->working_days }}',
+                                        '{{ $app->leave_details ?? '' }}'
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                             <path d="M12 12l7-7 3 3-7 7-3 0 0-3z"></path>
+                                        </svg>
+                                    </button>
+
+                                @elseif ($app->is_cto_application)
+                                    {{-- CTO application → Edit and Delete --}}
+                                    <button type="button" class="edit-btn" onclick="editCtoApplication(
+                                        {{ $app->id }},
+                                        '{{ \Carbon\Carbon::parse($app->date_filed)->format('Y-m-d') }}',
+                                        '{{ $app->hours_applied }}',
+                                        '{{ $app->cto_details ?? '' }}'
+                                    )">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M12 12l7-7 3 3-7 7-3 0 0-3z"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="delete-btn" onclick="deleteRecord({{ $app->id }}, 'cto_application')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3,6 5,6 21,6"></polyline>
+                                            <path d="m5,6 1,14c0,1 1,2 2,2h8c1,0 2-1 2-2l1-14"></path>
+                                            <path d="m10,11 0,6"></path>
+                                            <path d="m14,11 0,6"></path>
+                                            <path d="M8,6V4c0-1,1-2,2-2h4c0-1,1-2,2-2v2"></path>
                                         </svg>
                                     </button>
 
@@ -377,7 +469,8 @@
                                         '{{ \Carbon\Carbon::parse($app->date_filed)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
-                                        '{{ $app->working_days }}'
+                                        '{{ $app->working_days }}',
+                                        '{{ $app->leave_details ?? '' }}'
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -416,21 +509,124 @@
             </tbody>
         </table>
     @endif
-    <!-- External Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <!-- Pass Laravel routes to JavaScript -->
-    <script src="{{ asset('js/leave-form.js') }}"></script>
 
     <script>
         // Make Laravel routes available to JavaScript
         window.autocompleteRoute = '{{ route("customer.autocomplete") }}';
         window.leaveUpdateRoute = '{{ route("leave.update") }}';
         window.deleteRoute = '{{ route("leave.delete") }}';
+        window.ctoUpdateRoute = '{{ route("cto.update") }}'; // New CTO update route
+        window.ctoDeleteRoute = '{{ route("cto.delete") }}'; // New CTO delete route
         window.csrfToken = '{{ csrf_token() }}';
+
+        function showOtherCreditsModal() {
+            document.getElementById('otherCreditsModal').style.display = 'block';
+        }
+
+        function closeOtherCreditsModal() {
+            document.getElementById('otherCreditsModal').style.display = 'none';
+        }
+
+        // Function to edit leave application
+        function editLeaveApplication(id, leave_type, date_filed, inclusive_date_start, inclusive_date_end, working_days, leave_details) {
+            document.getElementById('edit_id').value = id;
+            document.querySelector('select[name="leave_type"]').value = leave_type;
+            document.getElementById('date_filed').value = date_filed;
+            document.getElementById('inclusive_date_start').value = inclusive_date_start;
+            document.getElementById('inclusive_date_end').value = inclusive_date_end;
+            document.getElementById('working_days').value = working_days;
+            document.getElementById('leave_details').value = leave_details;
+
+            document.getElementById('submit-btn').textContent = 'Update Leave';
+            document.getElementById('form_method').value = 'PUT';
+            document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+            document.getElementById('is_cancellation').value = '0'; // Ensure not marked as cancellation during edit
+            document.getElementById('leave-form').action = window.leaveUpdateRoute; // Set action for update
+        }
+
+        // Function to cancel a leave application
+        function cancelLeaveApplication(id, leave_type, inclusive_date_start, inclusive_date_end, working_days) {
+            if (confirm('Are you sure you want to cancel this leave application?')) {
+                // Set the form to act as a cancellation
+                document.getElementById('edit_id').value = id;
+                document.querySelector('select[name="leave_type"]').value = leave_type;
+                document.getElementById('date_filed').valueAsDate = new Date(); // Date of cancellation
+                document.getElementById('inclusive_date_start').value = inclusive_date_start; // Original start date
+                document.getElementById('inclusive_date_end').value = inclusive_date_end; // Original end date
+                document.getElementById('working_days').value = working_days;
+                document.getElementById('leave_details').value = 'CANCELLATION of ' + leave_type + ' from ' + inclusive_date_start + ' to ' + inclusive_date_end;
+                document.getElementById('is_cancellation').value = '1';
+
+                document.getElementById('submit-btn').textContent = 'Confirm Cancellation';
+                document.getElementById('form_method').value = 'POST'; // Cancellations are new records, not updates of the original
+                document.getElementById('leave-form').action = '{{ route("leave.submit") }}'; // Submit as a new record
+
+                // Submit the form
+                document.getElementById('leave-form').submit();
+            }
+        }
+
+        // Function to edit CTO application
+        function editCtoApplication(id, cto_date, hours_applied, cto_details) {
+            document.getElementById('cto_edit_id').value = id;
+            document.getElementById('cto_date').value = cto_date;
+            document.getElementById('cto_hours_applied').value = hours_applied;
+            document.getElementById('cto_details').value = cto_details;
+
+            document.getElementById('cto-submit-btn').textContent = 'Update CTO';
+            document.getElementById('cto_form_method').value = 'PUT';
+            document.getElementById('cto-cancel-edit-btn').style.display = 'inline-block';
+            document.getElementById('cto-form').action = window.ctoUpdateRoute; // Set action for update
+        }
+
+        function cancelCtoEdit() {
+            document.getElementById('cto_edit_id').value = '';
+            document.getElementById('cto_date').value = '';
+            document.getElementById('cto_hours_applied').value = '';
+            document.getElementById('cto_details').value = '';
+
+            document.getElementById('cto-submit-btn').textContent = 'Add CTO Application';
+            document.getElementById('cto_form_method').value = 'POST';
+            document.getElementById('cto-cancel-edit-btn').style.display = 'none';
+            document.getElementById('cto-form').action = "{{ route('cto.update', ['id' => ':id']) }}".replace(':id', id);
+        }
+
+
+        function deleteRecord(id, type) {
+            if (confirm('Are you sure you want to delete this record?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.style.display = 'none';
+
+                const csrfInput = document.createElement('input');
+                csrfInput.name = '_token';
+                csrfInput.value = window.csrfToken;
+                form.appendChild(csrfInput);
+
+                const methodInput = document.createElement('input');
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+
+                const idInput = document.createElement('input');
+                idInput.name = 'id';
+                idInput.value = id;
+                form.appendChild(idInput);
+
+                if (type === 'credit' || type === 'leave' || type === 'cancellation') {
+                    form.action = window.deleteRoute;
+                } else if (type === 'cto_credit' || type === 'cto_application') {
+                    form.action = window.ctoDeleteRoute;
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
     </script>
-    
-    <!-- Include the external JavaScript file -->
+
+    <script src="{{ asset('js/leave-form.js') }}"></script>
 
 </body>
 </html>

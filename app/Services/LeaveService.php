@@ -37,7 +37,7 @@ class LeaveService
         } else {
             // Create new leave
             $leaveApplication = LeaveApplication::create([
-                'employee_id' => $customer->id,
+                'customer_id' => $customer->id,
                 'leave_type' => $leaveData['leave_type'],
                 'leave_details' => $leaveData['leave_details'] ?? null,
                 'working_days' => $workingDays,
@@ -181,7 +181,7 @@ class LeaveService
     private function recalculateBalancesFromDate(Customer $customer, $fromDate)
     {
         // Get all leave applications (including credits) from the specified date onwards
-        $leaves = LeaveApplication::where('employee_id', $customer->id)
+        $leaves = LeaveApplication::where('customer_id', $customer->id)
             ->where(function($query) use ($fromDate) {
                 $query->whereDate('inclusive_date_start', '>=', $fromDate)
                       ->orWhereDate('earned_date', '>=', $fromDate);
@@ -255,7 +255,7 @@ class LeaveService
     private function getBalancesBeforeDate(Customer $customer, $beforeDate)
     {
         // Get all leave applications before the specified date
-        $leaves = LeaveApplication::where('employee_id', $customer->id)
+        $leaves = LeaveApplication::where('customer_id', $customer->id)
             ->where(function($query) use ($beforeDate) {
                 $query->whereDate('inclusive_date_start', '<', $beforeDate)
                     ->orWhereDate('earned_date', '<', $beforeDate);
@@ -312,7 +312,7 @@ class LeaveService
         $leaveDate = $leaveToEdit->inclusive_date_start ?? $leaveToEdit->date_filed;
        
         // Get all leave applications before this one (by date, not ID)
-        $leaves = LeaveApplication::where('employee_id', $customer->id)
+        $leaves = LeaveApplication::where('customer_id', $customer->id)
             ->where('id', '!=', $leaveToEdit->id) // Exclude the leave being edited
             ->where(function($query) use ($leaveDate) {
                 $query->where('inclusive_date_start', '<', $leaveDate)
@@ -391,7 +391,7 @@ class LeaveService
     public function addCreditsEarned(Customer $customer, $earnedDate, $vlCredits = 1.25, $slCredits = 1.25)
     {
         $leaveApplication = LeaveApplication::create([
-            'employee_id' => $customer->id,
+            'customer_id' => $customer->id,
             'is_credit_earned' => true,
             'earned_date' => $earnedDate,
             'earned_vl' => $vlCredits,
@@ -500,7 +500,7 @@ class LeaveService
         // Create a new leave application record for the cancellation
         // This will appear as a new row in the table
         $cancellationApplication = LeaveApplication::create([
-            'employee_id' => $customer->id,
+            'customer_id' => $customer->id,
             'leave_type' => $cancellationData['leave_type'],
             'leave_details' => 'CANCELLED - Credits Restored',
             'working_days' => -$workingDays, // Negative value to indicate credit restoration

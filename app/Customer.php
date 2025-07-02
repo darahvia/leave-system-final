@@ -10,11 +10,16 @@ class Customer extends Model
 
     protected $fillable = [
         'nama', 'alamat', 'email', 'telepon', 'district', 'office_id', 'position_id',
-        'customer_id', 'role', 'lastprmtn_date', 'origappnt_date', 'step_array', 'loyalty_array',         
+        'customer_id', 'role', 'lastprmtn_date', 'origappnt_date', 'step_array', 'loyalty_array',
         'vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl',
         'ra9710', 'rl', 'sel', 'study_leave', 'vawc', 'adopt',
         'balance_forwarded_vl', 'balance_forwarded_sl',
+        'balance_forwarded_cto', 
+        'cto', 
+        'salary', 
+        'surname', 'given_name', 'middle_name', 'division', 'designation', 
     ];
+
 
     protected $hidden = ['created_at', 'updated_at'];
 
@@ -25,13 +30,13 @@ class Customer extends Model
 
     public function office()
     {
-        return $this->belongsTo(Office::class);
+        return $this->belongsTo(Office::class)->withDefault();
     }
     
 
     public function position()
     {
-        return $this->belongsTo(Position::class);
+        return $this->belongsTo(Position::class)->withDefault();
     }
 
     public function user()
@@ -42,7 +47,16 @@ class Customer extends Model
     {
         return $this->hasMany(LeaveApplication::class);
     }
-   
+    public function ctoApplications()
+    {
+        return $this->hasMany(CtoApplication::class);
+    }
+
+    public function ctoCreditUsages()
+    {
+        return $this->hasManyThrough(CtoCreditUsage::class, CtoApplication::class);
+    }
+
     public function getCurrentLeaveBalance($leaveType)
     {
         $lastApplication = $this->leaveApplications()->latest()->first();
@@ -85,6 +99,9 @@ class Customer extends Model
     public function deductLeave($leaveType, $days)
     {
         switch (strtolower($leaveType)) {
+            case 'cto':
+                $this->cto = max(0, ($this->cto ?? 0) - $days);
+                break;
             case 'spl':
                 $this->spl = max(0, ($this->spl ?? 0) - $days);
                 break;
@@ -129,6 +146,9 @@ class Customer extends Model
     public function addLeaveCredits($leaveType, $days)
     {
         switch (strtolower($leaveType)) {
+            case 'cto':
+                $this->cto = ($this->cto ?? 0) + $days;
+                break;
             case 'spl':
                 $this->spl = ($this->spl ?? 0) + $days;
                 break;
@@ -165,6 +185,23 @@ class Customer extends Model
         }
        
         $this->save();
+    }
+
+
+
+    /**
+     * Get current CTO balance
+     */
+    public function getCurrentCtoBalance()
+    {
+        $latestRecord = $this->ctoApplications()
+            ->orderBy('date_of_activity_start', 'desc')
+            ->orderBy('date_of_absence_start', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+
+        return $latestRecord ? $latestRecord->balance : 0;
     }
 
 }

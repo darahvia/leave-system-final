@@ -34,21 +34,21 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </button>
-                    <input type="text" name="name" id="employee-search" autocomplete="off" required placeholder="Find Teaching Employee...">
+                    <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Teaching Customer...">
                     <div id="suggestions"></div>
                 </div>
             </form>
-            <button class="add-employee-btn" id="showAddEmpModal">
+            <button class="add-customer-btn" id="showAddEmpModal">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                <span>Add Teaching Employee</span>
+                <span>Add Teaching Customer</span>
             </button>
         </div>
     </div>
 
-    <!-- Add Employee Modal -->
+    <!-- Add Customer Modal -->
     <div class="modal-bg" id="addEmpModal">
         <div class="modal-content">
             <button class="close" id="closeAddEmpModal">&times;</button>
@@ -88,66 +88,66 @@
                             <option value="Temporary">Temporary</option>
                             <option value="Contractual">Contractual</option>
                         </select>
-                        <label>Employee Number:</label>
-                        <input type="text" name="employee_number">
+                        <label>Customer Number:</label>
+                        <input type="text" name="customer_number">
                         <label>Salary:</label>
                         <input type="number" step="0.01" name="salary">
                         <label>Initial Leave Credits:</label>
                         <input type="number" step="0.01" name="leave_credits" value="0">
                         <div style="height: 1rem;"></div>
-                        <button type="submit">Add Teaching Employee</button>
+                        <button type="submit">Add Teaching Customer</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Employee Details Table -->
-    @if($employee)
+    <!-- Customer Details Table -->
+    @if($customer)
         <div class="emp-details-table">
-            <table class="employee-info-table">
+            <table class="customer-info-table">
                 <tr>
                     <td class="label">SURNAME</td>
-                    <td class="value">{{ strtoupper($employee->surname) }}</td>
+                    <td class="value">{{ strtoupper($customer->surname) }}</td>
                     <td class="label">SEX</td>
-                    <td class="value">{{ strtoupper($employee->sex) }}</td>
+                    <td class="value">{{ strtoupper($customer->sex) }}</td>
                     <td class="label">POSITION</td>
-                    <td class="value">{{ strtoupper($employee->position ?? '') }}</td>
-                    <td class="label">EMPLOYEE NUMBER</td>
-                    <td class="value">{{ $employee->employee_number ?? '' }}</td>
+                    <td class="value">{{ strtoupper($customer->position ?? '') }}</td>
+                    <td class="label">customer NUMBER</td>
+                    <td class="value">{{ $customer->customer_number ?? '' }}</td>
                 </tr>
                 <tr>
                     <td class="label">GIVEN NAME</td>
-                    <td class="value">{{ strtoupper($employee->given_name) }}</td>
+                    <td class="value">{{ strtoupper($customer->given_name) }}</td>
                     <td class="label">CIVIL STATUS</td>
-                    <td class="value">{{ strtoupper($employee->civil_status ?? '') }}</td>
+                    <td class="value">{{ strtoupper($customer->civil_status ?? '') }}</td>
                     <td class="label">NAME OF SCHOOL</td>
-                    <td class="value">{{ strtoupper($employee->name_of_school ?? '') }}</td>
+                    <td class="value">{{ strtoupper($customer->name_of_school ?? '') }}</td>
                     <td class="label">BASIC SALARY</td>
-                    <td class="value">{{ number_format($employee->salary, 2) }}</td>
+                    <td class="value">{{ number_format($customer->salary, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="label">MIDDLE NAME</td>
-                    <td class="value">{{ strtoupper($employee->middle_name) }}</td>
+                    <td class="value">{{ strtoupper($customer->middle_name) }}</td>
                     <td class="label">DATE OF BIRTH</td>
-                    <td class="value">{{ $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('F j, Y') : '' }}</td>
+                    <td class="value">{{ $customer->date_of_birth ? \Carbon\Carbon::parse($customer->date_of_birth)->format('F j, Y') : '' }}</td>
                     <td class="label">PERMANENCY</td>
-                    <td class="value">{{ strtoupper($employee->permanency ?? '') }}</td>
+                    <td class="value">{{ strtoupper($customer->permanency ?? '') }}</td>
                     <td class="label">LEAVE CREDITS BALANCE</td>
-                    <td class="value">{{ $employee->leave_credits ?? 0 }}</td>
+                    <td class="value">{{ $customer->leave_credits ?? 0 }}</td>
                 </tr>
             </table>
         </div>
     @endif
 
     <!-- Bottom: Add Leave Application and Add Credits Earned -->
-    @if($employee)
+    @if($customer)
         <div class="bottom-section">
             
             <!-- Add Credits Earned -->
             <form method="POST" action="{{ route('teaching.credits.add') }}">
                 @csrf
-                <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                 <div class="emp-form">
                     <label>Earned Date:</label>
                     <input type="text" name="earned_date" required>
@@ -163,7 +163,7 @@
             <!-- Add Leave Application -->
             <form method="POST" action="{{ route('teaching.leave.submit') }}" id="leave-form" class="leave-form">
                 @csrf
-                <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                 <input type="hidden" name="edit_id" id="edit_id" value="">
                 <input type="hidden" name="_method" id="form_method" value="POST">
                 <div class="emp-form" id="leave-form-container">
@@ -180,7 +180,7 @@
     @endif
 
 <!-- Leave Records Tables - Side by Side -->
-@if($employee)
+@if($customer)
     <div style="display: flex; gap: 20px; align-items: flex-start;">
         
         <!-- Left Table: Credits Earned -->
@@ -241,13 +241,13 @@
                     <tr>
                         <td data-label="DATE">INITIAL BALANCE</td>
                         <td data-label="DAYS"></td>
-                        <td data-label="BALANCE">{{ $employee->leave_credits }}</td>
+                        <td data-label="BALANCE">{{ $customer->leave_credits }}</td>
                         <td data-label="ACTIONS"></td>
                     </tr>
                     
                     @if($teachingLeaveApplications && $teachingLeaveApplications->count())
                         @php
-                            $runningBalance = $employee->leave_credits;
+                            $runningBalance = $customer->leave_credits;
                             // First, add all earned credits to initial balance
                             if($teachingEarnedCredits) {
                                 foreach($teachingEarnedCredits as $creditApp) {
@@ -362,7 +362,7 @@
                     },
                     body: JSON.stringify({
                         id: id,
-                        employee_id: {{ $employee->id ?? 0 }},
+                        customer_id: {{ $customer->id ?? 0 }},
                         type: type
                     })
                 })
@@ -382,7 +382,7 @@
         }
 
         // Auto-complete functionality
-        const searchInput = document.getElementById('employee-search');
+        const searchInput = document.getElementById('customer-search');
         const suggestionsDiv = document.getElementById('suggestions');
 
         if (searchInput && suggestionsDiv) {
@@ -406,16 +406,16 @@
                     suggestionsDiv.innerHTML = '';
                     
                     if (data.length > 0) {
-                        data.forEach(employee => {
+                        data.forEach(customer => {
                             const div = document.createElement('div');
                             div.className = 'suggestion-item';
                             div.innerHTML = `
-                                <strong>${employee.name}</strong><br>
-                                <small>Employee #: ${employee.employee_number || 'N/A'} | Position: ${employee.position || 'N/A'}</small><br>
-                                <small>School: ${employee.school || 'N/A'}</small>
+                                <strong>${customer.name}</strong><br>
+                                <small>Customer #: ${customer.customer_number || 'N/A'} | Position: ${customer.position || 'N/A'}</small><br>
+                                <small>School: ${customer.school || 'N/A'}</small>
                             `;
                             div.addEventListener('click', function() {
-                                searchInput.value = employee.name;
+                                searchInput.value = customer.name;
                                 suggestionsDiv.innerHTML = '';
                                 suggestionsDiv.style.display = 'none';
                             });

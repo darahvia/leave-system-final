@@ -2,17 +2,15 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TeachingEarnedCredits extends Model
 {
-    use HasFactory;
 
     protected $table = 'teaching_earned_credits';
 
     protected $fillable = [
-        'employee_id',
+        'customer_id',
         'earned_date',
         'special_order',
         'days',
@@ -20,8 +18,8 @@ class TeachingEarnedCredits extends Model
     ];
 
 
-    public function teaching()
+    public function customer()
     {
-        return $this->belongsTo(Teaching::class, 'employee_id');
+        return $this->belongsTo(Customer::class);
     }
 }

@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateEmployeesTable extends Migration
+class AddLeaveFieldsToCustomersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,15 +13,7 @@ class CreateEmployeesTable extends Migration
      */
     public function up()
     {
-        Schema::create('employees', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('surname');
-            $table->string('given_name');
-            $table->string('middle_name');
-            $table->string('division');
-            $table->string('designation');
-            $table->string('original_appointment')->nullable();
-            $table->string('salary')->nullable();
+        Schema::table('customers', function (Blueprint $table) {
             $table->integer('vl');
             $table->integer('sl');
             $table->integer('spl');
@@ -37,7 +29,6 @@ class CreateEmployeesTable extends Migration
             $table->integer('vawc');
             $table->decimal('balance_forwarded_vl', 5, 2)->default(0);
             $table->decimal('balance_forwarded_sl', 5, 2)->default(0);
-            $table->timestamps();
         });
     }
 
@@ -48,8 +39,8 @@ class CreateEmployeesTable extends Migration
      */
     public function down()
     {
-    {
-        Schema::dropIfExists('employees');
+        Schema::table('customers', function (Blueprint $table) {
+            //
+        });
     }
-}
 }

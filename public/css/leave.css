@@ -176,7 +176,7 @@ body > *:not(.header-wrapper) {
     background: var(--gray-100);
 }
 
-#employee-search {
+#customer-search {
     width: 100%;
     padding: 1rem 1rem 1rem 3.5rem;
     border: 2px solid var(--gray-200);
@@ -187,7 +187,7 @@ body > *:not(.header-wrapper) {
     box-shadow: var(--shadow-sm);
 }
 
-#employee-search:focus {
+#customer-search:focus {
     outline: none;
     border-color: var(--primary-blue);
     box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
@@ -227,7 +227,7 @@ body > *:not(.header-wrapper) {
     border-bottom: none;
 }
 
-.add-employee-btn {
+.add-customer-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -243,17 +243,17 @@ body > *:not(.header-wrapper) {
     white-space: nowrap;
 }
 
-.add-employee-btn:hover {
+.add-customer-btn:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
     background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
 }
 
-.add-employee-btn svg {
+.add-customer-btn svg {
     transition: transform 0.2s ease;
 }
 
-.add-employee-btn:hover svg {
+.add-customer-btn:hover svg {
     transform: rotate(90deg);
 }
 
@@ -400,14 +400,14 @@ body > *:not(.header-wrapper) {
     box-shadow: var(--shadow-lg);
 }
 
-/* Employee Details Table */
+/* Customer Details Table */
 .emp-details-table {
     max-width: 100%;
 
 
 }
 
-.employee-info-table {
+.customer-info-table {
     width: 100%;
     background: var(--white);
     border-radius: 1rem;
@@ -416,12 +416,12 @@ body > *:not(.header-wrapper) {
     border-collapse: collapse;
 }
 
-.employee-info-table td {
+.customer-info-table td {
     padding: 0.65rem;
     border-bottom: 1px solid var(--gray-100);
 }
 
-.employee-info-table .label {
+.customer-info-table .label {
     background: linear-gradient(135deg, var(--gray-50) 0%, var(--light-blue) 100%);
     font-weight: 700;
     color: var(--gray-700);
@@ -432,7 +432,7 @@ body > *:not(.header-wrapper) {
     border-right: 2px solid var(--primary-blue);
 }
 
-.employee-info-table .value {
+.customer-info-table .value {
     font-weight: 600;
         font-size: 0.65rem;
 
@@ -633,7 +633,7 @@ body > *:not(.header-wrapper) {
         gap: 1rem;
     }
     
-    .add-employee-btn {
+    .add-customer-btn {
         width: 100%;
         justify-content: center;
     }
@@ -801,7 +801,7 @@ body > *:not(.header-wrapper) {
         display: none !important;
     }
     
-    .leave-table, .employee-info-table {
+    .leave-table, .customer-info-table {
         box-shadow: none;
         border: 1px solid var(--gray-300);
     }

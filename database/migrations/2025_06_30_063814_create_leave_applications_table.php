@@ -15,8 +15,8 @@ class CreateLeaveApplicationsTable extends Migration
     {
         Schema::create('leave_applications', function (Blueprint $table) {
             $table->increments('id');
-$table->unsignedInteger('employee_id');
-$table->foreign('employee_id')->references('id')->on('employees');
+            $table->unsignedInteger('customer_id');
+            $table->foreign('customer_id')->references('id')->on('customers');
             $table->string('leave_type')->nullable();
             $table->string('leave_details')->nullable();
             $table->integer('working_days')->default(0);

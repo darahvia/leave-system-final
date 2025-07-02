@@ -2,12 +2,10 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Teaching extends Model
 {
-    use HasFactory;
 
     // Explicitly specify the table name
     protected $table = 'teaching';
@@ -23,7 +21,7 @@ class Teaching extends Model
         'position',
         'name_of_school',
         'permanency',
-        'employee_number',
+        'customer_number',
         'salary',
         'leave_credits'
     ];
@@ -37,6 +35,6 @@ class Teaching extends Model
     // Relationship with leave applications
     public function leaveApplications()
     {
-        return $this->hasMany(TeachingLeaveApplications::class, 'employee_id');
+        return $this->hasMany(TeachingLeaveApplications::class, 'customer_id');
     }
 }

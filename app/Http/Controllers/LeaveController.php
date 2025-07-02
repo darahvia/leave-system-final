@@ -1,9 +1,9 @@
 <?php
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;  
-use App\Employee; // Assuming Employee model is directly under App namespace for this project structure
-use App\LeaveApplication; // Assuming LeaveApplication model is directly under App namespace for this project structure
+use Illuminate\Http\Request;
+use App\Customer; 
+use App\LeaveApplication; 
 use App\Services\LeaveService;
 use Carbon\Carbon;
 
@@ -17,20 +17,26 @@ class LeaveController extends Controller
         $this->leaveService = $leaveService;
     }
 
-    public function index(Request $request)
-    {
-        $employee = null;
-        $leaveTypes = LeaveService::getLeaveTypes();
-        $message = '';
+        public function index(Request $request)
+        {
+            $customer = null;
+            $leaveTypes = LeaveService::getLeaveTypes();
+            $message = '';
 
-        if ($request->has('employee_id')) {
-            $employee = Employee::find($request->employee_id);
+            if ($request->has('customer_id')) {
+                $customer = Customer::with('office')->find($request->customer_id);
+            }
+
+            return view('leave.customer.index', [
+                'customer' => $customer,
+                'leaveTypes' => $leaveTypes,
+                'message' => $message
+
+            ]);
         }
 
-        return view('leave.employee.index', compact('employee', 'leaveTypes'));
-    }
 
-    public function addEmployee(Request $request)
+    public function addCustomer(Request $request)
     {
         $request->validate([
             'surname' => 'required|string',
@@ -38,64 +44,66 @@ class LeaveController extends Controller
             'middle_name' => 'required|string',
             'division' => 'required|string',
             'designation' => 'required|string',
-            'original_appointment' => 'required|string',
+            'origappnt_date' => 'required|string',
             'balance_forwarded_vl' => 'nullable|numeric',
             'balance_forwarded_sl' => 'nullable|numeric',
         ]);
 
-        $employeeData = $request->all();
-        $employeeData['vl'] = $employeeData['vl'] ?? 0;
-        $employeeData['sl'] = $employeeData['sl'] ?? 0;
-        $employeeData['spl'] = $employeeData['spl'] ?? 3;
-        $employeeData['fl'] = $employeeData['fl'] ?? 0;
-        $employeeData['solo_parent'] = $employeeData['solo_parent'] ?? 7;
-        $employeeData['ml'] = $employeeData['ml'] ?? 105;
-        $employeeData['pl'] = $employeeData['pl'] ?? 7;
-        $employeeData['ra9710'] = $employeeData['ra9710'] ?? 0;
-        $employeeData['rl'] = $employeeData['rl'] ?? 0;
-        $employeeData['sel'] = $employeeData['sel'] ?? 0;
-        $employeeData['study_leave'] = $employeeData['study_leave'] ?? 0;
-        $employeeData['vawc'] = $employeeData['vawc'] ?? 0; // Added 'vawc' as per your provided code
-        $employeeData['adopt'] = $employeeData['adopt'] ?? 0;
+        $customerData = $request->all();
+        $customerData['vl'] = $customerData['vl'] ?? 0;
+        $customerData['sl'] = $customerData['sl'] ?? 0;
+        $customerData['spl'] = $customerData['spl'] ?? 3;
+        $customerData['fl'] = $customerData['fl'] ?? 0;
+        $customerData['solo_parent'] = $customerData['solo_parent'] ?? 7;
+        $customerData['ml'] = $customerData['ml'] ?? 105;
+        $customerData['pl'] = $customerData['pl'] ?? 7;
+        $customerData['ra9710'] = $customerData['ra9710'] ?? 0;
+        $customerData['rl'] = $customerData['rl'] ?? 0;
+        $customerData['sel'] = $customerData['sel'] ?? 0;
+        $customerData['study_leave'] = $customerData['study_leave'] ?? 0;
+        $customerData['vawc'] = $customerData['vawc'] ?? 0;
+        $customerData['adopt'] = $customerData['adopt'] ?? 0;
 
-        $employee = Employee::create($employeeData);
+        $customer = Customer::create($customerData);
 
-        $fullName = "{$employee->surname}, {$employee->given_name} {$employee->middle_name}";
+        $fullName = "{$customer->surname}, {$customer->given_name} {$customer->middle_name}";
 
-        return redirect()->route('employee.find', ['name' => $fullName])
-            ->with('success', '✅ Employee Added!');
+        return redirect()->route('customer.find', ['name' => $fullName])
+            ->with('success', '✅ Customer Added!');
         }
 
-        public function findEmployee(Request $request)
+        public function findCustomer(Request $request)
         {
-            $employee = Employee::whereRaw("CONCAT(surname, ', ', given_name, ' ', middle_name) = ?", [$request->name])
+            $customer = Customer::whereRaw("CONCAT(surname, ', ', given_name, ' ', middle_name) = ?", [$request->name])
                 ->first();
 
-            if ($employee) {
-                // Preserving the dynamic redirect based on 'redirect_to' input
-                $redirectTo = $request->input('redirect_to', 'leave');
-                
-                if ($redirectTo === 'cto') {
-                    return redirect()->route('cto.index', ['employee_id' => $employee->id]);
-                } else {
-                    // Changed to 'leave.index' as per your previous route definition for leave page
-                    return redirect()->route('leave.index', ['employee_id' => $employee->id]);
-                }
-            }
+            if ($customer) { // Keep the $customer variable from main
+                        // Preserving the dynamic redirect based on 'redirect_to' input from your branch
+                        $redirectTo = $request->input('redirect_to', 'leave');
 
-            // If employee not found, redirect back to the appropriate page
-            $redirectTo = $request->input('redirect_to', 'leave');
-            $routeName = $redirectTo === 'cto' ? 'cto.index' : 'leave.index';
-            
-            return redirect()->route($routeName)
-                ->with('error', '❌ Employee not found.');
+                        if ($redirectTo === 'cto') {
+                            // Update employee->id to customer->id
+                            return redirect()->route('cto.index', ['customer_id' => $customer->id]);
+                        } else {
+                            // Update employee->id to customer->id and use the new customer route
+                            return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
+                        }
+                    }
+
+                    // If customer not found, redirect back to the appropriate page
+                    // Preserve the dynamic redirect logic but use customer route for 'leave'
+                    $redirectTo = $request->input('redirect_to', 'leave');
+                    $routeName = $redirectTo === 'cto' ? 'cto.index' : 'leave.customer.index'; // Use leave.customer.index here
+
+                    return redirect()->route($routeName)
+                        ->with('error', '❌ Customer not found.'); // Update message for customer
         }
 
 
         public function submitLeave(Request $request)
         {
             $request->validate([
-                'employee_id' => 'required|exists:employees,id',
+                'customer_id' => 'required|exists:customers,id',
                 'leave_type' => 'required|string',
                 'working_days' => 'required|integer|min:1',
                 'date_filed' => 'required|date',
@@ -105,38 +113,35 @@ class LeaveController extends Controller
             ]);
 
             try {
-                $employee = Employee::find($request->employee_id);
+                $customer = Customer::find($request->customer_id);
                 $isCancellation = $request->input('is_cancellation', false);
                 
                 if ($isCancellation) {
                     // Handle leave cancellation (credit restoration)
                     $leaveApplication = $this->leaveService->processCancellation(
-                        $employee,
+                        $customer,
                         $request->all()
                     );
                     
                     $leaveTypeName = LeaveService::getLeaveTypes()[$request->leave_type] ?? $request->leave_type;
                     
-                    // Changed to 'leave.index' as per your previous route definition for leave page
-                    return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
+                    return redirect()->route('leave.customer.index', ['customer_id' => $request->customer_id])
                         ->with('success', "✅ {$leaveTypeName} cancellation processed! {$request->working_days} credits restored.");
                 } else {
                     // Handle regular leave application
                     $leaveApplication = $this->leaveService->processLeaveApplication(
-                        $employee,
+                        $customer,
                         $request->all()
                     );
 
                     $leaveTypeName = LeaveService::getLeaveTypes()[$request->leave_type] ?? $request->leave_type;
                     
-                    // Changed to 'leave.index' as per your previous route definition for leave page
-                    return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
+                    return redirect()->route('leave.customer.index', ['customer_id' => $request->customer_id])
                         ->with('success', "✅ {$leaveTypeName} application submitted successfully!");
                 }
 
             } catch (\Exception $e) {
-                // Changed to 'leave.index' as per your previous route definition for leave page
-                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
+                return redirect()->route('leave.customer.index', ['customer_id' => $request->customer_id])
                     ->with('error', '❌ ' . $e->getMessage());
             }
         }
@@ -146,7 +151,7 @@ class LeaveController extends Controller
             try {
                 $request->validate([
                     'edit_id' => 'required|integer',
-                    'employee_id' => 'required|integer',
+                    'customer_id' => 'required|integer',
                     'leave_type' => 'required|string',
                     'date_filed' => 'required|date',
                     'inclusive_date_start' => 'required|date',
@@ -155,15 +160,15 @@ class LeaveController extends Controller
                 ]);
 
                 // Find the leave application to update
-                $employee = Employee::findOrFail($request->employee_id);
+                $customer = Customer::findOrFail($request->customer_id);
                 $leaveApplication = LeaveApplication::findOrFail($request->edit_id);
                 
-                // Verify that this leave application belongs to the specified employee
-                if ($leaveApplication->employee_id != $request->employee_id) {
+                // Verify that this leave application belongs to the specified customer
+                if ($leaveApplication->customer_id != $request->customer_id) {
                     return back()->with('error', 'Unauthorized access to leave application.');
                 }
                 $this->leaveService->processLeaveApplication(
-                    $employee,
+                    $customer,
                     $request->all(),
                     $leaveApplication // <- update mode
                 );
@@ -215,27 +220,25 @@ class LeaveController extends Controller
         public function addCreditsEarned(Request $request)
         {
             $request->validate([
-                'employee_id' => 'required|exists:employees,id',
+                'customer_id' => 'required|exists:customers,id',
                 'earned_date' => 'required|date',
             ]);
 
             try {
-                $employee = Employee::find($request->employee_id);
+                $customer = Customer::find($request->customer_id);
                 
                 $this->leaveService->addCreditsEarned(
-                    $employee,
+                    $customer,
                     $request->earned_date,
                     1.25, // VL credits
                     1.25  // SL credits
                 );
 
-                // Changed to 'leave.index' as per your previous route definition for leave page
-                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
+                return redirect()->route('leave.customer.index', ['customer_id' => $request->customer_id])
                     ->with('success', '✅ Leave credits added successfully!');
 
             } catch (\Exception $e) {
-                // Changed to 'leave.index' as per your previous route definition for leave page
-                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
+                return redirect()->route('leave.customer.index', ['customer_id' => $request->customer_id])
                     ->with('error', '❌ ' . $e->getMessage());
             }
         }
@@ -243,13 +246,13 @@ class LeaveController extends Controller
         public function addOtherCreditsEarned(Request $request)
         {
             $request->validate([
-                'employee_id' => 'required|exists:employees,id',
+                'customer_id' => 'required|exists:customers,id',
                 'leave_type' => 'required|string',
                 'credits' => 'required|numeric|min:0',
             ]);
 
             try {
-                $employee = Employee::findOrFail($request->employee_id);
+                $customer = Customer::findOrFail($request->customer_id);
                 $leaveType = strtolower($request->leave_type);
                 $credits = $request->credits;
 
@@ -259,40 +262,38 @@ class LeaveController extends Controller
                     throw new \Exception('Invalid leave type.');
                 }
 
-                $employee->{$leaveType} += $credits;
-                $employee->save();
+                $customer->{$leaveType} += $credits;
+                $customer->save();
 
-                // Changed to 'leave.index' as per your previous route definition for leave page
-                return redirect()->route('leave.index', ['employee_id' => $employee->id])
+                return redirect()->route('leave.customer.index', ['customer_id' => $customer->id])
                     ->with('success', '✅ Other leave credits added successfully!');
                     
             } catch (\Exception $e) {
-                // Changed to 'leave.index' as per your previous route definition for leave page
-                return redirect()->route('leave.index', ['employee_id' => $request->employee_id])
+                return redirect()->route('leave.customer.index', ['customer_id' => $request->customer_id])
                     ->with('error', '❌ ' . $e->getMessage());
             }
         }
 
     // unused
-    // public function getEmployeeLeaveBalances($employeeId)
+    // public function getCustomerLeaveBalances($customerId)
     // {
-    //      $employee = Employee::find($employeeId);
+    //     $customer = Customer::find($customerId);
         
-    //      if (!$employee) {
-    //          return response()->json(['error' => 'Employee not found'], 404);
-    //      }
+    //     if (!$customer) {
+    //         return response()->json(['error' => 'Customer not found'], 404);
+    //     }
 
     //      $balances = [];
     //      $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
         
-    //      foreach ($leaveTypes as $type) {
-    //          $balances[$type] = $employee->getCurrentLeaveBalance($type);
-    //      }
+    //     foreach ($leaveTypes as $type) {
+    //         $balances[$type] = $customer->getCurrentLeaveBalance($type);
+    //     }
 
     //      return response()->json($balances);
     // }
 
-    public function employeeAutocomplete(Request $request)
+    public function customerAutocomplete(Request $request)
     {
         if (ob_get_level()) {
             ob_clean();
@@ -305,17 +306,17 @@ class LeaveController extends Controller
         }
 
         try {
-            $results = Employee::where(function ($query) use ($search) {
-                        $query->where('surname', 'LIKE', "%{$search}%")
-                            ->orWhere('given_name', 'LIKE', "%{$search}%")
-                            ->orWhere('middle_name', 'LIKE', "%{$search}%");
+            $results = Customer::where(function ($query) use ($search) {
+                    $query->where('surname', 'LIKE', "%{$search}%")
+                        ->orWhere('given_name', 'LIKE', "%{$search}%")
+                        ->orWhere('middle_name', 'LIKE', "%{$search}%");
                 })
                 ->limit(10)
                 ->get(['surname', 'given_name', 'middle_name', 'id'])
-                ->map(function ($employee) {
+                ->map(function ($customer) {
                     return [
-                        'id' => $employee->id,
-                        'label' => trim("{$employee->surname}, {$employee->given_name} {$employee->middle_name}"),
+                        'id' => $customer->id,
+                        'label' => trim("{$customer->surname}, {$customer->given_name} {$customer->middle_name}"),
                     ];
                 })
                 ->values()

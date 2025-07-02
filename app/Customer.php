@@ -1,39 +1,57 @@
 <?php
-namespace App; // Changed namespace from App\Models to App
 
-// Removed 'use Illuminate\Database\Eloquent\Factories\HasFactory;'
+namespace App;
+
 use Illuminate\Database\Eloquent\Model;
-use App\LeaveApplication; // Assuming LeaveApplication is also in namespace App
-use App\CtoApplication;   // Assuming CtoApplication is also in namespace App
-
 
 class Customer extends Model
 {
+    protected $table = 'customers';
 
     protected $fillable = [
-        'surname', 'given_name', 'middle_name', 'division', 'designation', 'origappnt_date',
+        'nama', 'alamat', 'email', 'telepon', 'district', 'office_id', 'position_id',
+        'customer_id', 'role', 'lastprmtn_date', 'origappnt_date', 'step_array', 'loyalty_array',         
         'vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl',
-        'ra9710', 'rl', 'sel', 'study_leave', 'vawc', 'adopt', // Added 'vawc'
+        'ra9710', 'rl', 'sel', 'study_leave', 'vawc', 'adopt',
         'balance_forwarded_vl', 'balance_forwarded_sl',
-        'salary'
     ];
 
+    protected $hidden = ['created_at', 'updated_at'];
 
+    protected $casts = [
+        'step_array' => 'array',
+        'loyalty_array' => 'array',
+    ];
+
+    public function office()
+    {
+        return $this->belongsTo(Office::class);
+    }
+    
+
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
     public function leaveApplications()
     {
         return $this->hasMany(LeaveApplication::class);
     }
-
-
+   
     public function getCurrentLeaveBalance($leaveType)
     {
         $lastApplication = $this->leaveApplications()->latest()->first();
 
         switch (strtolower($leaveType)) {
             case 'vl':
-                return $lastApplication ? $lastApplication->current_vl : ($this->balance_forwarded_vl ?? 0);
+                return $lastApplication ? $lastApplication->current_vl : $this->balance_forwarded_vl;
             case 'sl':
-                return $lastApplication ? $lastApplication->current_sl : ($this->balance_forwarded_sl ?? 0);
+                return $lastApplication ? $lastApplication->current_sl : $this->balance_forwarded_sl;
             case 'spl':
                 return $this->spl ?? 0;
             case 'fl':
@@ -52,15 +70,14 @@ class Customer extends Model
                 return $this->sel ?? 0;
             case 'study_leave':
                 return $this->study_leave ?? 0;
-            case 'vawc': // Added vawc case
+            case 'vawc':
                 return $this->vawc ?? 0;
             case 'adopt':
-                return $this->adopt ?? 0; // Ensure null coalescing for adopt as well
+                return $this->adopt;
             default:
                 return 0;
         }
     }
-
 
     /**
      * Deduct leave days from the appropriate leave type
@@ -68,12 +85,6 @@ class Customer extends Model
     public function deductLeave($leaveType, $days)
     {
         switch (strtolower($leaveType)) {
-            case 'vl':
-                $this->vl = max(0, ($this->vl ?? 0) - $days);
-                break;
-            case 'sl':
-                $this->sl = max(0, ($this->sl ?? 0) - $days);
-                break;
             case 'spl':
                 $this->spl = max(0, ($this->spl ?? 0) - $days);
                 break;
@@ -101,19 +112,16 @@ class Customer extends Model
             case 'study_leave':
                 $this->study_leave = max(0, ($this->study_leave ?? 0) - $days);
                 break;
-            case 'vawc': // Added vawc case
+            case 'vawc':
                 $this->vawc = max(0, ($this->vawc ?? 0) - $days);
                 break;
             case 'adopt':
-                $this->adopt = max(0, ($this->adopt ?? 0) - $days);
+                $this->adopt = max(0, $this->adopt - $days);
                 break;
-            default:
-                throw new \Exception("Invalid leave type: {$leaveType}");
         }
-        
+       
         $this->save();
     }
-
 
     /**
      * Add leave credits to the appropriate leave type
@@ -121,12 +129,6 @@ class Customer extends Model
     public function addLeaveCredits($leaveType, $days)
     {
         switch (strtolower($leaveType)) {
-            case 'vl':
-                $this->vl = ($this->vl ?? 0) + $days;
-                break;
-            case 'sl':
-                $this->sl = ($this->sl ?? 0) + $days;
-                break;
             case 'spl':
                 $this->spl = ($this->spl ?? 0) + $days;
                 break;
@@ -154,41 +156,15 @@ class Customer extends Model
             case 'study_leave':
                 $this->study_leave = ($this->study_leave ?? 0) + $days;
                 break;
-            case 'vawc': // Added vawc case
+            case 'vawc':
                 $this->vawc = ($this->vawc ?? 0) + $days;
                 break;
             case 'adopt':
                 $this->adopt = ($this->adopt ?? 0) + $days;
                 break;
-            default:
-                throw new \Exception("Invalid leave type: {$leaveType}");
         }
-        
+       
         $this->save();
     }
 
-
-    /**
-     * Relationship with CTO Applications
-     */
-    public function ctoApplications()
-    {
-        return $this->hasMany(CtoApplication::class);
-    }
-
-
-    /**
-     * Get current CTO balance
-     */
-    public function getCurrentCtoBalance()
-    {
-        $latestRecord = $this->ctoApplications()
-            ->orderBy('date_of_activity_start', 'desc')
-            ->orderBy('date_of_absence_start', 'desc')
-            ->orderBy('id', 'desc')
-            ->first();
-
-
-        return $latestRecord ? $latestRecord->balance : 0;
-    }
 }

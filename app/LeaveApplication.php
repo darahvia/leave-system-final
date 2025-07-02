@@ -1,7 +1,8 @@
 <?php
-namespace App;
+namespace App; // Assuming your models are now directly in the 'app' directory
 
 use Illuminate\Database\Eloquent\Model;
+
 
 class LeaveApplication extends Model
 {

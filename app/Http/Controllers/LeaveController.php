@@ -77,12 +77,26 @@ class LeaveController extends Controller
             $customer = Customer::whereRaw("CONCAT(surname, ', ', given_name, ' ', middle_name) = ?", [$request->name])
                 ->first();
 
-            if ($customer) {
-                return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
-            }
+            if ($customer) { // Keep the $customer variable from main
+                        // Preserving the dynamic redirect based on 'redirect_to' input from your branch
+                        $redirectTo = $request->input('redirect_to', 'leave');
 
-            return redirect()->route('leave.customer.index')
-                ->with('error', '❌ Customer not found.');
+                        if ($redirectTo === 'cto') {
+                            // Update employee->id to customer->id
+                            return redirect()->route('cto.index', ['customer_id' => $customer->id]);
+                        } else {
+                            // Update employee->id to customer->id and use the new customer route
+                            return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
+                        }
+                    }
+
+                    // If customer not found, redirect back to the appropriate page
+                    // Preserve the dynamic redirect logic but use customer route for 'leave'
+                    $redirectTo = $request->input('redirect_to', 'leave');
+                    $routeName = $redirectTo === 'cto' ? 'cto.index' : 'leave.customer.index'; // Use leave.customer.index here
+
+                    return redirect()->route($routeName)
+                        ->with('error', '❌ Customer not found.'); // Update message for customer
         }
 
 
@@ -269,14 +283,14 @@ class LeaveController extends Controller
     //         return response()->json(['error' => 'Customer not found'], 404);
     //     }
 
-    //     $balances = [];
-    //     $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
+    //      $balances = [];
+    //      $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
         
     //     foreach ($leaveTypes as $type) {
     //         $balances[$type] = $customer->getCurrentLeaveBalance($type);
     //     }
 
-    //     return response()->json($balances);
+    //      return response()->json($balances);
     // }
 
     public function customerAutocomplete(Request $request)

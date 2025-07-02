@@ -181,10 +181,13 @@ function calculateWorkingDays() {
 // Edit leave application
 function editLeaveApplication(id, leaveType, dateFiled, startDate, endDate, workingDays) {
   isEditing = true;
+      console.log('Leave type received:', leaveType); // Add this line to debug
+
+  
   var form = document.getElementById('leave-form');
   var editIdInput = document.getElementById('edit_id');
   var methodInput = document.getElementById('form_method');
-  var leaveTypeSelect = document.getElementById('leave_type');
+  var leaveTypeSelect = document.querySelector('select[name="leave_type"]');
   var dateFiledInput = document.getElementById('date_filed');
   var startDateInput = document.getElementById('inclusive_date_start');
   var endDateInput = document.getElementById('inclusive_date_end');
@@ -230,7 +233,7 @@ function cancelEdit() {
   var form = document.getElementById('leave-form');
   var editIdInput = document.getElementById('edit_id');
   var methodInput = document.getElementById('form_method');
-  var leaveTypeSelect = document.getElementById('leave_type');
+  var leaveTypeSelect = document.querySelector('select[name="leave_type"]');
   var dateFiledInput = document.getElementById('date_filed');
   var startDateInput = document.getElementById('inclusive_date_start');
   var endDateInput = document.getElementById('inclusive_date_end');
@@ -435,12 +438,14 @@ function deleteRecordWithForm(id, type) {
   }
 }
 function cancelLeaveApplication(id, leaveType, startDate, endDate, workingDays) {
+    console.log('Leave type received:', leaveType); // Add this line to debug
+
   // Reset any existing edit state
   cancelEdit();
 
   // Set cancellation mode
   isCancelling = true;
-  var leaveTypeSelect = document.getElementById('leave_type');
+  var leaveTypeSelect = document.querySelector('select[name="leave_type"]');
   var dateFiledInput = document.getElementById('date_filed');
   var startDateInput = document.getElementById('inclusive_date_start');
   var endDateInput = document.getElementById('inclusive_date_end');
@@ -519,7 +524,7 @@ window.isCancelling = function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! /Users/darahvia/leave-card/resources/js/leave-form.js */"./resources/js/leave-form.js");
+module.exports = __webpack_require__(/*! /Users/darahvia/leave-system-final/resources/js/leave-form.js */"./resources/js/leave-form.js");
 
 
 /***/ })

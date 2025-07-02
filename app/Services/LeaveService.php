@@ -188,21 +188,9 @@ class LeaveService
             })
             ->get()
             ->sortBy(function($leave) {
-                // Create a sortable date - use the earliest relevant date for each record
-                $dates = array_filter([
-                    $leave->inclusive_date_start,
-                    $leave->earned_date,
-                    $leave->date_filed
-                ]);
-               
-                if (empty($dates)) {
-                    return now(); // fallback if no dates
-                }
-               
-                $earliestDate = min($dates);
-               
-                // Return a combination of date and ID for consistent sorting
-                return $earliestDate . '-' . str_pad($leave->id, 10, '0', STR_PAD_LEFT);
+                $sortDate = $leave->date_filed ?? $leave->earned_date ?? $leave->inclusive_date_start;
+                
+                return $sortDate . '-' . str_pad($leave->id, 10, '0', STR_PAD_LEFT);
             });
 
         // Get the balance just before this date
@@ -262,19 +250,8 @@ class LeaveService
             })
             ->get()
             ->sortBy(function($leave) {
-                // Create a sortable date - use the earliest relevant date for each record
-                $dates = array_filter([
-                    $leave->inclusive_date_start,
-                    $leave->earned_date,
-                    $leave->date_filed
-                ]);
-               
-                if (empty($dates)) {
-                    return '1900-01-01'; // very early date for records with no dates
-                }
-               
-                $earliestDate = min($dates);
-                return $earliestDate . '-' . str_pad($leave->id, 10, '0', STR_PAD_LEFT);
+                $sortDate = $leave->date_filed ?? $leave->earned_date ?? $leave->inclusive_date_start;
+                return $sortDate . '-' . str_pad($leave->id, 10, '0', STR_PAD_LEFT);
             });
 
         // Start with forwarded balances

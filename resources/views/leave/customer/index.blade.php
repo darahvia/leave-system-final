@@ -397,6 +397,7 @@
                             <td data-label="SL BALANCE">{{ $app->current_sl ?? '' }}</td>
                             <td data-label="CTO BALANCE">{{ $app->current_cto ?? '' }}</td>
                             <td data-label="ACTIONS">
+                            
                                 @if ($app->is_credit_earned)
                                     {{-- Credits earned → Only delete --}}
                                     <button type="button" class="delete-btn" onclick="deleteRecord({{ $app->id }}, 'credit')">
@@ -543,28 +544,6 @@
             document.getElementById('cancel-edit-btn').style.display = 'inline-block';
             document.getElementById('is_cancellation').value = '0'; // Ensure not marked as cancellation during edit
             document.getElementById('leave-form').action = window.leaveUpdateRoute; // Set action for update
-        }
-
-        // Function to cancel a leave application
-        function cancelLeaveApplication(id, leave_type, inclusive_date_start, inclusive_date_end, working_days) {
-            if (confirm('Are you sure you want to cancel this leave application?')) {
-                // Set the form to act as a cancellation
-                document.getElementById('edit_id').value = id;
-                document.querySelector('select[name="leave_type"]').value = leave_type;
-                document.getElementById('date_filed').valueAsDate = new Date(); // Date of cancellation
-                document.getElementById('inclusive_date_start').value = inclusive_date_start; // Original start date
-                document.getElementById('inclusive_date_end').value = inclusive_date_end; // Original end date
-                document.getElementById('working_days').value = working_days;
-                document.getElementById('leave_details').value = 'CANCELLATION of ' + leave_type + ' from ' + inclusive_date_start + ' to ' + inclusive_date_end;
-                document.getElementById('is_cancellation').value = '1';
-
-                document.getElementById('submit-btn').textContent = 'Confirm Cancellation';
-                document.getElementById('form_method').value = 'POST'; // Cancellations are new records, not updates of the original
-                document.getElementById('leave-form').action = '{{ route("leave.submit") }}'; // Submit as a new record
-
-                // Submit the form
-                document.getElementById('leave-form').submit();
-            }
         }
 
         // Function to edit CTO application

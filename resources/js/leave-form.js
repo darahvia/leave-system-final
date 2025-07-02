@@ -404,7 +404,7 @@ function cancelLeaveApplication(id, leaveType, startDate, endDate, workingDays) 
     const formTitle = document.createElement('div');
     formTitle.id = 'cancel-mode-title';
     formTitle.style.cssText = 'background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-weight: bold;';
-    formTitle.innerHTML = '⚠️ CANCELLATION MODE: This will add back ' + workingDays + ' ' + leaveType + ' credits';
+    formTitle.innerHTML = '⚠️ CANCELLATION MODE: This will ddddadd back ' + workingDays + ' ' + leaveType + ' credits';
     
     // Remove any existing title
     const existingTitle = document.getElementById('cancel-mode-title');

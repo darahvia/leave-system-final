@@ -98,7 +98,7 @@ function editLeaveApplication(id, leaveType, dateFiled, startDate, endDate, work
     const form = document.getElementById('leave-form');
     const editIdInput = document.getElementById('edit_id');
     const methodInput = document.getElementById('form_method');
-    const leaveTypeSelect = document.getElementById('leave_type');
+    const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
     const dateFiledInput = document.getElementById('date_filed');
     const startDateInput = document.getElementById('inclusive_date_start');
     const endDateInput = document.getElementById('inclusive_date_end');
@@ -144,7 +144,7 @@ function cancelEdit() {
     const form = document.getElementById('leave-form');
     const editIdInput = document.getElementById('edit_id');
     const methodInput = document.getElementById('form_method');
-    const leaveTypeSelect = document.getElementById('leave_type');
+    const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
     const dateFiledInput = document.getElementById('date_filed');
     const startDateInput = document.getElementById('inclusive_date_start');
     const endDateInput = document.getElementById('inclusive_date_end');
@@ -370,7 +370,7 @@ function cancelLeaveApplication(id, leaveType, startDate, endDate, workingDays) 
     // Set cancellation mode
     isCancelling = true;
     
-    const leaveTypeSelect = document.getElementById('leave_type');
+    const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
     const dateFiledInput = document.getElementById('date_filed');
     const startDateInput = document.getElementById('inclusive_date_start');
     const endDateInput = document.getElementById('inclusive_date_end');
@@ -404,7 +404,7 @@ function cancelLeaveApplication(id, leaveType, startDate, endDate, workingDays) 
     const formTitle = document.createElement('div');
     formTitle.id = 'cancel-mode-title';
     formTitle.style.cssText = 'background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-weight: bold;';
-    formTitle.innerHTML = '⚠️ CANCELLATION MODE: This will ddddadd back ' + workingDays + ' ' + leaveType + ' credits';
+    formTitle.innerHTML = '⚠️ CANCELLATION MODE: This will add back ' + workingDays + ' ' + leaveType + ' credits';
     
     // Remove any existing title
     const existingTitle = document.getElementById('cancel-mode-title');

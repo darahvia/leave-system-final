@@ -493,7 +493,7 @@ class LeaveService
 
         // For non-VL/SL leave types, add credits back to customer balance
         if (!in_array($leaveType, ['vl', 'sl'])) {
-            $customer->addLeave($leaveType, $workingDays); // Add credits back
+            $customer->addLeaveCredits($leaveType, $workingDays); // Add credits back
         }
 
         return $cancellationApplication;

@@ -84,7 +84,7 @@ class LeaveService
                 $this->recalculateBalancesFromDate($customer, $leaveDate);
                 break;
                 
-            case 'solo parent':
+            case 'solo_parent':
                 $customer->deductLeave('solo_parent', $workingDays);
                 break;
                 
@@ -113,6 +113,9 @@ class LeaveService
                 break;
             case 'vawc':
                 $customer->deductLeave('vawc', $workingDays);
+                break;
+            case 'adopt':
+                $customer->deductLeave('adopt', $workingDays);
                 break;
                 
             default:
@@ -350,6 +353,8 @@ class LeaveService
             'sel' => $customer->sel,
             'study_leave' => $customer->study_leave,
             'vawc' => $customer->vawc,
+            'adopt' => $customer->adopt,
+
 
         ];
     }
@@ -440,6 +445,9 @@ class LeaveService
                 break;
             case 'vawc':
                 $customer->vawc = ($customer->vawc ?? 0) + $workingDays;
+                break;
+            case 'adopt':
+                $customer->deductLeave('adopt', $workingDays);
                 break;
         }
         

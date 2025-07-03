@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>CTO Management</title>
-    {{-- @vite(['resources/css/leave.css', 'resources/js/cto-form.js']) --}}
     <link rel="stylesheet" href="{{ asset('css/leave.css') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
@@ -89,11 +88,6 @@
 </head>
 <body>
     <div class="page-wrapper">
-        <div class="tab-nav" style="margin-bottom: 1.5rem;">
-            <a href="{{ route('leave.customer.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('leave.customer.index') || request()->routeIs('leave.customer.index') ? ' active' : '' }}">Leave</a>
-            <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
-        </div>
-
         @if(session('success'))
             <div class="success">{{ session('success') }}</div>
         @endif
@@ -102,43 +96,11 @@
             <div class="error">{{ session('error') }}</div>
         @endif
 
-        <div class="header-wrapper">
-            <div class="header-container">
-                <img src="/images/deped-logo.png" alt="DepEd Logo" class="header-logo">
-                <div class="header-text">
-                    <div class="header-title">
-                        <span class="dep">Dep</span><span class="ed">Ed</span> Cadiz City
-                    </div>
-                    <div class="header-subtitle">CTO Management System</div>
-                </div>
-                <img src="/images/deped-cadiz-logo.png" alt="Division Logo" class="header-logo">
-            </div>
+    @include('partials.header', ['pageTitle' => 'Leave Credit System - CTO'])
 
-            <div class="search-bar-section">
-                {{-- Changed route to customer.find and input/button labels --}}
-                <form method="POST" action="{{ route('customer.find') }}" class="search-form" autocomplete="off">
-                    @csrf
-                    <input type="hidden" name="redirect_to" value="cto">
-                    <div class="search-box">
-                        <button type="submit" class="search-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                        <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Customer...">
-                        <div id="suggestions"></div>
-                    </div>
-                </form>
-                {{-- Changed button labels and IDs --}}
-                <button class="add-customer-btn" id="showAddCustomerModal">
-                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    <span>Add Customer</span>
-                </button>
-            </div>
+        <div class="tab-nav" style="margin-bottom: 1.5rem;">
+            <a href="{{ route('leave.customer.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('leave.customer.index') || request()->routeIs('leave.customer.index') ? ' active' : '' }}">Leave</a>
+            <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
         </div>
 
         {{-- Add Customer Modal - Changed ID and route --}}
@@ -184,36 +146,6 @@
 
         {{-- Employee Details Table - Changed variable to $customer --}}
         @if($customer)
-            <div class="emp-details-table">
-                <table class="employee-info-table"> {{-- Class name can remain, or change to customer-info-table --}}
-                    <tr>
-                        <td class="label">SURNAME</td>
-                        <td class="value">{{ strtoupper($customer->surname) }}</td>
-                        <td class="label">DIVISION</td>
-                        {{-- Added fallback for division/designation if 'office' and 'position' relationships aren't loaded or exist --}}
-                        <td class="value">{{ strtoupper($customer->office->office ?? $customer->division) }}</td>
-                        <td class="label">BASIC SALARY</td>
-                        <td class="value">{{ number_format($customer->salary, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">GIVEN NAME</td>
-                        <td class="value">{{ strtoupper($customer->given_name) }}</td>
-                        <td class="label">DESIGNATION</td>
-                        <td class="value">{{ strtoupper($customer->position->position ?? $customer->designation) }}</td>
-                        <td class="label">CTO BALANCE</td>
-                        {{-- Display customer's current eligible CTO balance for new deductions. Assumes ctoService is injected into CtoController --}}
-                        <td class="value balance-positive">{{ number_format($ctoService->getEligibleCtoBalance($customer), 1) }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">MIDDLE NAME</td>
-                        <td class="value">{{ strtoupper($customer->middle_name) }}</td>
-                        <td class="label">ORIGINAL APPOINTMENT</td>
-                        <td class="value">{{ $customer->origappnt_date ? \Carbon\Carbon::parse($customer->origappnt_date)->format('F j, Y') : '' }}</td>
-                        <td class="label"></td>
-                        <td class="value"></td>
-                    </tr>
-                </table>
-            </div>
 
             <div class="bottom-section">
                 <div class="form-section">
@@ -278,9 +210,6 @@
 
                             <label>Credits Used:</label>
                             <input type="number" name="hours_applied" id="hours_applied_usage" step="0.01" required>
-
-                            <label>Remarks:</label>
-                            <input type="text" name="cto_details" id="cto_details_usage">
 
                             <button type="submit" id="submit-usage-btn">Add CTO Usage</button>
                             <button type="button" id="cancel-usage-edit-btn" onclick="cancelCtoUsageEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>

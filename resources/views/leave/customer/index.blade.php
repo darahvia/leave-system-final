@@ -6,10 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
-    <div class="tab-nav" style="margin-bottom: 1.5rem;">
-        <a href="{{ route('leave.customer.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('leave.customer.index') ? ' active' : '' }}">Leave</a>
-        <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
-    </div>
+
     <style>
         .tab-nav {
             display: flex;
@@ -36,137 +33,19 @@
     @if(session('error'))
         <div class="error">{{ session('error') }}</div>
     @endif
-    <div class="header-wrapper">
-        <div class="header-container">
-            <img src="/images/deped-logo.png" alt="DepEd Logo" class="header-logo">
-            <div class="header-text">
-                <div class="header-title">
-                    <span class="dep">Dep</span><span class="ed">Ed</span> Cadiz City
-                </div>
-                <div class="header-subtitle">Leave Credit System</div>
-            </div>
-            <img src="/images/deped-cadiz-logo.png" alt="Division Logo" class="header-logo">
-        </div>
+    @include('partials.header', ['pageTitle' => 'Leave Credit System'])
 
-        <div class="search-bar-section">
-            <form method="POST" action="{{ route('customer.find') }}" class="search-form" autocomplete="off">
-                @csrf
-                <div class="search-box">
-                    <button type="submit" class="search-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </button>
-                    <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Customer...">
-                    <div id="suggestions"></div>
-                </div>
-            </form>
-        </div>
+    <div class="tab-nav" style="margin-bottom: 1.5rem;">
+        <a href="{{ route('leave.customer.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('leave.customer.index') ? ' active' : '' }}">Leave</a>
+        <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
     </div>
 
-    <div class="modal-bg" id="addEmpModal">
-        <div class="modal-content">
-            <button class="close" id="closeAddEmpModal">&times;</button>
-            <form method="POST" action="{{ route('customer.add') }}">
-                @csrf
-                <div class="emp-form">
-                    <div class="form-left">
-                        <label>Surname:</label>
-                        <input type="text" name="surname" required>
-                        <label>Given name:</label>
-                        <input type="text" name="given_name" required>
-                        <label>Middle name:</label>
-                        <input type="text" name="middle_name" required>
-                        <label>Division:</label>
-                        <input type="text" name="division" required>
-                        <label>Designation:</label>
-                        <input type="text" name="designation" required>
-                    </div>
 
-                    <div class="form-right">
-                        <label>Original Appointment:</label>
-                        <input type="text" name="original_appointment">
-                        <label>Salary:</label>
-                        <input type="number" step="0.01" name="salary" required>
-
-                        <label>Vacation Leave Forwarded Balance:</label>
-                        <input type="number" step="0.01" name="balance_forwarded_vl" required>
-                        <label>Sick Leave Forwarded Balance:</label>
-                        <input type="number" step="0.01" name="balance_forwarded_sl" required>
-                        <div style="height: 1rem;"></div>
-
-                        <button type="submit">Add Customer</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    @if($customer)
-        @php
-            $latestApp = $customer->leaveApplications->last();
-        @endphp
-
-        <div class="emp-details-table">
-            <table class="customer-info-table">
-                <tr>
-                    <td class="label">SURNAME</td>
-                    <td class="value">{{ strtoupper($customer->surname) }}</td>
-                    <td class="label">DIVISION</td>
-                    <td class="value">{{ strtoupper($customer->office->office) }}</td>
-                    <td class="label">BASIC SALARY</td>
-                    <td class="value">{{ number_format($customer->salary, 2) }}</td>
-                    <td class="label"> FORCE LEAVE BALANCE </td>
-                    <td class="value">{{ strtoupper($customer->fl) }}</td>
-                </tr>
-                <tr>
-                    <td class="label">GIVEN NAME</td>
-                    <td class="value">{{ strtoupper($customer->given_name) }}</td>
-                    <td class="label">DESIGNATION</td>
-                    <td class="value">{{ strtoupper($customer->position->position) }}</td>
-                    <td class="label">VACATION LEAVE BALANCE</td>
-                    <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
-                    <td class="label">SPECIAL PRIVILEGE LEAVE BALANCE</td>
-                    <td class="value">{{ $customer->spl ?? 0 }}</td>
-                </tr>
-                <tr>
-                    <td class="label">MIDDLE NAME</td>
-                    <td class="value">{{ strtoupper($customer->middle_name) }}</td>
-                    <td class="label">ORIGINAL APPOINTMENT</td>
-                    <td class="value">{{ $customer->origappnt_date ?? '' }}</td>
-                    <td class="label">SICK LEAVE BALANCE</td>
-                    <td class="value">{{ $latestApp ? $latestApp->current_sl : ($customer->balance_forwarded_sl ?? 0) }}</td>
-                    <td class="label"> VIEW OTHER LEAVE BALANCES </td>
-                    <td class="value">
-                        <button type="button" id="viewAllBtn" onclick="showOtherCreditsModal()">View All</button>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="modal-bg" id="otherCreditsModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:999;">
-            <div class="modal-content" style="background:#fff; margin:5% auto; padding:20px; border-radius:8px; max-width:400px; position:relative;">
-                <button class="close" onclick="closeOtherCreditsModal()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:20px;">&times;</button>
-                <h3>Other Leave Credits</h3>
-                @php
-                    $balances = app(\App\Services\LeaveService::class)->getCurrentBalances($customer);
-                @endphp
-
-                <ul style="list-style:none; padding:0;">
-                    @foreach ($balances as $type => $value)
-                        @if (!in_array($type, ['vl', 'sl', 'vawc']))
-                            <li>{{ \App\Services\LeaveService::getLeaveTypes()[strtoupper($type)] ?? ucfirst(str_replace('_', ' ', $type)) }}: <strong>{{ $value }}</strong></li>
-                        @endif
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    @endif
 
 
     @if($customer)
         <div class="bottom-section">
+            
             <form method="POST" action="{{ route('leave.submit') }}" id="leave-form" class="leave-form">
                 @csrf
                 <input type="hidden" name="customer_id" value="{{ $customer->id }}">
@@ -194,7 +73,7 @@
                     
                     <div class="date-row">
                         <div class="date-col">
-                            <label>Leave Start Date (Inclusive):</label>
+                            <label>Leave Start Date:</label>
                             <input type="date" name="inclusive_date_start" id="inclusive_date_start" required>
                             <span class="halfday-controls" id="start-halfday-span">
                                 <button type="button" class="toggle-button" id="start-am-btn" data-value="AM">AM</button>
@@ -202,7 +81,7 @@
                             </span>
                         </div>
                         <div class="date-col" id="end-date-col">
-                            <label>Leave End Date (Inclusive):</label>
+                            <label>Leave End Date:</label>
                             <input type="date" name="inclusive_date_end" id="inclusive_date_end" required>
                             <span class="halfday-controls" id="end-halfday-span">
                                 <button type="button" class="toggle-button" id="end-am-btn" data-value="AM">AM</button>
@@ -246,35 +125,6 @@
                     <button type="submit">Add Other Credits</button>
                 </div>
             </form>
-            <form method="POST" action="{{ route('cto.submit') }}" id="cto-form" class="leave-form">
-                @csrf
-                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
-                <input type="hidden" name="edit_id" id="cto_edit_id" value="">
-                <input type="hidden" name="_method" id="cto_form_method" value="POST">
-                <div class="emp-form" id="cto-form-container">
-                    <h3>Apply for CTO</h3>
-                    <label>Date of CTO:</label>
-                    <input type="date" name="cto_date" id="cto_date" required>
-                    <label>Hours Applied:</label>
-                    <input type="number" name="hours_applied" id="cto_hours_applied" step="0.01" required>
-                    <label>Remarks:</label>
-                    <input type="text" name="cto_details" id="cto_details">
-                    <button type="submit" id="cto-submit-btn">Add CTO Application</button>
-                    <button type="button" id="cto-cancel-edit-btn" onclick="cancelCtoEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
-                </div>
-            </form>
-            <form method="POST" action="{{ route('cto.credits') }}">
-                @csrf
-                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
-                <div class="emp-form">
-                    <h3>Add Earned CTO Credits</h3>
-                    <label>Earned Date:</label>
-                    <input type="date" name="earned_date" required>
-                    <label>Hours Earned:</label>
-                    <input type="number" name="hours_earned" step="0.01" required>
-                    <button type="submit">Add CTO Earned</button>
-                </div>
-            </form>
         </div>
     @endif
 
@@ -286,8 +136,8 @@
                     <th>VL EARNED</th>
                     <th>SL EARNED</th>
                     <th>CTO EARNED</th>
-                    <th>DATE LEAVE FILED</th>
-                    <th>DATE LEAVE INCURRED</th>
+                    <th>DATE FILED</th>
+                    <th>DATE INCURRED</th>
                     <th>LEAVE INCURRED</th>
                     <th>VL</th>
                     <th>SL</th>
@@ -295,11 +145,9 @@
                     <th>FL</th>
                     <th>SOLO PARENT</th>
                     <th>OTHERS</th>
-                    <th>CTO Hours</th>
                     <th>REMARKS</th>
-                    <th>VL BALANCE</th>
-                    <th>SL BALANCE</th>
-                    <th>CTO BALANCE</th>
+                    <th>VL BAL</th>
+                    <th>SL BAL</th>
                     <th>ACTIONS</th>
                 </tr>
             </thead>
@@ -318,11 +166,9 @@
                     <td data-label="FL"></td>
                     <td data-label="SOLO PARENT"></td>
                     <td data-label="OTHERS"></td>
-                    <td data-label="CTO Hours"></td>
                     <td data-label="REMARKS"></td>
                     <td data-label="VL BALANCE">{{ number_format($customer->balance_forwarded_vl, 3) }}</td>
                     <td data-label="SL BALANCE">{{ number_format($customer->balance_forwarded_sl, 3) }}</td>
-                    <td data-label="CTO BALANCE">{{ number_format($customer->balance_forwarded_cto ?? 0, 3) }}</td>
                     <td data-label="ACTIONS"></td>
                 </tr>
 @if($customer->leaveApplications && $customer->leaveApplications->count())
@@ -397,16 +243,11 @@
                                 @endif
                             </td>
                             @php
-                                $otherLeaveTypes = ['ML', 'PL', 'RA9710', 'RL', 'SEL', 'STUDY_LEAVE', 'ADOPT', 'VAWC'];
+                                $otherLeaveTypes = ['ML', 'PL', 'RA9710', 'RL', 'SEL', 'STUDY_LEAVE', 'ADOPT', 'VAWC', 'SOLO_PARENT'];
                             @endphp
                             <td data-label="OTHERS">
                                 @if (in_array($app->leave_type, $otherLeaveTypes))
                                     {{ $app->working_days ?? '' }}
-                                @endif
-                            </td>
-                            <td data-label="CTO Hours">
-                                @if($app->is_cto_application) {{-- If it's a CTO application --}}
-                                    {{ $app->hours_applied ?? '' }}
                                 @endif
                             </td>
                             <td data-label="REMARKS">
@@ -416,7 +257,6 @@
                             </td>
                             <td data-label="VL BALANCE">{{ $app->current_vl ?? '' }}</td>
                             <td data-label="SL BALANCE">{{ $app->current_sl ?? '' }}</td>
-                            <td data-label="CTO BALANCE">{{ $app->current_cto ?? '' }}</td>
                             <td data-label="ACTIONS">
                             
                                 @if ($app->is_credit_earned)

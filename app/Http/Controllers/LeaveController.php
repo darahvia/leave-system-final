@@ -26,11 +26,12 @@ class LeaveController extends Controller
             if ($request->has('customer_id')) {
                 $customer = Customer::with('office')->find($request->customer_id);
             }
-
+            $ctoService = app(\App\Services\CtoService::class);
             return view('leave.customer.index', [
                 'customer' => $customer,
                 'leaveTypes' => $leaveTypes,
-                'message' => $message
+                'message' => $message,
+                'ctoService' => $ctoService,
             ]);
         }
 

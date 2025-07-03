@@ -173,20 +173,32 @@ function initializeDateCalculation() {
 }
 function initializeToggleButtons() {
   // Start date toggle buttons
-  document.getElementById('start-am-btn').addEventListener('click', function () {
-    toggleHalfDay('start', 'AM');
-  });
-  document.getElementById('start-pm-btn').addEventListener('click', function () {
-    toggleHalfDay('start', 'PM');
-  });
+  var startAmBtn = document.getElementById('start-am-btn');
+  var startPmBtn = document.getElementById('start-pm-btn');
+  var endAmBtn = document.getElementById('end-am-btn');
+  var endPmBtn = document.getElementById('end-pm-btn');
+  if (startAmBtn) {
+    startAmBtn.addEventListener('click', function () {
+      toggleHalfDay('start', 'AM');
+    });
+  }
+  if (startPmBtn) {
+    startPmBtn.addEventListener('click', function () {
+      toggleHalfDay('start', 'PM');
+    });
+  }
 
   // End date toggle buttons
-  document.getElementById('end-am-btn').addEventListener('click', function () {
-    toggleHalfDay('end', 'AM');
-  });
-  document.getElementById('end-pm-btn').addEventListener('click', function () {
-    toggleHalfDay('end', 'PM');
-  });
+  if (endAmBtn) {
+    endAmBtn.addEventListener('click', function () {
+      toggleHalfDay('end', 'AM');
+    });
+  }
+  if (endPmBtn) {
+    endPmBtn.addEventListener('click', function () {
+      toggleHalfDay('end', 'PM');
+    });
+  }
 }
 function toggleHalfDay(dateType, period) {
   if (dateType === 'start') {
@@ -211,16 +223,17 @@ function updateToggleButtonState(dateType) {
   var currentSelection = dateType === 'start' ? startHalfDay : endHalfDay;
   var amBtn = document.getElementById("".concat(prefix, "-am-btn"));
   var pmBtn = document.getElementById("".concat(prefix, "-pm-btn"));
+  if (amBtn && pmBtn) {
+    // Reset both buttons
+    amBtn.classList.remove('active');
+    pmBtn.classList.remove('active');
 
-  // Reset both buttons
-  amBtn.classList.remove('active');
-  pmBtn.classList.remove('active');
-
-  // Activate the selected button
-  if (currentSelection === 'AM') {
-    amBtn.classList.add('active');
-  } else if (currentSelection === 'PM') {
-    pmBtn.classList.add('active');
+    // Activate the selected button
+    if (currentSelection === 'AM') {
+      amBtn.classList.add('active');
+    } else if (currentSelection === 'PM') {
+      pmBtn.classList.add('active');
+    }
   }
 }
 function calculateWorkingDays() {

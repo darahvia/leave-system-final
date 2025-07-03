@@ -1,6 +1,14 @@
 
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script src="{{ asset('js/leave-form.js') }}"></script>
+<script>
+            window.autocompleteRoute = '{{ route("customer.autocomplete") }}';
+                window.csrfToken = '{{ csrf_token() }}';
+
+
+</script>
 <div class="header-wrapper">
     <div class="header-container">
         <img src="/images/deped-logo.png" alt="DepEd Logo" class="header-logo">

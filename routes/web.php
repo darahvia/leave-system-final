@@ -16,6 +16,7 @@ Route::get('/', function () {
     return view('leave.select', compact('offices', 'positions'));
 })->name('leave.select');
 
+    Route::any('/find-customer', [LeaveController::class, 'findCustomer'])->name('customer.find');
 
 
 // Customer management routes
@@ -28,7 +29,6 @@ Route::post('/customers', [CustomerController::class, 'store'])->name('customers
 Route::prefix('leave/customer')->group(function () {
     Route::get('/', [LeaveController::class, 'index'])->name('leave.customer.index');
     Route::post('/add-customer', [LeaveController::class, 'addCustomer'])->name('customer.add');
-    Route::any('/find-customer', [LeaveController::class, 'findCustomer'])->name('customer.find');
     Route::post('/submit-leave', [LeaveController::class, 'submitLeave'])->name('leave.submit');
     Route::put('/update-leave', [LeaveController::class, 'updateLeave'])->name('leave.update');
 

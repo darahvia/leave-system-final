@@ -357,10 +357,10 @@ class CtoService
 
                 // --- Step 3: Update the balance field for the current CTO record and save ---
                 $newBalanceValue = round($currentRunningBalance, 2);
-                if ($record->balance !== $newBalanceValue) {
-                    $record->balance = $newBalanceValue;
-                    $record->save(); // Save to database
-                    Log::info("  CTO record ID " . $record->id . " balance updated to: " . $newBalanceValue);
+                if ($record->current_balance !== $newBalanceValue) { // Use current_balance
+                    $record->current_balance = $newBalanceValue; // Write to current_balance
+                    $record->save();
+                    Log::info("   CTO record ID " . $record->id . " current_balance updated to: " . $newBalanceValue);
                 } else {
                     Log::info("  CTO record ID " . $record->id . " balance unchanged: " . $newBalanceValue);
                 }

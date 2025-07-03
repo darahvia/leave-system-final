@@ -233,7 +233,7 @@
                             <label>Activity:</label>
                             <input type="text" name="activity" id="activity" >
 
-                            <label>Hours Earned:</label>
+                            <label>Credits Earned:</label>
                             <input type="number" name="hours_earned" id="hours_earned" step="0.01" required>
 
                             <label>
@@ -267,16 +267,16 @@
                                 <input type="checkbox" name="is_single_day_absence" id="single-day-absence"> Single Day Absence
                             </label>
 
-                            <label>Date Filed (Usage):</label>
+                            <label>Date Filed:</label>
                             <input type="date" name="date_filed" id="usage_date_filed" required>
 
-                            <label>CTO Date (Inclusive Start):</label>
+                            <label>Leave Date (Inclusive Start):</label>
                             <input type="date" name="inclusive_date_start" id="inclusive_date_start_usage" required>
 
                             <label id="absence-end-date-label">CTO Date (Inclusive End):</label>
                             <input type="date" name="inclusive_date_end" id="inclusive_date_end_usage">
 
-                            <label>Hours Applied:</label>
+                            <label>Credits Used:</label>
                             <input type="number" name="hours_applied" id="hours_applied_usage" step="0.01" required>
 
                             <label>Remarks:</label>
@@ -296,14 +296,12 @@
             <table class="cto-table">
                 <thead>
                     <tr>
-                        <th>PERIOD</th>
                         <th>SPECIAL ORDER</th>
                         <th>DATE OF ACTIVITY</th>
                         <th>ACTIVITY</th>
                         <th>EARNED HOURS</th>
                         <th>DATE OF ABSENCES</th>
                         <th>HOURS USED</th>
-                        <th>REMARKS</th>
                         <th>BALANCE</th>
                         <th>ACTIONS</th>
                     </tr>
@@ -326,9 +324,6 @@
                             }
                         @endphp
                         <tr class="{{ $rowClass }}">
-                            <td data-label="PERIOD">
-                                {{ $cto->date_filed ? \Carbon\Carbon::parse($cto->date_filed)->format('F j, Y') : '' }}
-                            </td>
                             <td data-label="SPECIAL ORDER">
                                 {{ $cto->is_activity ? ($cto->special_order ?? '') : '' }}
                             </td>
@@ -355,15 +350,8 @@
                                     {{ number_format($cto->no_of_days ?? 0, 2) }}
                                 @endif
                             </td>
-                            <td data-label="REMARKS">
-                                @if($cto->is_activity)
-                                    Credits Earned
-                                @else
-                                    {{ $cto->cto_details ?? '' }}
-                                @endif
-                            </td>
                             <td data-label="BALANCE" style="font-weight: bold;">
-                                {{ number_format($cto->current_balance ?? 0, 2) }}
+                                {{ number_format($cto->balance ?? 0, 2) }}
                             </td>
                             <td data-label="ACTIONS" class="actions-column">
                                 {{-- Edit Button --}}
@@ -415,7 +403,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" style="text-align: center; color: #6c757d;">No CTO records found</td>
+                            <td colspan="8" style="text-align: center; color: #6c757d;">No CTO records found</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -664,6 +652,7 @@
 
                         dateFiledUsageField.valueAsDate = new Date(); // Or get from record if stored
                         inclusiveDateStartUsageField.value = date_start;
+                        inclusiveDateEndUsageField.value = date_end; // Make sure to set this
                         hoursAppliedUsageField.value = hours_earned_or_applied;
                         ctoDetailsUsageField.value = cto_details_usage;
 

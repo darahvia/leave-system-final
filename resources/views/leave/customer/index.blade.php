@@ -185,10 +185,31 @@
 
                     <label>Date Filed:</label>
                     <input type="date" name="date_filed" id="date_filed" required>
-                    <label>Leave Start Date (Inclusive):</label>
-                    <input type="date" name="inclusive_date_start" id="inclusive_date_start" required>
-                    <label>Leave End Date (Inclusive):</label>
-                    <input type="date" name="inclusive_date_end" id="inclusive_date_end" required>
+
+                    <div class="single-day-check">
+                        <label>
+                            <input type="checkbox" name="is_single_day_activity" id="single-day-activity"> Single Day Activity
+                        </label>
+                    </div>
+                    
+                    <div class="date-row">
+                        <div class="date-col">
+                            <label>Leave Start Date (Inclusive):</label>
+                            <input type="date" name="inclusive_date_start" id="inclusive_date_start" required>
+                            <span class="halfday-controls" id="start-halfday-span">
+                                <button type="button" class="toggle-button" id="start-am-btn" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="start-pm-btn" data-value="PM">PM</button>
+                            </span>
+                        </div>
+                        <div class="date-col" id="end-date-col">
+                            <label>Leave End Date (Inclusive):</label>
+                            <input type="date" name="inclusive_date_end" id="inclusive_date_end" required>
+                            <span class="halfday-controls" id="end-halfday-span">
+                                <button type="button" class="toggle-button" id="end-am-btn" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="end-pm-btn" data-value="PM">PM</button>
+                            </span>
+                        </div>
+                    </div>
                     <label>Working Days:</label>
                     <input type="number" name="working_days" id="working_days" readonly style="background-color: #f5f5f5;">
                     <label>Remarks:</label>
@@ -517,92 +538,7 @@
         window.autocompleteRoute = '{{ route("customer.autocomplete") }}';
         window.leaveUpdateRoute = '{{ route("leave.update") }}';
         window.deleteRoute = '{{ route("leave.delete") }}';
-        window.ctoUpdateRoute = '{{ route("cto.update") }}'; // New CTO update route
-        window.ctoDeleteRoute = '{{ route("cto.delete") }}'; // New CTO delete route
         window.csrfToken = '{{ csrf_token() }}';
-
-        function showOtherCreditsModal() {
-            document.getElementById('otherCreditsModal').style.display = 'block';
-        }
-
-        function closeOtherCreditsModal() {
-            document.getElementById('otherCreditsModal').style.display = 'none';
-        }
-
-        // Function to edit leave application
-        function editLeaveApplication(id, leave_type, date_filed, inclusive_date_start, inclusive_date_end, working_days, leave_details) {
-            document.getElementById('edit_id').value = id;
-            document.querySelector('select[name="leave_type"]').value = leave_type;
-            document.getElementById('date_filed').value = date_filed;
-            document.getElementById('inclusive_date_start').value = inclusive_date_start;
-            document.getElementById('inclusive_date_end').value = inclusive_date_end;
-            document.getElementById('working_days').value = working_days;
-            document.getElementById('leave_details').value = leave_details;
-
-            document.getElementById('submit-btn').textContent = 'Update Leave';
-            document.getElementById('form_method').value = 'PUT';
-            document.getElementById('cancel-edit-btn').style.display = 'inline-block';
-            document.getElementById('is_cancellation').value = '0'; // Ensure not marked as cancellation during edit
-            document.getElementById('leave-form').action = window.leaveUpdateRoute; // Set action for update
-        }
-
-        // Function to edit CTO application
-        function editCtoApplication(id, cto_date, hours_applied, cto_details) {
-            document.getElementById('cto_edit_id').value = id;
-            document.getElementById('cto_date').value = cto_date;
-            document.getElementById('cto_hours_applied').value = hours_applied;
-            document.getElementById('cto_details').value = cto_details;
-
-            document.getElementById('cto-submit-btn').textContent = 'Update CTO';
-            document.getElementById('cto_form_method').value = 'PUT';
-            document.getElementById('cto-cancel-edit-btn').style.display = 'inline-block';
-            document.getElementById('cto-form').action = window.ctoUpdateRoute; // Set action for update
-        }
-
-        function cancelCtoEdit() {
-            document.getElementById('cto_edit_id').value = '';
-            document.getElementById('cto_date').value = '';
-            document.getElementById('cto_hours_applied').value = '';
-            document.getElementById('cto_details').value = '';
-
-            document.getElementById('cto-submit-btn').textContent = 'Add CTO Application';
-            document.getElementById('cto_form_method').value = 'POST';
-            document.getElementById('cto-cancel-edit-btn').style.display = 'none';
-            document.getElementById('cto-form').action = "{{ route('cto.update', ['id' => ':id']) }}".replace(':id', id);
-        }
-
-
-        function deleteRecord(id, type) {
-            if (confirm('Are you sure you want to delete this record?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.style.display = 'none';
-
-                const csrfInput = document.createElement('input');
-                csrfInput.name = '_token';
-                csrfInput.value = window.csrfToken;
-                form.appendChild(csrfInput);
-
-                const methodInput = document.createElement('input');
-                methodInput.name = '_method';
-                methodInput.value = 'DELETE';
-                form.appendChild(methodInput);
-
-                const idInput = document.createElement('input');
-                idInput.name = 'id';
-                idInput.value = id;
-                form.appendChild(idInput);
-
-                if (type === 'credit' || type === 'leave' || type === 'cancellation') {
-                    form.action = window.deleteRoute;
-                } else if (type === 'cto_credit' || type === 'cto_application') {
-                    form.action = window.ctoDeleteRoute;
-                }
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
     </script>
 
     <script src="{{ asset('js/leave-form.js') }}"></script>

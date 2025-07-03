@@ -100,6 +100,8 @@
 var isEditing = false;
 var isCancelling = false;
 var originalFormAction = '';
+var startHalfDay = null; // null means full day, 'AM' or 'PM' means half day
+var endHalfDay = null;
 
 // DOM Content Loaded - Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', function () {
@@ -134,47 +136,140 @@ function initializeModal() {
     };
   }
 }
-
-// Working days calculation
 function initializeDateCalculation() {
   var startDateInput = document.getElementById('inclusive_date_start');
   var endDateInput = document.getElementById('inclusive_date_end');
+  var singleDayCheckbox = document.getElementById('single-day-activity');
+  var workingDaysInput = document.getElementById('working_days');
+  var endDateCol = document.getElementById('end-date-col');
+
+  // Initialize toggle buttons
+  initializeToggleButtons();
   if (startDateInput && endDateInput) {
-    startDateInput.addEventListener('change', calculateWorkingDays);
+    startDateInput.addEventListener('change', function () {
+      if (singleDayCheckbox && singleDayCheckbox.checked) {
+        endDateInput.value = startDateInput.value;
+      }
+      calculateWorkingDays();
+    });
     endDateInput.addEventListener('change', calculateWorkingDays);
+  }
+  if (singleDayCheckbox) {
+    singleDayCheckbox.addEventListener('change', function () {
+      if (this.checked) {
+        // Hide end date and its controls
+        if (endDateCol) endDateCol.style.display = 'none';
+        endDateInput.value = startDateInput.value;
+        // Reset end date half day selection
+        endHalfDay = null;
+        updateToggleButtonState('end');
+      } else {
+        // Show end date and its controls
+        if (endDateCol) endDateCol.style.display = 'block';
+      }
+      calculateWorkingDays();
+    });
+  }
+}
+function initializeToggleButtons() {
+  // Start date toggle buttons
+  document.getElementById('start-am-btn').addEventListener('click', function () {
+    toggleHalfDay('start', 'AM');
+  });
+  document.getElementById('start-pm-btn').addEventListener('click', function () {
+    toggleHalfDay('start', 'PM');
+  });
+
+  // End date toggle buttons
+  document.getElementById('end-am-btn').addEventListener('click', function () {
+    toggleHalfDay('end', 'AM');
+  });
+  document.getElementById('end-pm-btn').addEventListener('click', function () {
+    toggleHalfDay('end', 'PM');
+  });
+}
+function toggleHalfDay(dateType, period) {
+  if (dateType === 'start') {
+    if (startHalfDay === period) {
+      startHalfDay = null; // Deselect if clicking the same button
+    } else {
+      startHalfDay = period; // Select the clicked button
+    }
+    updateToggleButtonState('start');
+  } else if (dateType === 'end') {
+    if (endHalfDay === period) {
+      endHalfDay = null; // Deselect if clicking the same button
+    } else {
+      endHalfDay = period; // Select the clicked button
+    }
+    updateToggleButtonState('end');
+  }
+  calculateWorkingDays();
+}
+function updateToggleButtonState(dateType) {
+  var prefix = dateType === 'start' ? 'start' : 'end';
+  var currentSelection = dateType === 'start' ? startHalfDay : endHalfDay;
+  var amBtn = document.getElementById("".concat(prefix, "-am-btn"));
+  var pmBtn = document.getElementById("".concat(prefix, "-pm-btn"));
+
+  // Reset both buttons
+  amBtn.classList.remove('active');
+  pmBtn.classList.remove('active');
+
+  // Activate the selected button
+  if (currentSelection === 'AM') {
+    amBtn.classList.add('active');
+  } else if (currentSelection === 'PM') {
+    pmBtn.classList.add('active');
   }
 }
 function calculateWorkingDays() {
   var startDate = document.getElementById('inclusive_date_start').value;
   var endDate = document.getElementById('inclusive_date_end').value;
   var workingDaysInput = document.getElementById('working_days');
+  var singleDayCheckbox = document.getElementById('single-day-activity');
+  var daysDisplay = document.getElementById('days-display');
+  if (singleDayCheckbox && singleDayCheckbox.checked) {
+    // Single day activity - check if start date has half day selected
+    var singleDayValue = startHalfDay ? 0.5 : 1;
+    if (workingDaysInput) workingDaysInput.value = singleDayValue;
+    if (daysDisplay) daysDisplay.textContent = singleDayValue;
+    return;
+  }
   if (startDate && endDate && workingDaysInput) {
     var start = new Date(startDate);
     var end = new Date(endDate);
-
-    // Validate that end date is not before start date
     if (end < start) {
       workingDaysInput.value = 0;
+      if (daysDisplay) daysDisplay.textContent = 0;
       return;
     }
     var workingDays = 0;
     var currentDate = new Date(start);
-
-    // Loop through each day in the range (inclusive)
+    var dayCount = 0;
     while (currentDate <= end) {
       var dayOfWeek = currentDate.getDay();
-      // Count weekdays only (Monday = 1, Friday = 5)
-      // Sunday = 0, Saturday = 6 are excluded
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDays++;
+        // Not weekend
+        if (dayCount === 0) {
+          // First day - check start half day
+          workingDays += startHalfDay ? 0.5 : 1;
+        } else if (currentDate.getTime() === end.getTime()) {
+          // Last day - check end half day
+          workingDays += endHalfDay ? 0.5 : 1;
+        } else {
+          // Middle days are always full days
+          workingDays += 1;
+        }
       }
       currentDate.setDate(currentDate.getDate() + 1);
+      dayCount++;
     }
     workingDaysInput.value = workingDays;
+    if (daysDisplay) daysDisplay.textContent = workingDays;
   } else {
-    if (workingDaysInput) {
-      workingDaysInput.value = '';
-    }
+    if (workingDaysInput) workingDaysInput.value = '';
+    if (daysDisplay) daysDisplay.textContent = '0';
   }
 }
 

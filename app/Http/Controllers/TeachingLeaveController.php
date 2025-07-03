@@ -68,7 +68,7 @@ class TeachingLeaveController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customer,id',
             'leave_incurred_date' => 'required|date',
-            'leave_incurred_days' => 'required|integer|min:1|max:365',
+            'leave_incurred_days' => 'required|numeric|min:1|max:365',
         ]);
 
         try {
@@ -107,7 +107,7 @@ class TeachingLeaveController extends Controller
                 'edit_id' => 'required|integer|exists:teaching_leave_applications,id',
                 'customer_id' => 'required|integer|exists:customer,id',
                 'leave_incurred_date' => 'required|date',
-                'leave_incurred_days' => 'required|integer|min:1|max:365',
+                'leave_incurred_days' => 'required|numeric|min:1|max:365',
             ]);
 
             $customer = Customer::findOrFail($request->customer_id);

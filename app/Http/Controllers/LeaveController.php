@@ -54,7 +54,7 @@ class LeaveController extends Controller
             $request->validate([
                 'customer_id' => 'required|exists:customers,id',
                 'leave_type' => 'required|string',
-                'working_days' => 'required|integer|min:1',
+                'working_days' => 'required|numeric|min:0',
                 'date_filed' => 'required|date',
                 'inclusive_date_start' => 'required|date',
                 'inclusive_date_end' => 'required|date|after_or_equal:inclusive_date_start',

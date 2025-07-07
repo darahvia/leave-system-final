@@ -139,7 +139,6 @@
                     <th>PERIOD</th>
                     <th>VL EARNED</th>
                     <th>SL EARNED</th>
-                    <th>CTO EARNED</th>
                     <th>DATE FILED</th>
                     <th>DATE INCURRED</th>
                     <th>LEAVE INCURRED</th>
@@ -160,7 +159,6 @@
                     <td data-label="PERIOD">BALANCE FORWARDED</td>
                     <td data-label="VL EARNED"></td>
                     <td data-label="SL EARNED"></td>
-                    <td data-label="CTO EARNED"></td>
                     <td data-label="DATE LEAVE FILED"></td>
                     <td data-label="DATE LEAVE INCURRED"></td>
                     <td data-label="LEAVE INCURRED"></td>
@@ -198,11 +196,6 @@
                                     @endif
                                 @endif
                             </td>
-                            <td data-label="CTO EARNED">
-                                @if($app->is_cto_earned) {{-- Assuming 'is_cto_earned' flag --}}
-                                    {{ $app->earned_cto_hours ?? '' }}
-                                @endif
-                            </td>
                             <td data-label="DATE LEAVE FILED">{{ $app->date_filed ? \Carbon\Carbon::parse($app->date_filed)->format('F j, Y') : '' }}</td>
                             <td data-label="DATE LEAVE INCURRED">
                                 @if($app->inclusive_date_start && $app->inclusive_date_end)
@@ -216,33 +209,33 @@
                                 @endif
                             </td>
                             <td data-label="LEAVE INCURRED">
-                                @if(!$app->is_credit_earned && !$app->is_cto_application) {{-- Not earned credit and not CTO application --}}
+                                @if(!$app->is_credit_earned) {{-- Not earned credit and not CTO application --}}
                                     {{ \App\Services\LeaveService::getLeaveTypes()[$app->leave_type] ?? $app->leave_type }}
                                 @endif
                             </td>
 
                             <td data-label="VL">
-                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'VL')
+                                @if(!$app->is_credit_earned && $app->leave_type === 'VL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="SL">
-                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'SL')
+                                @if(!$app->is_credit_earned && $app->leave_type === 'SL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="SPL">
-                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'SPL')
+                                @if(!$app->is_credit_earned && $app->leave_type === 'SPL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="FL">
-                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'FL')
+                                @if(!$app->is_credit_earned && $app->leave_type === 'FL')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
                             <td data-label="SOLO PARENT">
-                                @if(!$app->is_credit_earned && !$app->is_cto_application && $app->leave_type === 'SOLO PARENT')
+                                @if(!$app->is_credit_earned && $app->leave_type === 'SOLO PARENT')
                                     {{ $app->working_days ?? '' }}
                                 @endif
                             </td>
@@ -256,7 +249,7 @@
                             </td>
                             <td data-label="REMARKS">
                                 @if(!$app->is_credit_earned)
-                                    {{ $app->leave_details ?? $app->cto_details ?? '' }}
+                                    {{ $app->leave_details  ?? '' }}
                                 @endif
                             </td>
                             <td data-label="VL BALANCE">{{ $app->current_vl ?? '' }}</td>
@@ -274,19 +267,6 @@
                                             <path d="M8,6V4c0-1,1-2,2-2h4c0-1,1-2,2-2v2"></path>
                                         </svg>
                                     </button>
-
-                                @elseif ($app->is_cto_earned)
-                                    {{-- CTO Credits earned → Only delete --}}
-                                    <button type="button" class="delete-btn" onclick="deleteRecord({{ $app->id }}, 'cto_credit')">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="3,6 5,6 21,6"></polyline>
-                                            <path d="m5,6 1,14c0,1 1,2 2,2h8c1,0 2-1 2-2l1-14"></path>
-                                            <path d="m10,11 0,6"></path>
-                                            <path d="m14,11 0,6"></path>
-                                            <path d="M8,6V4c0-1,1-2,2-2h4c0-1,1-2,2-2v2"></path>
-                                        </svg>
-                                    </button>
-
                                 @elseif ($app->is_cancellation)
                                     {{-- Cancellation → Only edit --}}
                                     <button type="button" class="edit-btn" onclick="editLeaveApplication(
@@ -304,28 +284,6 @@
                                         </svg>
                                     </button>
 
-                                @elseif ($app->is_cto_application)
-                                    {{-- CTO application → Edit and Delete --}}
-                                    <button type="button" class="edit-btn" onclick="editCtoApplication(
-                                        {{ $app->id }},
-                                        '{{ \Carbon\Carbon::parse($app->date_filed)->format('Y-m-d') }}',
-                                        '{{ $app->hours_applied }}',
-                                        '{{ $app->cto_details ?? '' }}'
-                                    )">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M12 12l7-7 3 3-7 7-3 0 0-3z"></path>
-                                        </svg>
-                                    </button>
-                                    <button type="button" class="delete-btn" onclick="deleteRecord({{ $app->id }}, 'cto_application')">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="3,6 5,6 21,6"></polyline>
-                                            <path d="m5,6 1,14c0,1 1,2 2,2h8c1,0 2-1 2-2l1-14"></path>
-                                            <path d="m10,11 0,6"></path>
-                                            <path d="m14,11 0,6"></path>
-                                            <path d="M8,6V4c0-1,1-2,2-2h4c0-1,1-2,2-2v2"></path>
-                                        </svg>
-                                    </button>
 
                                 @else
                                     {{-- Regular leave → Edit, Delete, Cancel --}}

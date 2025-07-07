@@ -23,6 +23,19 @@ class LeaveService
                 $this->getAvailableBalanceAtDate($customer, $leaveType, $leaveDate) . " days");
         }
 
+if (!$leaveApplication && $leaveType === 'fl') {
+    $availableFL = $this->getAvailableBalanceAtDate($customer, 'fl', $leaveDate);
+    $availableVL = $this->getAvailableBalanceAtDate($customer, 'vl', $leaveDate);
+
+    if ($availableFL < $workingDays) {
+        throw new \Exception("Insufficient Force Leave balance. Available FL: {$availableFL} days");
+    }
+
+    if ($availableVL < $workingDays) {
+        throw new \Exception("Insufficient Vacation Leave balance. Available VL: {$availableVL} days");
+    }
+}
+
         if ($leaveApplication) {
             // Update existing leave
             $leaveApplication->update([

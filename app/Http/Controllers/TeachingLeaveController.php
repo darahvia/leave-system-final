@@ -66,13 +66,13 @@ class TeachingLeaveController extends Controller
     public function submitLeave(Request $request)
     {
         $request->validate([
-            'customer_id' => 'required|exists:customer,id',
+            'customer_id' => 'required|exists:customers,id',
             'leave_incurred_date' => 'required|date',
             'leave_incurred_days' => 'required|numeric|min:1|max:365',
         ]);
 
         try {
-            $teaching = Customer::findOrFail($request->customer_id);
+            $customer = Customer::findOrFail($request->customer_id);
 
             // Check if customer has sufficient leave credits
             if ($customer->leave_credits < $request->leave_incurred_days) {
@@ -105,7 +105,7 @@ class TeachingLeaveController extends Controller
         try {
             $request->validate([
                 'edit_id' => 'required|integer|exists:teaching_leave_applications,id',
-                'customer_id' => 'required|integer|exists:customer,id',
+                'customer_id' => 'required|integer|exists:customers,id',
                 'leave_incurred_date' => 'required|date',
                 'leave_incurred_days' => 'required|numeric|min:1|max:365',
             ]);
@@ -152,7 +152,7 @@ class TeachingLeaveController extends Controller
         try {
             $request->validate([
                 'id' => 'required|integer|exists:teaching_leave_applications,id',
-                'customer_id' => 'required|integer|exists:customer,id'
+                'customer_id' => 'required|integer|exists:customers,id'
             ]);
 
             $leaveApplication = TeachingLeaveApplications::findOrFail($request->id);
@@ -195,9 +195,10 @@ class TeachingLeaveController extends Controller
     public function addCreditsEarned(Request $request)
     {
         $request->validate([
-            'customer_id' => 'required|exists:customer,id',
+            'customer_id' => 'required|exists:customers,id',
             'credits_to_add' => 'required|numeric|min:0.01|max:50',
             'earned_date' => 'required|string',
+            'event' => 'nullable|string|max:255',
             'special_order' => 'nullable|string|max:255',
             'reference' => 'nullable|string|max:255'
         ]);
@@ -213,6 +214,7 @@ class TeachingLeaveController extends Controller
             TeachingEarnedCredits::create([
                 'customer_id' => $customer->id,
                 'earned_date' => $request->earned_date,
+                'event' => $request->event,
                 'days' => $request->credits_to_add,
                 'reference' => $request->reference ?? 'CREDIT_EARNED',
                 'special_order' => $request->special_order ?? 'Leave credits earned',

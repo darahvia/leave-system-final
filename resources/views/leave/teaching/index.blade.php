@@ -26,9 +26,8 @@
         }
         
         .tab-button.active {
-            background-color: #007bff;
+            background-color: #1e40af;
             color: white;
-            border-color: #007bff;
         }
         
         .tab-button:hover:not(.active) {
@@ -80,15 +79,7 @@
         </div>
     </div>
 
-    <!-- Tabs Section -->
-    @if($customer)
-        <div class="tabs-container">
-            <div class="tabs">
-                <button class="tab-button active" onclick="switchTab('old')">Old (Before Sept 14, 2024)</button>
-                <button class="tab-button" onclick="switchTab('new')">New (After Sept 14, 2024)</button>
-            </div>
-        </div>
-    @endif
+
 
     <!-- Customer Details Table -->
     @if($customer)
@@ -128,6 +119,16 @@
         </div>
     @endif
 
+    <!-- Tabs Section -->
+    @if($customer)
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('old')">Old (Before Sept 14, 2024)</button>
+                <button class="tab-button" onclick="switchTab('new')">New (After Sept 14, 2024)</button>
+            </div>
+        </div>
+    @endif
+
     <!-- Tab Content for Old Records -->
     @if($customer)
         <div id="old-tab" class="tab-content active">
@@ -140,6 +141,8 @@
                     <div class="emp-form">
                         <label>Earned Date:</label>
                         <input type="date" name="earned_date" required>
+                        <label>Event:</label>
+                        <input type="text" name="event" required>
                         <label>Special Order:</label>
                         <input type="text" name="special_order" id="special_order">
                         <label>Number of days:</label>

@@ -1,5 +1,7 @@
 {
     "/js/app.js": "/js/app.js",
-    "/css/app.css": "/css/app.css",
+    "/css/form.css": "/css/form.css",
+    "/css/leave.css": "/css/leave.css",
+    "/js/cto-form.js": "/js/cto-form.js",
     "/js/leave-form.js": "/js/leave-form.js"
 }

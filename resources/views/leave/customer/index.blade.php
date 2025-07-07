@@ -117,9 +117,11 @@
                     <label>Leave Type:</label>
                     <select name="leave_type" class="form-control" required>
                         @foreach ($leaveTypes as $code => $label)
-                            <option value="{{ $code }}" {{ old('leave_type') == $code ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
+                            @if (!in_array($code, ['vl', 'sl']))
+                                <option value="{{ $code }}" {{ old('leave_type') == $code ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                            @endif
                         @endforeach
                     </select>
 

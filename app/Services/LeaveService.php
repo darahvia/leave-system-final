@@ -16,6 +16,19 @@ class LeaveService
         $leaveType = strtolower($leaveData['leave_type']);
         $workingDays = $leaveData['working_days'];
         $leaveDate = $leaveData['inclusive_date_start'] ?? $leaveData['date_filed'];
+    
+        if (!$leaveApplication && $leaveType === 'fl') {
+            $availableFL = $this->getAvailableBalanceAtDate($customer, 'fl', $leaveDate);
+            $availableVL = $this->getAvailableBalanceAtDate($customer, 'vl', $leaveDate);
+
+        if ($availableFL < $workingDays && $availableVL < $workingDays) {
+            throw new \Exception("Insufficient Force and Vacation Leave balance. Available FL: {$availableFL}, VL: {$availableVL}");
+        } elseif ($availableFL < $workingDays) {
+            throw new \Exception("Insufficient Force Leave balance. Available FL: {$availableFL}");
+        } elseif ($availableVL < $workingDays) {
+            throw new \Exception("Insufficient Vacation Leave balance. Available VL: {$availableVL}");
+        }
+        }
 
         // For new applications, check if customer has sufficient leave balance
         if (!$leaveApplication && !$this->hasSufficientBalance($customer, $leaveType, $workingDays, $leaveDate)) {
@@ -23,18 +36,7 @@ class LeaveService
                 $this->getAvailableBalanceAtDate($customer, $leaveType, $leaveDate) . " days");
         }
 
-if (!$leaveApplication && $leaveType === 'fl') {
-    $availableFL = $this->getAvailableBalanceAtDate($customer, 'fl', $leaveDate);
-    $availableVL = $this->getAvailableBalanceAtDate($customer, 'vl', $leaveDate);
 
-    if ($availableFL < $workingDays) {
-        throw new \Exception("Insufficient Force Leave balance. Available FL: {$availableFL} days");
-    }
-
-    if ($availableVL < $workingDays) {
-        throw new \Exception("Insufficient Vacation Leave balance. Available VL: {$availableVL} days");
-    }
-}
 
         if ($leaveApplication) {
             // Update existing leave

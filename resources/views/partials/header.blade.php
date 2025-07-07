@@ -81,24 +81,6 @@
         </table>
     </div>
 
-<div class="modal-bg" id="otherCreditsModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:999;">
-            <div class="modal-content" style="background:#fff; margin:5% auto; padding:20px; border-radius:8px; max-width:400px; position:relative;">
-                <button class="close" onclick="closeOtherCreditsModal()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:20px;">&times;</button>
-                <h3>Other Leave Credits</h3>
-                @php
-                    $balances = app(\App\Services\LeaveService::class)->getCurrentBalances($customer);
-                @endphp
-                <ul style="list-style:none; padding:0;">
-                    @foreach ($balances as $type => $value)
-                        @if (!in_array($type, ['vl', 'sl', 'vawc']))
-                            <li>{{ \App\Services\LeaveService::getLeaveTypes()[strtoupper($type)] ?? ucfirst(str_replace('_', ' ', $type)) }}: <strong>{{ $value }}</strong></li>
-                        @endif
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-
-
     <div class="modal-bg" id="otherCreditsModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:999;">
         <div class="modal-content" style="background:#fff; margin:5% auto; padding:20px; border-radius:8px; max-width:400px; position:relative;">
             <button class="close" onclick="closeOtherCreditsModal()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:20px;">&times;</button>
@@ -108,7 +90,7 @@
             @endphp
             <ul style="list-style:none; padding:0;">
                 @foreach ($balances as $type => $value)
-                    @if (!in_array($type, ['vl', 'sl', 'vawc']))
+                    @if (!in_array($type, ['vl', 'sl']))
                         <li>{{ \App\Services\LeaveService::getLeaveTypes()[strtoupper($type)] ?? ucfirst(str_replace('_', ' ', $type)) }}: <strong>{{ $value }}</strong></li>
                     @endif
                 @endforeach

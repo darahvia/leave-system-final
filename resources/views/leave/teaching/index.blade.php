@@ -72,7 +72,7 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </button>
-                    <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Teaching Customer...">
+                    <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Teaching Employee...">
                     <div id="suggestions"></div>
                 </div>
             </form>
@@ -123,8 +123,10 @@
     @if($customer)
         <div class="tabs-container">
             <div class="tabs">
-                <button class="tab-button active" onclick="switchTab('old')">Old (Before Sept 14, 2024)</button>
-                <button class="tab-button" onclick="switchTab('new')">New (After Sept 14, 2024)</button>
+                <button class="tab-button active" onclick="switchTab('old')">Old (Before October 1
+                    , 2024)</button>
+                <button class="tab-button" onclick="switchTab('new')">New (After October 1
+                    , 2024)</button>
             </div>
         </div>
     @endif
@@ -173,7 +175,7 @@
             <div style="display: flex; gap: 20px; align-items: flex-start;">
                 <!-- Left Table: Credits Earned (Old) -->
                 <div style="flex: 1;">
-                    <h3>Credits Earned (Before Sept 14, 2024)</h3>
+                    <h3>Credits Earned (Before Oct 1, 2024)</h3>
                     <table class="leave-table">
                         <thead>
                             <tr>
@@ -188,7 +190,7 @@
                         <tbody>
                             @if($teachingEarnedCredits && $teachingEarnedCredits->count())
                                 @foreach($teachingEarnedCredits->filter(function($credit) {
-                                    return \Carbon\Carbon::parse($credit->earned_date)->lt(\Carbon\Carbon::parse('2024-09-14'));
+                                    return \Carbon\Carbon::parse($credit->earned_date)->lt(\Carbon\Carbon::parse('2024-10-01'));
                                 })->sortBy('earned_date') as $credit)
                                     <tr>
                                         <td data-label="EARNED DATE">{{ $credit->earned_date }}</td>
@@ -218,7 +220,8 @@
 
                 <!-- Right Table: Leave Usage (Old) -->
                 <div style="flex: 1;">
-                    <h3>Leave Usage (Before Sept 14, 2024)</h3>
+                    <h3>Leave Usage (Before October 1
+                        , 2024)</h3>
                     <table class="leave-table">
                         <thead>
                             <tr>
@@ -238,7 +241,7 @@
                             
                             @if($teachingLeaveApplications && $teachingLeaveApplications->count())
                                 @foreach($teachingLeaveApplications->filter(function($app) {
-                                    return \Carbon\Carbon::parse($app->leave_incurred_date)->lt(\Carbon\Carbon::parse('2024-09-14'));
+                                    return \Carbon\Carbon::parse($app->leave_incurred_date)->lt(\Carbon\Carbon::parse('2024-10-01'));
                                 })->sortBy('leave_incurred_date') as $app)
                                     <tr>
                                         <td data-label="DATE">{{ $app->leave_incurred_date ? \Carbon\Carbon::parse($app->leave_incurred_date)->format('F j, Y') : '' }}</td>
@@ -320,7 +323,8 @@
             <div style="display: flex; gap: 20px; align-items: flex-start;">
                 <!-- Left Table: Credits Earned (New) -->
                 <div style="flex: 1;">
-                    <h3>Credits Earned (After Sept 14, 2024)</h3>
+                    <h3>Credits Earned (After October 1
+                        , 2024)</h3>
                     <table class="leave-table">
                         <thead>
                             <tr>
@@ -335,7 +339,7 @@
                         <tbody>
                             @if($teachingEarnedCredits && $teachingEarnedCredits->count())
                                 @foreach($teachingEarnedCredits->filter(function($credit) {
-                                    return \Carbon\Carbon::parse($credit->earned_date)->gte(\Carbon\Carbon::parse('2024-09-14'));
+                                    return \Carbon\Carbon::parse($credit->earned_date)->gte(\Carbon\Carbon::parse('2024-10-01'));
                                 })->sortBy('earned_date') as $credit)
                                     <tr>
                                         <td data-label="EARNED DATE">{{ $credit->earned_date }}</td>
@@ -365,7 +369,8 @@
 
                 <!-- Right Table: Leave Usage (New) -->
                 <div style="flex: 1;">
-                    <h3>Leave Usage (After Sept 14, 2024)</h3>
+                    <h3>Leave Usage (After October 1
+                        , 2024)</h3>
                     <table class="leave-table">
                         <thead>
                             <tr>
@@ -385,7 +390,7 @@
                             
                             @if($teachingLeaveApplications && $teachingLeaveApplications->count())
                                 @foreach($teachingLeaveApplications->filter(function($app) {
-                                    return \Carbon\Carbon::parse($app->leave_incurred_date)->gte(\Carbon\Carbon::parse('2024-09-14'));
+                                    return \Carbon\Carbon::parse($app->leave_incurred_date)->gte(\Carbon\Carbon::parse('2024-10-01'));
                                 })->sortBy('leave_incurred_date') as $app)
                                     <tr>
                                         <td data-label="DATE">{{ $app->leave_incurred_date ? \Carbon\Carbon::parse($app->leave_incurred_date)->format('F j, Y') : '' }}</td>

@@ -6,7 +6,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
-
     <style>
         .tab-nav {
             display: flex;
@@ -121,7 +120,7 @@
                                 <option value="{{ $code }}" {{ old('leave_type') == $code ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
-                            @endifS
+                            @endif
                         @endforeach
                     </select>
 

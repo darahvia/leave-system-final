@@ -22,6 +22,7 @@
     </div>
 
     <div class="search-bar-section">
+        <a href="{{ route('leave.select') }}" class="home-button">Home</a>
         <form method="POST" action="{{ route('customer.find') }}" class="search-form" autocomplete="off">
             @csrf
             <input type="hidden" name="redirect_to" value="{{ request()->routeIs('cto.index') ? 'cto' : 'leave' }}">
@@ -32,7 +33,7 @@
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                 </button>
-                <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Customer...">
+                <input type="text" name="name" id="customer-search" autocomplete="off" required placeholder="Find Employee...">
                 <div id="suggestions"></div>
             </div>
         </form>

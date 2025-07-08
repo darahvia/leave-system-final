@@ -20,7 +20,6 @@ class Customer extends Model
         'surname', 'given_name', 'middle_name', 'division', 'designation', 
     ];
 
-
     protected $hidden = ['created_at', 'updated_at'];
 
     protected $casts = [
@@ -33,7 +32,6 @@ class Customer extends Model
         return $this->belongsTo(Office::class)->withDefault();
     }
     
-
     public function position()
     {
         return $this->belongsTo(Position::class)->withDefault();
@@ -43,10 +41,12 @@ class Customer extends Model
     {
         return $this->belongsTo(User::class);
     }
+    
     public function leaveApplications()
     {
         return $this->hasMany(LeaveApplication::class);
     }
+    
     public function ctoApplications()
     {
         return $this->hasMany(CtoApplication::class);
@@ -59,13 +59,23 @@ class Customer extends Model
 
     public function getCurrentLeaveBalance($leaveType)
     {
-        $lastApplication = $this->leaveApplications()->latest()->first();
-
         switch (strtolower($leaveType)) {
             case 'vl':
+                // Get the latest leave application ordered by date_filed
+                $lastApplication = $this->leaveApplications()
+                    ->orderBy('date_filed', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->first();
                 return $lastApplication ? $lastApplication->current_vl : $this->balance_forwarded_vl;
+                
             case 'sl':
+                // Get the latest leave application ordered by date_filed
+                $lastApplication = $this->leaveApplications()
+                    ->orderBy('date_filed', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->first();
                 return $lastApplication ? $lastApplication->current_sl : $this->balance_forwarded_sl;
+                
             case 'spl':
                 return $this->spl ?? 0;
             case 'fl':
@@ -87,7 +97,7 @@ class Customer extends Model
             case 'vawc':
                 return $this->vawc ?? 0;
             case 'adopt':
-                return $this->adopt;
+                return $this->adopt ?? 0;
             default:
                 return 0;
         }
@@ -99,6 +109,14 @@ class Customer extends Model
     public function deductLeave($leaveType, $days)
     {
         switch (strtolower($leaveType)) {
+            case 'vl':
+                // VL is handled through leave applications, not direct customer balance
+                // This method is called for updating the running balance calculation
+                break;
+            case 'sl':
+                // SL is handled through leave applications, not direct customer balance
+                // This method is called for updating the running balance calculation
+                break;
             case 'cto':
                 $this->cto = max(0, ($this->cto ?? 0) - $days);
                 break;
@@ -133,7 +151,7 @@ class Customer extends Model
                 $this->vawc = max(0, ($this->vawc ?? 0) - $days);
                 break;
             case 'adopt':
-                $this->adopt = max(0, $this->adopt - $days);
+                $this->adopt = max(0, ($this->adopt ?? 0) - $days);
                 break;
         }
        
@@ -146,6 +164,14 @@ class Customer extends Model
     public function addLeaveCredits($leaveType, $days)
     {
         switch (strtolower($leaveType)) {
+            case 'vl':
+                // VL is handled through leave applications, not direct customer balance
+                // This method is called for updating the running balance calculation
+                break;
+            case 'sl':
+                // SL is handled through leave applications, not direct customer balance
+                // This method is called for updating the running balance calculation
+                break;
             case 'cto':
                 $this->cto = ($this->cto ?? 0) + $days;
                 break;
@@ -187,8 +213,6 @@ class Customer extends Model
         $this->save();
     }
 
-
-
     /**
      * Get current CTO balance
      */
@@ -200,8 +224,6 @@ class Customer extends Model
             ->orderBy('id', 'desc')
             ->first();
 
-
         return $latestRecord ? $latestRecord->balance : 0;
     }
-
 }

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Customer; // Corrected namespace
-use App\LeaveApplication; // ADDED: If you still need this model here, confirm its namespace is App
-use App\CtoApplication; // Corrected namespace
-use App\CtoCreditUsage; // Corrected namespace
+use App\Customer;
+use App\LeaveApplication; // Ensure this is needed/correct, otherwise remove.
+use App\CtoApplication;
+use App\CtoCreditUsage;
 use App\Services\CtoService;
-use App\Services\LeaveService; // For LeaveService::getLeaveTypes()
+use App\Services\LeaveService; // Ensure this is needed/correct, otherwise remove.
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +30,9 @@ class CtoController extends Controller
     public function index(Request $request)
     {
         $customer = null; // Initialize customer as null
-        $leaveTypes = LeaveService::getLeaveTypes(); // Used for tab navigation in Blade, consistent with LeaveController
+        // Ensure LeaveService::getLeaveTypes() is used correctly if it exists and is needed here.
+        // Otherwise, remove $leaveTypes or its usage if it's not actually for the CTO view.
+        $leaveTypes = LeaveService::getLeaveTypes(); 
 
         if ($request->has('customer_id')) {
             $customer = Customer::find($request->customer_id);
@@ -40,7 +42,6 @@ class CtoController extends Controller
                 $this->ctoService->recalculateBalancesForCustomer($customer);
 
                 // Reload the ctoApplications relationship on the Customer model
-                // Ensure 'ctoApplications' relationship is defined on your Customer model
                 $customer->load('ctoApplications');
             } else {
                 // If customer_id is provided but customer not found, redirect with error
@@ -48,8 +49,7 @@ class CtoController extends Controller
             }
         }
 
-        // CORRECTED LINE: Assign $this->ctoService to a local variable $ctoService
-        $ctoService = $this->ctoService; // <-- THIS IS THE FIX
+        $ctoService = $this->ctoService;
 
         return view('cto.index', compact('customer', 'ctoService', 'leaveTypes'));
     }
@@ -71,7 +71,7 @@ class CtoController extends Controller
             'hours_earned' => 'required|numeric|min:0', // Matches blade form input name
             'date_of_activity_start' => 'required|date',
             'date_of_activity_end' => $isSingleDayActivity ? 'nullable|date' : 'required|date|after_or_equal:date_of_activity_start',
-            'is_cto_earned' => 'required|boolean',
+            'is_cto_earned' => 'required|boolean', // This field is likely not actually sent from the form but set as hidden input.
         ];
 
         try {
@@ -90,9 +90,9 @@ class CtoController extends Controller
                 'date_of_activity_start' => $request->date_of_activity_start,
                 'date_of_activity_end' => $endDateForStorage,
                 'activity' => $request->activity,
-                'credits_earned' => (float)$request->hours_earned, // Store into 'credits_earned' column of CtoApplication
+                'credits_earned' => (float)$request->hours_earned,
                 'is_activity' => true,
-                'date_filed' => $request->date_of_activity_start, // Add date_filed for sorting
+                'date_filed' => $request->date_of_activity_start, // Add date_filed for sorting/consistency
             ];
 
             $ctoApplication = $this->ctoService->processCtoActivity($customer, $activityData);
@@ -128,12 +128,12 @@ class CtoController extends Controller
 
         $validationRules = [
             'customer_id' => 'required|exists:customers,id',
-            'date_filed' => 'required|date', // From blade form
-            'inclusive_date_start' => 'required|date', // From blade form
-            'inclusive_date_end' => $isSingleDayAbsence ? 'nullable|date' : 'required|date|after_or_equal:inclusive_date_start', // From blade form
-            'hours_applied' => 'required|numeric|min:0.01', // From blade form
-            'cto_details' => 'nullable|string|max:255', // From blade form
-            'is_cto_application' => 'required|boolean',
+            'date_filed' => 'required|date',
+            'inclusive_date_start' => 'required|date',
+            'inclusive_date_end' => $isSingleDayAbsence ? 'nullable|date' : 'required|date|after_or_equal:inclusive_date_start',
+            'hours_applied' => 'required|numeric|min:0.01',
+            'cto_details' => 'nullable|string|max:255',
+            'is_cto_application' => 'required|boolean', // This field is likely not actually sent from the form but set as hidden input.
         ];
 
         try {
@@ -158,11 +158,11 @@ class CtoController extends Controller
             }
 
             $usageData = [
-                'date_of_absence_start' => $startDate->toDateString(), // Corresponds to CtoApplication field
-                'date_of_absence_end' => $endDateForStorage, // Corresponds to CtoApplication field
-                'no_of_days' => $hoursToDeduct, // Stores hours_applied into CtoApplication's 'no_of_days'
-                'cto_details' => $request->cto_details, // Corresponds to CtoApplication field
-                'date_filed' => $request->date_filed, // Corresponds to CtoApplication field
+                'date_of_absence_start' => $startDate->toDateString(),
+                'date_of_absence_end' => $endDateForStorage,
+                'no_of_days' => $hoursToDeduct,
+                'cto_details' => $request->cto_details,
+                'date_filed' => $request->date_filed,
                 'is_activity' => false,
             ];
 
@@ -207,8 +207,8 @@ class CtoController extends Controller
         $ctoRecord = CtoApplication::findOrFail($request->edit_id);
 
         // Verify record type to apply correct validation/processing
-        $isCtoEarned = $ctoRecord->is_activity; // Check existing record's type
-        $isCtoApplication = !$ctoRecord->is_activity; // Check existing record's type
+        $isCtoEarned = $ctoRecord->is_activity;
+        $isCtoApplication = !$ctoRecord->is_activity;
 
         if ($ctoRecord->customer_id != $request->customer_id) {
             return back()->with('error', 'Unauthorized access to CTO record.');
@@ -235,7 +235,7 @@ class CtoController extends Controller
                 'date_of_activity_end' => $endDateForStorage,
                 'activity' => $request->activity,
                 'credits_earned' => (float)$request->hours_earned,
-                'date_filed' => $request->date_of_activity_start, // Update date_filed as well
+                'date_filed' => $request->date_of_activity_start,
             ];
 
             $this->ctoService->processCtoActivity($customer, $activityData, $ctoRecord);
@@ -274,30 +274,33 @@ class CtoController extends Controller
 
     /**
      * Delete CTO record.
-     * This method expects 'id' in the request body, not route model binding.
-     * Relies on CtoService for processing and recalculation.
+     * This method is called via AJAX. It returns JSON response, not redirect.
      */
-    public function deleteCtoRecord(Request $request)
+    public function deleteCtoRecord(Request $request, $id) // Getting $id from URL parameter
     {
-        Log::info('CTO Delete Request Data:', $request->all());
-
-        $request->validate([
-            'id' => 'required|integer',
-        ]);
+        Log::info('CTO Delete Request for ID from URL:', ['id' => $id]);
 
         try {
-            $ctoApplication = CtoApplication::findOrFail($request->id);
+            $ctoApplication = CtoApplication::findOrFail($id);
+            $customerId = $ctoApplication->customer_id; // Get customer ID before deletion
             $this->ctoService->deleteCtoRecord($ctoApplication);
-            return response()->json(['success' => true, 'message' => 'CTO record deleted successfully!']);
+
+            // Return JSON success for AJAX call with message and customer_id
+            return response()->json([
+                'success' => true, 
+                'message' => 'CTO record deleted successfully!', 
+                'customer_id' => $customerId // Pass customer_id back to JS
+            ]);
+
         } catch (\Exception $e) {
             Log::error('CTO Delete Error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            // Always return JSON errors for AJAX calls
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
     /**
      * Get CTO data for editing (AJAX).
-     * This method assumes route model binding is NOT used for edit (ID from request)
      */
     public function edit(Request $request)
     {
@@ -321,3 +324,4 @@ class CtoController extends Controller
         return response()->json(['days' => $days]);
     }
 }
+ // for pull request

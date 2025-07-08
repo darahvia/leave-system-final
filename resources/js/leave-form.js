@@ -553,4 +553,4 @@ window.deleteRecord = deleteRecord;
 window.deleteRecordWithForm = deleteRecordWithForm;
 window.cancelEdit = cancelEdit;
 window.cancelLeaveApplication = cancelLeaveApplication;
-window.isCancelling = () => isCancelling;
+window.isCancelling = () => isCancelling; //for pull request

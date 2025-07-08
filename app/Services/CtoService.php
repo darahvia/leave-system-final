@@ -484,4 +484,4 @@ class CtoService
 
         return (float)($totalEarned - $totalUsed + $customer->balance_forwarded_cto);
     }
-}
+} //for pull req

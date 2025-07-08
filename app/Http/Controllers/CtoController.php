@@ -324,3 +324,4 @@ class CtoController extends Controller
         return response()->json(['days' => $days]);
     }
 }
+// Note: Ensure that the CtoService and LeaveService are correctly implemented to handle the logic as expected.

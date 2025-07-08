@@ -456,9 +456,9 @@
                 }
                 // Use history.replaceState to change URL without reloading the page again
                 window.history.replaceState({}, document.title, newUrl);
-            }
+            } // for pull req
         });
     </script>
     <script src="{{ asset('js/cto-form.js') }}"></script>
 </body>
-</html>
+</html> 

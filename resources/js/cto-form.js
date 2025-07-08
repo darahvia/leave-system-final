@@ -508,4 +508,4 @@ $(document).ready(function() {
         modalOverlay.style.display = 'flex';
     }
 
-}); // End of document.ready //for pull request
+}); // End of document.ready //for pull request 

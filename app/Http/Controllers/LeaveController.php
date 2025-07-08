@@ -36,18 +36,18 @@ class LeaveController extends Controller
         }
 
 
-        public function findCustomer(Request $request)
-        {
-            $customer = Customer::whereRaw("CONCAT(surname, ', ', given_name, ' ', middle_name) = ?", [$request->name])
-                ->first();
+    public function findCustomer(Request $request)
+    {
+        $customer = Customer::whereRaw("CONCAT(surname, ', ', given_name, CASE WHEN middle_name IS NOT NULL AND middle_name != '' THEN CONCAT(' ', middle_name) ELSE '' END) = ?", [$request->name])
+            ->first(); // empty middle name
 
-            if ($customer) {
-                return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
-            }
-
-            return redirect()->route('leave.customer.index')
-                ->with('error', '❌ Customer not found.');
+        if ($customer) {
+            return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
         }
+
+        return redirect()->route('leave.customer.index')
+            ->with('error', '❌ Customer not found.');
+    }
 
 
         public function submitLeave(Request $request)
@@ -173,18 +173,18 @@ class LeaveController extends Controller
             $request->validate([
                 'customer_id' => 'required|exists:customers,id',
                 'earned_date' => 'required|date',
+                'earned_vl' => 'required|numeric|min:0',
+                'earned_sl' => 'required|numeric|min:0',
             ]);
 
             try {
                 $customer = Customer::find($request->customer_id);
-
                 $this->leaveService->addCreditsEarned(
                     $customer,
                     $request->earned_date,
-                    1.25, // VL credits
-                    1.25  // SL credits
+                    $request->earned_vl, // Use input value
+                    $request->earned_sl  // Use input value
                 );
-
                 return redirect()->route('leave.customer.index', ['customer_id' => $request->customer_id])
                     ->with('success', '✅ Leave credits added successfully!');
 

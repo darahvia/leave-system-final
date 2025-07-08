@@ -44,13 +44,11 @@
     @php
         $latestApp = $customer->leaveApplications->last();
 
-    $latestCtoApp = $customer->leaveApplications
-        ->where('leave_type', 'cto')
-        ->sortBy([
-            ['date_of_activity_start', 'desc'],
-            ['date_of_absence_start', 'desc'],
-        ])
-        ->first();
+$latestCtoApp = $customer->ctoApplications
+    ->sortByDesc('date_of_activity_start')
+    ->sortByDesc('date_of_absence_start')
+    ->first();
+
 
 
     @endphp
@@ -76,7 +74,7 @@
                 <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
                 <td class="label">CTO BALANCE</td>
 <td class="value">
-    {{ $latestCtoApp ? number_format($latestCtoApp->current_cto, 1) : number_format($ctoService->getEligibleCtoBalance($customer), 1) }}
+    {{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : number_format($ctoService->getEligibleCtoBalance($customer), 1) }}
 </td>
             </tr>
             <tr>

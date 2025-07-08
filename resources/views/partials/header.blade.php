@@ -45,9 +45,11 @@
         $latestApp = $customer->leaveApplications->last();
 
 $latestCtoApp = $customer->ctoApplications
-    ->sortByDesc('date_of_activity_start')
-    ->sortByDesc('date_of_absence_start')
+    ->sortByDesc(function ($app) {
+        return $app->date_of_activity_start . $app->date_of_absence_start;
+    })
     ->last();
+
 
 
 

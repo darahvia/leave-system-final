@@ -47,7 +47,7 @@
 $latestCtoApp = $customer->ctoApplications
     ->sortByDesc('date_of_activity_start')
     ->sortByDesc('date_of_absence_start')
-    ->first();
+    ->last();
 
 
 

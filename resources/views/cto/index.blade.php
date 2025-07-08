@@ -88,6 +88,7 @@
 </head>
 <body>
     <div class="page-wrapper">
+        {{-- These are for initial page load errors/successes passed via Laravel's session flashes --}}
         @if(session('success'))
             <div class="success">{{ session('success') }}</div>
         @endif
@@ -103,7 +104,7 @@
             <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
         </div>
 
-        {{-- Add Customer Modal - Changed ID and route --}}
+        {{-- Add Customer Modal --}}
         <div class="modal-bg" id="addCustomerModal">
             <div class="modal-content">
                 <button class="close" id="closeAddCustomerModal">&times;</button>
@@ -125,7 +126,7 @@
 
                         <div class="form-right">
                             <label>Original Appointment:</label>
-                            <input type="date" name="original_appointment"> {{-- Changed type to date --}}
+                            <input type="date" name="original_appointment">
                             <label>Salary:</label>
                             <input type="number" step="0.01" name="salary" required>
 
@@ -133,7 +134,7 @@
                             <input type="number" step="0.01" name="balance_forwarded_vl" required>
                             <label>Sick Leave Forwarded Balance:</label>
                             <input type="number" step="0.01" name="balance_forwarded_sl" required>
-                            <label>CTO Forwarded Balance:</label> {{-- Added CTO forwarded balance --}}
+                            <label>CTO Forwarded Balance:</label>
                             <input type="number" step="0.01" name="balance_forwarded_cto" required>
                             <div style="height: 1rem;"></div>
 
@@ -144,19 +145,17 @@
             </div>
         </div>
 
-        {{-- Employee Details Table - Changed variable to $customer --}}
+        {{-- Employee Details Table --}}
         @if($customer)
-
             <div class="bottom-section">
                 <div class="form-section">
                     <h4>Add CTO Activity (Credits Earned)</h4>
-                    {{-- Updated action route to cto.credits --}}
                     <form method="POST" action="{{ route('cto.credits') }}" id="activity-form">
                         @csrf
                         <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                         <input type="hidden" name="edit_id" id="activity_cto_id" value="">
                         <input type="hidden" name="_method" id="activity_form_method" value="POST">
-                        <input type="hidden" name="is_cto_earned" value="1"> {{-- Flag to identify as earned credit --}}
+                        <input type="hidden" name="is_cto_earned" value="1">
 
                         <div class="emp-form">
                             <label>Special Order:</label>
@@ -179,20 +178,19 @@
                             <input type="date" name="date_of_activity_end" id="activity-end-date">
 
                             <button type="submit" id="submit-activity-btn">Add CTO Activity</button>
-                            <button type="button" id="cancel-activity-edit-btn" onclick="cancelCtoActivityEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
+                            <button type="button" id="cancel-activity-edit-btn" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                         </div>
                     </form>
                 </div>
 
                 <div class="form-section">
                     <h4>Add CTO Usage (Credits Deducted)</h4>
-                    {{-- Updated action route to cto.submit --}}
                     <form method="POST" action="{{ route('cto.submit') }}" id="usage-form">
                         @csrf
                         <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                         <input type="hidden" name="edit_id" id="usage_cto_id" value="">
                         <input type="hidden" name="_method" id="usage_form_method" value="POST">
-                        <input type="hidden" name="is_cto_application" value="1"> {{-- Flag to identify as CTO application --}}
+                        <input type="hidden" name="is_cto_application" value="1">
 
                         <div class="emp-form">
                             <label>
@@ -212,7 +210,7 @@
                             <input type="number" name="hours_applied" id="hours_applied_usage" step="0.01" required>
 
                             <button type="submit" id="submit-usage-btn">Add CTO Usage</button>
-                            <button type="button" id="cancel-usage-edit-btn" onclick="cancelCtoUsageEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
+                            <button type="button" id="cancel-usage-edit-btn" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                         </div>
                     </form>
                 </div>
@@ -251,6 +249,97 @@
                             } else {
                                 $rowClass = 'cto-absence';
                             }
+
+                            // --- Start: More Robust Data Preparation for JSON encoding ---
+
+                            // Sanitize string fields by explicitly casting to string and using null coalesce
+                            $specialOrder = (string)($cto->special_order ?? '');
+                            $activityName = (string)($cto->activity ?? '');
+                            $ctoDetails = (string)($cto->cto_details ?? ''); // Ensure cto_details is handled if it exists
+
+                            // Sanitize numeric fields by explicitly casting to float and using null coalesce
+                            $creditsEarnedValue = (float)($cto->credits_earned ?? 0.00);
+                            $noOfDaysUsageValue = (float)($cto->no_of_days ?? 0.00);
+                            $creditsEarnedFormatted = number_format($creditsEarnedValue, 2);
+                            $noOfDaysUsageFormatted = number_format($noOfDaysUsageValue, 2);
+
+                            // Safely format dates for passing to JavaScript (empty string if null/invalid)
+                            // This checks if it's already a Carbon instance, then if it's not null/empty but not Carbon, attempts to parse.
+                            // Finally, defaults to empty string if anything fails or is null.
+                            $dateOfActivityStartFormatted = '';
+                            if ($cto->date_of_activity_start instanceof \Carbon\Carbon) {
+                                $dateOfActivityStartFormatted = $cto->date_of_activity_start->format('Y-m-d');
+                            } elseif ($cto->date_of_activity_start) {
+                                try {
+                                    $dateOfActivityStartFormatted = \Carbon\Carbon::parse($cto->date_of_activity_start)->format('Y-m-d');
+                                } catch (\Exception $e) {
+                                    // Log error if date parsing fails for debugging
+                                    \Illuminate\Support\Facades\Log::warning("Could not parse date_of_activity_start for CTO ID {$cto->id}: {$cto->date_of_activity_start}");
+                                }
+                            }
+
+                            $dateOfActivityEndFormatted = '';
+                            if ($cto->date_of_activity_end instanceof \Carbon\Carbon) {
+                                $dateOfActivityEndFormatted = $cto->date_of_activity_end->format('Y-m-d');
+                            } elseif ($cto->date_of_activity_end) {
+                                try {
+                                    $dateOfActivityEndFormatted = \Carbon\Carbon::parse($cto->date_of_activity_end)->format('Y-m-d');
+                                } catch (\Exception $e) {
+                                    \Illuminate\Support\Facades\Log::warning("Could not parse date_of_activity_end for CTO ID {$cto->id}: {$cto->date_of_activity_end}");
+                                }
+                            }
+
+                            $dateOfAbsenceStartFormatted = '';
+                            if ($cto->date_of_absence_start instanceof \Carbon\Carbon) {
+                                $dateOfAbsenceStartFormatted = $cto->date_of_absence_start->format('Y-m-d');
+                            } elseif ($cto->date_of_absence_start) {
+                                try {
+                                    $dateOfAbsenceStartFormatted = \Carbon\Carbon::parse($cto->date_of_absence_start)->format('Y-m-d');
+                                } catch (\Exception $e) {
+                                    \Illuminate\Support\Facades\Log::warning("Could not parse date_of_absence_start for CTO ID {$cto->id}: {$cto->date_of_absence_start}");
+                                }
+                            }
+
+                            $dateOfAbsenceEndFormatted = '';
+                            if ($cto->date_of_absence_end instanceof \Carbon\Carbon) {
+                                $dateOfAbsenceEndFormatted = $cto->date_of_absence_end->format('Y-m-d');
+                            } elseif ($cto->date_of_absence_end) {
+                                try {
+                                    $dateOfAbsenceEndFormatted = \Carbon\Carbon::parse($cto->date_of_absence_end)->format('Y-m-d');
+                                } catch (\Exception $e) {
+                                    \Illuminate\Support\Facades\Log::warning("Could not parse date_of_absence_end for CTO ID {$cto->id}: {$cto->date_of_absence_end}");
+                                }
+                            }
+                            // --- End: More Robust Data Preparation for JSON encoding ---
+
+
+                            // Create data objects for JSON encoding
+                            $activityData = [
+                                'id' => $cto->id,
+                                'is_activity' => true,
+                                'special_order' => $specialOrder,
+                                'activity' => $activityName,
+                                'hours_earned_or_applied' => $creditsEarnedFormatted,
+                                'date_start' => $dateOfActivityStartFormatted,
+                                'date_end' => $dateOfActivityEndFormatted,
+                                'no_of_days_usage_unused' => '0', // Placeholder
+                                'date_of_absence_start' => '', // Not applicable for activity
+                                'date_of_absence_end' => '',   // Not applicable for activity
+                            ];
+
+                            $usageData = [
+                                'id' => $cto->id,
+                                'is_activity' => false,
+                                'special_order' => '', // Not applicable for usage
+                                'activity' => '', // Not applicable for usage
+                                'hours_earned_or_applied' => $noOfDaysUsageFormatted, // This is hours used for usage
+                                'date_start' => '', // Not applicable for usage (this was activity start)
+                                'date_end' => '',   // Not applicable for usage (this was activity end)
+                                'no_of_days_usage_unused' => '0', // Placeholder
+                                'date_of_absence_start' => $dateOfAbsenceStartFormatted,
+                                'date_of_absence_end' => $dateOfAbsenceEndFormatted,
+                                'cto_details' => $ctoDetails, // Pass cto_details for usage records
+                            ];
                         @endphp
                         <tr class="{{ $rowClass }}">
                             <td data-label="SPECIAL ORDER">
@@ -285,32 +374,14 @@
                             <td data-label="ACTIONS" class="actions-column">
                                 {{-- Edit Button --}}
                                 @if($cto->is_activity)
-                                    <button type="button" class="edit-btn" onclick="editCtoRecord(
-                                        {{ $cto->id }},
-                                        true, {{-- is_activity flag --}}
-                                        '{{ $cto->special_order ?? '' }}',
-                                        '{{ $cto->activity ?? '' }}',
-                                        '{{ number_format($cto->credits_earned ?? 0, 2) }}', {{-- credits_earned for earned --}}
-                                        '{{ $cto->date_of_activity_start ? \Carbon\Carbon::parse($cto->date_of_activity_start)->format('Y-m-d') : '' }}',
-                                        '{{ $cto->date_of_activity_end ? \Carbon\Carbon::parse($cto->date_of_activity_end)->format('Y-m-d') : '' }}',
-                                        '' {{-- cto_details (not applicable for earned) --}}
-                                    )">
+                                    <button type="button" class="edit-btn" onclick='editCtoRecordFromData(@json($activityData))'>
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                             <path d="M12 12l7-7 3 3-7 7-3 0 0-3z"></path>
                                         </svg>
                                     </button>
                                 @else
-                                    <button type="button" class="edit-btn" onclick="editCtoRecord(
-                                        {{ $cto->id }},
-                                        false, {{-- is_activity flag --}}
-                                        '', {{-- special_order (not applicable for usage) --}}
-                                        '', {{-- activity (not applicable for usage) --}}
-                                        '{{ number_format($cto->no_of_days ?? 0, 2) }}', {{-- no_of_days for usage (hours applied) --}}
-                                        '{{ $cto->date_of_absence_start ? \Carbon\Carbon::parse($cto->date_of_absence_start)->format('Y-m-d') : '' }}',
-                                        '{{ $cto->date_of_absence_end ? \Carbon\Carbon::parse($cto->date_of_absence_end)->format('Y-m-d') : '' }}',
-                                        '{{ $cto->cto_details ?? '' }}' {{-- CTO details for usage --}}
-                                    )">
+                                    <button type="button" class="edit-btn" onclick='editCtoRecordFromData(@json($usageData))'>
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                             <path d="M12 12l7-7 3 3-7 7-3 0 0-3z"></path>
@@ -342,438 +413,52 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
+        // Make Laravel routes and customer ID available to external JavaScript
+        window.autocompleteRoute = '{{ route("customer.autocomplete") }}';
+        window.ctoUpdateRoute = '{{ route("cto.update", ":id") }}';
+        window.ctoDeleteRoute = '{{ route("cto.delete", ":id") }}';
+        window.ctoCalculateDaysRoute = '{{ route("cto.calculate-days") }}';
+        window.ctoStoreActivityRoute = '{{ route("cto.credits") }}';
+        window.ctoStoreUsageRoute = '{{ route("cto.submit") }}';
+        window.csrfToken = '{{ csrf_token() }}';
+        // FIX: Add cto.index route for JavaScript redirection
+        window.ctoIndexRoute = '{{ route("cto.index") }}';
+        
+        @if($customer)
+            window.customerId = {{ $customer->id }};
+        @else
+            window.customerId = null;
+        @endif
+
+        // This script block handles toast messages from URL parameters on page load
         $(document).ready(function() {
-            // Make Laravel routes available to JavaScript
-            window.autocompleteRoute = '{{ route("customer.autocomplete") }}';
-            window.ctoUpdateRoute = '{{ route("cto.update") }}';
-            window.ctoDeleteRoute = '{{ route("cto.delete") }}';
-            window.ctoCalculateDaysRoute = '{{ route("cto.calculate-days") }}';
-            window.ctoStoreActivityRoute = '{{ route("cto.credits") }}';
-            window.ctoStoreUsageRoute = '{{ route("cto.submit") }}';
-            window.csrfToken = '{{ csrf_token() }}';
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+            const message = urlParams.get('message');
+            const customer_id_param_from_url = urlParams.get('customer_id'); // Get original customer_id from URL if present
 
-            // Modal functionality (Add Customer)
-            document.getElementById('showAddCustomerModal').addEventListener('click', function() {
-                document.getElementById('addCustomerModal').style.display = 'flex';
-            });
-
-            document.getElementById('closeAddCustomerModal').addEventListener('click', function() {
-                document.getElementById('addCustomerModal').style.display = 'none';
-            });
-
-            // Customer search autocomplete
-            let debounceTimer;
-            $('#customer-search').on('input', function() {
-                clearTimeout(debounceTimer);
-                const query = $(this).val();
-
-                if (query.length < 2) {
-                    $('#suggestions').empty().hide();
-                    return;
+            if (status && message) {
+                displayMessage(message, status); 
+                
+                // Optional: Clean up URL parameters after displaying message
+                // This prevents the message from reappearing on subsequent manual refreshes
+                urlParams.delete('status');
+                urlParams.delete('message');
+                
+                // Reconstruct URL, preserving customer_id if it was there
+                let newUrl = window.location.pathname;
+                if (customer_id_param_from_url) {
+                    urlParams.set('customer_id', customer_id_param_from_url);
                 }
-
-                debounceTimer = setTimeout(() => {
-                    $.ajax({
-                        url: window.autocompleteRoute,
-                        method: 'GET',
-                        data: { query: query },
-                        success: function(data) {
-                            $('#suggestions').empty();
-
-                            if (data.length > 0) {
-                                data.forEach(function(item) {
-                                    $('#suggestions').append(
-                                        `<div class="suggestion-item" data-label="${item.label}">${item.label}</div>`
-                                    );
-                                });
-                                $('#suggestions').show();
-                            } else {
-                                $('#suggestions').hide();
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Autocomplete AJAX error:", status, error, xhr.responseText);
-                            $('#suggestions').empty().hide();
-                        }
-                    });
-                }, 300);
-            });
-
-            // Handle suggestion clicks
-            $(document).on('click', '.suggestion-item', function() {
-                const label = $(this).data('label');
-                $('#customer-search').val(label);
-                $('#suggestions').empty().hide();
-            });
-
-            // Hide suggestions when clicking outside
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('.search-box').length) {
-                    $('#suggestions').empty().hide();
+                const queryString = urlParams.toString();
+                if (queryString) {
+                    newUrl += '?' + queryString;
                 }
-            });
-
-            // --- CTO Specific JavaScript conditional on customer existence ---
-            @if($customer)
-                // Activity form elements
-                const singleDayActivityCheckbox = document.getElementById('single-day-activity');
-                const activityEndDateField = document.getElementById('activity-end-date');
-                const activityEndDateLabel = document.getElementById('end-date-label');
-                const dateOfActivityStartField = document.getElementById('date_of_activity_start');
-                const specialOrderField = document.getElementById('special_order');
-                const activityField = document.getElementById('activity');
-                const hoursEarnedField = document.getElementById('hours_earned');
-                const submitActivityBtn = document.getElementById('submit-activity-btn');
-                const cancelActivityEditBtn = document.getElementById('cancel-activity-edit-btn');
-                const activityCtoIdField = document.getElementById('activity_cto_id');
-                const activityFormMethodField = document.getElementById('activity_form_method');
-                const activityForm = $('#activity-form');
-
-
-                // Usage form elements
-                const singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
-                const absenceEndDateField = document.getElementById('inclusive_date_end_usage');
-                const absenceEndDateLabel = document.getElementById('absence-end-date-label');
-                const dateFiledUsageField = document.getElementById('usage_date_filed');
-                const inclusiveDateStartUsageField = document.getElementById('inclusive_date_start_usage');
-                const hoursAppliedUsageField = document.getElementById('hours_applied_usage');
-                const ctoDetailsUsageField = document.getElementById('cto_details_usage');
-                const submitUsageBtn = document.getElementById('submit-usage-btn');
-                const cancelUsageEditBtn = document.getElementById('cancel-usage-edit-btn');
-                const usageCtoIdField = document.getElementById('usage_cto_id');
-                const usageFormMethodField = document.getElementById('usage_form_method');
-                const usageForm = $('#usage-form');
-
-
-                // Initial state for single day checkboxes
-                if (singleDayActivityCheckbox && activityEndDateField && activityEndDateLabel) {
-                    if (singleDayActivityCheckbox.checked) {
-                        activityEndDateField.style.display = 'none';
-                        activityEndDateField.removeAttribute('required');
-                        activityEndDateField.value = '';
-                        activityEndDateLabel.style.display = 'none';
-                    } else {
-                        activityEndDateField.style.display = 'block';
-                        activityEndDateField.setAttribute('required', 'required');
-                        activityEndDateLabel.style.display = 'block';
-                    }
-                    singleDayActivityCheckbox.addEventListener('change', function() {
-                        if (this.checked) {
-                            activityEndDateField.style.display = 'none';
-                            activityEndDateField.value = '';
-                            activityEndDateField.removeAttribute('required');
-                            activityEndDateLabel.style.display = 'none';
-                        } else {
-                            activityEndDateField.style.display = 'block';
-                            activityEndDateField.setAttribute('required', 'required');
-                            activityEndDateLabel.style.display = 'block';
-                        }
-                    });
-                }
-
-                if (singleDayAbsenceCheckbox && absenceEndDateField && absenceEndDateLabel) {
-                    if (singleDayAbsenceCheckbox.checked) {
-                        absenceEndDateField.style.display = 'none';
-                        absenceEndDateField.removeAttribute('required');
-                        absenceEndDateField.value = '';
-                        absenceEndDateLabel.style.display = 'none';
-                    } else {
-                        absenceEndDateField.style.display = 'block';
-                        absenceEndDateField.setAttribute('required', 'required');
-                        absenceEndDateLabel.style.display = 'block';
-                    }
-                    singleDayAbsenceCheckbox.addEventListener('change', function() {
-                        if (this.checked) {
-                            absenceEndDateField.style.display = 'none';
-                            absenceEndDateField.value = '';
-                            absenceEndDateField.removeAttribute('required');
-                            absenceEndDateLabel.style.display = 'none';
-                        } else {
-                            absenceEndDateField.style.display = 'block';
-                            absenceEndDateField.setAttribute('required', 'required');
-                            absenceEndDateLabel.style.display = 'block';
-                        }
-                    });
-                }
-
-                // Function to calculate working days (for CTO usage)
-                async function calculateWorkingDaysForUsage() {
-                    const startDate = inclusiveDateStartUsageField.value;
-                    const endDate = singleDayAbsenceCheckbox.checked ? startDate : absenceEndDateField.value;
-
-                    if (startDate) {
-                        try {
-                            const response = await fetch(window.ctoCalculateDaysRoute, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': window.csrfToken
-                                },
-                                body: JSON.stringify({ start_date: startDate, end_date: endDate })
-                            });
-                            const data = await response.json();
-                            if (response.ok) {
-                                // For CTO usage, we often don't display working days, but hours.
-                                // If you need to populate a 'total_hours' field based on working days, do it here.
-                                // e.g., hoursAppliedUsageField.value = data.days * 8; (assuming 8 hours per day)
-                            } else {
-                                console.error('Error calculating days:', data.message);
-                                displayMessage('Error calculating days: ' + data.message, 'error');
-                            }
-                        } catch (error) {
-                            console.error('Fetch error calculating days:', error);
-                            displayMessage('An error occurred while calculating days.', 'error');
-                        }
-                    }
-                }
-
-                // Attach event listeners for date changes in usage form to recalculate days
-                if (inclusiveDateStartUsageField) {
-                    inclusiveDateStartUsageField.addEventListener('change', calculateWorkingDaysForUsage);
-                }
-                if (absenceEndDateField) {
-                    absenceEndDateField.addEventListener('change', calculateWorkingDaysForUsage);
-                }
-                if (singleDayAbsenceCheckbox) {
-                    singleDayAbsenceCheckbox.addEventListener('change', calculateWorkingDaysForUsage);
-                }
-
-
-                // Edit function for CTO records
-                window.editCtoRecord = function(id, is_activity, special_order, activity, hours_earned_or_applied, date_start, date_end, cto_details_usage = '') {
-                    if (is_activity) {
-                        // Populate Activity Form (Earned Credits)
-                        activityCtoIdField.value = id;
-                        activityForm.attr('action', window.ctoUpdateRoute); // Use cto.update for PUT
-                        activityFormMethodField.value = 'PUT'; // Set to PUT for update
-                        submitActivityBtn.textContent = 'Update CTO Activity';
-                        cancelActivityEditBtn.style.display = 'inline-block';
-
-                        specialOrderField.value = special_order;
-                        activityField.value = activity;
-                        hoursEarnedField.value = hours_earned_or_applied;
-                        dateOfActivityStartField.value = date_start;
-
-                        if (date_start === date_end) {
-                            singleDayActivityCheckbox.checked = true;
-                            activityEndDateField.style.display = 'none';
-                            activityEndDateField.removeAttribute('required');
-                            activityEndDateField.value = '';
-                            activityEndDateLabel.style.display = 'none';
-                        } else {
-                            singleDayActivityCheckbox.checked = false;
-                            activityEndDateField.style.display = 'block';
-                            activityEndDateField.setAttribute('required', 'required');
-                            activityEndDateField.value = date_end;
-                            activityEndDateLabel.style.display = 'block';
-                        }
-
-                        // Scroll to the activity form
-                        activityForm[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                    } else {
-                        // Populate Usage Form (Credits Deducted)
-                        usageCtoIdField.value = id;
-                        usageForm.attr('action', window.ctoUpdateRoute); // Use cto.update for PUT
-                        usageFormMethodField.value = 'PUT'; // Set to PUT for update
-                        submitUsageBtn.textContent = 'Update CTO Usage';
-                        cancelUsageEditBtn.style.display = 'inline-block';
-
-                        dateFiledUsageField.valueAsDate = new Date(); // Or get from record if stored
-                        inclusiveDateStartUsageField.value = date_start;
-                        inclusiveDateEndUsageField.value = date_end; // Make sure to set this
-                        hoursAppliedUsageField.value = hours_earned_or_applied;
-                        ctoDetailsUsageField.value = cto_details_usage;
-
-                        if (date_start === date_end) {
-                            singleDayAbsenceCheckbox.checked = true;
-                            absenceEndDateField.style.display = 'none';
-                            absenceEndDateField.removeAttribute('required');
-                            absenceEndDateField.value = '';
-                            absenceEndDateLabel.style.display = 'none';
-                        } else {
-                            singleDayAbsenceCheckbox.checked = false;
-                            absenceEndDateField.style.display = 'block';
-                            absenceEndDateField.setAttribute('required', 'required');
-                            absenceEndDateField.value = date_end;
-                            absenceEndDateLabel.style.display = 'block';
-                        }
-
-                        // Scroll to the usage form
-                        usageForm[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                };
-
-                // Cancel Edit functions (Activity Form)
-                window.cancelCtoActivityEdit = function() {
-                    activityCtoIdField.value = '';
-                    activityForm.attr('action', window.ctoStoreActivityRoute);
-                    activityFormMethodField.value = 'POST';
-                    submitActivityBtn.textContent = 'Add CTO Activity';
-                    cancelActivityEditBtn.style.display = 'none';
-                    activityForm[0].reset();
-                    singleDayActivityCheckbox.checked = false;
-                    activityEndDateField.style.display = 'block';
-                    activityEndDateField.setAttribute('required', 'required');
-                    activityEndDateLabel.style.display = 'block';
-                };
-
-                // Cancel Edit functions (Usage Form)
-                window.cancelCtoUsageEdit = function() {
-                    usageCtoIdField.value = '';
-                    usageForm.attr('action', window.ctoStoreUsageRoute);
-                    usageFormMethodField.value = 'POST';
-                    submitUsageBtn.textContent = 'Add CTO Usage';
-                    cancelUsageEditBtn.style.display = 'none';
-                    usageForm[0].reset();
-                    singleDayAbsenceCheckbox.checked = false;
-                    absenceEndDateField.style.display = 'block';
-                    absenceEndDateField.setAttribute('required', 'required');
-                    absenceEndDateLabel.style.display = 'block';
-                };
-
-
-                // Delete function for CTO records
-                window.deleteCtoRecord = function(id) {
-                    showConfirmationModal('Are you sure you want to delete this CTO record? This action cannot be undone and will recalculate balances.', function() {
-                        const deleteUrl = window.ctoDeleteRoute;
-                        $.ajax({
-                            url: deleteUrl,
-                            type: 'POST',
-                            data: {
-                                _method: 'DELETE',
-                                _token: window.csrfToken,
-                                id: id
-                            },
-                            success: function(response) {
-                                displayMessage(response.message || 'CTO record deleted successfully.', 'success');
-                                location.reload();
-                            },
-                            error: function(xhr, status, error) {
-                                console.error("Delete CTO record error:", status, error, xhr.responseText);
-                                displayMessage(xhr.responseJSON.error || 'Failed to delete CTO record.', 'error');
-                            }
-                        });
-                    });
-                };
-
-                // --- Custom Modal/Message Box Functions ---
-                function displayMessage(message, type) {
-                    let messageBox = document.getElementById('custom-message-box');
-                    if (!messageBox) {
-                        messageBox = document.createElement('div');
-                        messageBox.id = 'custom-message-box';
-                        messageBox.style.cssText = `
-                            position: fixed;
-                            top: 20px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            padding: 15px 25px;
-                            border-radius: 8px;
-                            font-weight: bold;
-                            color: white;
-                            z-index: 1000;
-                            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                            display: none;
-                            opacity: 0;
-                            transition: opacity 0.3s ease-in-out;
-                        `;
-                        document.body.appendChild(messageBox);
-                    }
-
-                    messageBox.textContent = message;
-                    messageBox.style.backgroundColor = type === 'success' ? '#28a745' : '#dc3545';
-                    messageBox.style.display = 'block';
-                    setTimeout(() => { messageBox.style.opacity = '1'; }, 10);
-
-                    setTimeout(() => {
-                        messageBox.style.opacity = '0';
-                        setTimeout(() => { messageBox.style.display = 'none'; }, 300);
-                    }, 3000);
-                }
-
-                function showConfirmationModal(message, onConfirmCallback) {
-                    let modalOverlay = document.getElementById('custom-confirm-overlay');
-                    if (!modalOverlay) {
-                        modalOverlay = document.createElement('div');
-                        modalOverlay.id = 'custom-confirm-overlay';
-                        modalOverlay.style.cssText = `
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background: rgba(0, 0, 0, 0.6);
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            z-index: 1000;
-                        `;
-                        document.body.appendChild(modalOverlay);
-
-                        const modalContent = document.createElement('div');
-                        modalContent.style.cssText = `
-                            background: white;
-                            padding: 30px;
-                            border-radius: 10px;
-                            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                            text-align: center;
-                            max-width: 400px;
-                            width: 90%;
-                        `;
-                        modalOverlay.appendChild(modalContent);
-
-                        const messagePara = document.createElement('p');
-                        messagePara.id = 'confirm-message-text';
-                        messagePara.style.marginBottom = '20px';
-                        messagePara.style.fontSize = '1.1em';
-                        modalContent.appendChild(messagePara);
-
-                        const buttonContainer = document.createElement('div');
-                        const confirmButton = document.createElement('button');
-                        confirmButton.textContent = 'Confirm';
-                        confirmButton.style.cssText = `
-                            background-color: #dc3545; /* Red */
-                            color: white;
-                            padding: 10px 20px;
-                            border: none;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            margin-right: 10px;
-                            font-size: 1em;
-                        `;
-                        confirmButton.onclick = function() {
-                            modalOverlay.style.display = 'none';
-                            if (onConfirmCallback) {
-                                onConfirmCallback();
-                            }
-                        };
-                        buttonContainer.appendChild(confirmButton);
-
-                        const cancelButton = document.createElement('button');
-                        cancelButton.textContent = 'Cancel';
-                        cancelButton.style.cssText = `
-                            background-color: #6c757d; /* Grey */
-                            color: white;
-                            padding: 10px 20px;
-                            border: none;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            font-size: 1em;
-                        `;
-                        cancelButton.onclick = function() {
-                            modalOverlay.style.display = 'none';
-                        };
-                        buttonContainer.appendChild(cancelButton);
-                        modalContent.appendChild(buttonContainer);
-                    }
-
-                    document.getElementById('confirm-message-text').textContent = message;
-                    modalOverlay.style.display = 'flex';
-                }
-            @endif {{-- End of @if($customer) conditional for JS --}}
-
-        }); {{-- End of $(document).ready() --}}
+                // Use history.replaceState to change URL without reloading the page again
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        });
     </script>
+    <script src="{{ asset('js/cto-form.js') }}"></script>
 </body>
 </html>

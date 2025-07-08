@@ -1,11 +1,10 @@
 <?php
-// app/Services/CtoService.php
+
 namespace App\Services;
 
-// Updated to use 'App\Customer' as per your model's new namespace
-use App\Customer; 
-use App\CtoApplication; // Updated to use 'App\CtoApplication'
-use App\CtoCreditUsage; // Updated to use 'App\CtoCreditUsage'
+use App\Customer;
+use App\CtoApplication;
+use App\CtoCreditUsage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,67 +13,68 @@ class CtoService
 {
     /**
      * Processes a CTO activity (credits earned).
-     *
-     * @param \App\Customer $customer // Updated type hint in docblock
+     * @param \App\Customer $customer
      * @param array $activityData
-     * @param \App\CtoApplication|null $existingRecord // Updated type hint in docblock
-     * @return \App\CtoApplication // Updated type hint in docblock
+     * @param \App\CtoApplication|null $existingRecord
+     * @return \App\CtoApplication
      * @throws \Exception
      */
- public function processCtoActivity(Customer $customer, array $activityData, $existingRecord = null)
-{
-    DB::beginTransaction();
-    try {
-        if ($existingRecord) {
-            // Update existing activity record
-            $ctoApplication = $existingRecord;
-            $ctoApplication->update([
-                'special_order' => $activityData['special_order'],
-                'date_of_activity_start' => $activityData['date_of_activity_start'],
-                'date_of_activity_end' => $activityData['date_of_activity_end'],
-                'activity' => $activityData['activity'],
-                'credits_earned' => $activityData['credits_earned'],
-                'is_activity' => true,
-                'no_of_days' => null, // Ensure these are null for activities
-                'date_of_absence_start' => null,
-                'date_of_absence_end' => null,
-            ]);
-            Log::info("Updated CTO Activity ID: {$ctoApplication->id}");
-        } else {
-            // Create new activity record
-            $ctoApplication = $customer->ctoApplications()->create([
-                'special_order' => $activityData['special_order'],
-                'date_of_activity_start' => $activityData['date_of_activity_start'],
-                'date_of_activity_end' => $activityData['date_of_activity_end'],
-                'activity' => $activityData['activity'],
-                'credits_earned' => $activityData['credits_earned'],
-                'is_activity' => true,
-            ]);
-            Log::info("Created new CTO Activity ID: {$ctoApplication->id}");
+    public function processCtoActivity(Customer $customer, array $activityData, $existingRecord = null)
+    {
+        DB::beginTransaction();
+        try {
+            if ($existingRecord) {
+                $ctoApplication = $existingRecord;
+                $ctoApplication->update([
+                    'special_order' => $activityData['special_order'],
+                    'date_of_activity_start' => $activityData['date_of_activity_start'],
+                    'date_of_activity_end' => $activityData['date_of_activity_end'],
+                    'activity' => $activityData['activity'],
+                    'credits_earned' => (float)$activityData['credits_earned'], // Ensure float
+                    'is_activity' => true,
+                    'no_of_days' => null,
+                    'date_of_absence_start' => null,
+                    'date_of_absence_end' => null,
+                    'current_balance' => (float)$activityData['credits_earned'], // Ensure float
+                    'hours_applied' => 0,
+                ]);
+                Log::info("Updated CTO Activity ID: {$ctoApplication->id}");
+            } else {
+                $ctoApplication = $customer->ctoApplications()->create([
+                    'special_order' => $activityData['special_order'],
+                    'date_of_activity_start' => $activityData['date_of_activity_start'],
+                    'date_of_activity_end' => $activityData['date_of_activity_end'],
+                    'activity' => $activityData['activity'],
+                    'credits_earned' => (float)$activityData['credits_earned'], // Ensure float
+                    'is_activity' => true,
+                    'no_of_days' => null,
+                    'date_of_absence_start' => null,
+                    'date_of_absence_end' => null,
+                    'current_balance' => (float)$activityData['credits_earned'], // Ensure float
+                    'hours_applied' => 0,
+                ]);
+                Log::info("Created new CTO Activity ID: {$ctoApplication->id}");
+            }
+
+            $this->recalculateBalancesForCustomer($customer);
+
+            DB::commit();
+            return $ctoApplication;
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error processing CTO activity: {$e->getMessage()}", ['trace' => $e->getTraceAsString()]);
+            throw new \Exception("Failed to process CTO activity: " . $e->getMessage());
         }
-
-        // After any activity (new or updated), recalculate balances for the customer
-        $this->recalculateBalancesForCustomer($customer);
-
-        DB::commit();
-        return $ctoApplication;
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error("Error processing CTO activity: {$e->getMessage()}", ['trace' => $e->getTraceAsString()]);
-        throw new \Exception("Failed to process CTO activity: " . $e->getMessage());
     }
-}
 
     /**
      * Processes a CTO usage (credits deducted for absence).
-     * This uses a FIFO (First-In, First-Out) and expiration logic.
-     *
-     * @param \App\Customer $customer // Updated type hint in docblock
+     * @param \App\Customer $customer
      * @param array $usageData
-     * @param \App\CtoApplication|null $existingRecord // Updated type hint in docblock
-     * @return \App\CtoApplication // Updated type hint in docblock
-     * @throws \Exception
+     * @param \App\CtoApplication|null $existingRecord
+     * @return \App\CtoApplication
+     * @throws \Exception If insufficient credits are available or other errors occur.
      */
     public function processCtoUsage(Customer $customer, array $usageData, $existingRecord = null)
     {
@@ -82,58 +82,40 @@ class CtoService
         try {
             $startDate = Carbon::parse($usageData['date_of_absence_start']);
             $endDate = Carbon::parse($usageData['date_of_absence_end']);
-            $daysToDeduct = $usageData['no_of_days'];
+            $hoursToDeduct = (float)$usageData['no_of_days'];
 
             if ($existingRecord) {
-                // For updates, we first "undo" the previous usage
-                // This means deleting existing CtoCreditUsage records linked to this absence
-                // and then recalculating the balance.
-                $originalDaysUsed = $existingRecord->no_of_days;
                 CtoCreditUsage::where('cto_absence_id', $existingRecord->id)->delete();
-                Log::info("Undoing existing CTO usage for absence ID: {$existingRecord->id}. Original days: {$originalDaysUsed}");
+                Log::info("Undoing existing CTO usage for absence ID: {$existingRecord->id} before update.");
                 
-                // Temporarily set the absence record's no_of_days to 0 for recalculation
-                // or ensure recalculation accounts for this. A full recalculation is safer.
-                $existingRecord->no_of_days = 0; // Effectively "releases" the credits
-                $existingRecord->save();
-                $this->recalculateBalancesForCustomer($customer); // Recalculate after undoing
-            }
-
-            // Check eligible balance before proceeding (after undoing for updates)
-            $eligibleBalance = $this->getEligibleCtoBalance($customer, $startDate);
-            if ($eligibleBalance < $daysToDeduct) {
-                DB::rollBack();
-                throw new \Exception("Insufficient eligible CTO balance. Available: {$eligibleBalance} days, Required: {$daysToDeduct} days.");
-            }
-
-            if ($existingRecord) {
-                // Update existing absence record
                 $ctoApplication = $existingRecord;
                 $ctoApplication->update([
                     'date_of_absence_start' => $startDate,
                     'date_of_absence_end' => $endDate,
-                    'no_of_days' => $daysToDeduct,
+                    'no_of_days' => $hoursToDeduct,
                     'is_activity' => false,
-                    'credits_earned' => null, // Ensure these are null for absences
+                    'credits_earned' => 0,
                     'special_order' => null,
                     'activity' => null,
+                    'current_balance' => 0,
                 ]);
                 Log::info("Updated CTO Usage ID: {$ctoApplication->id}");
             } else {
-                // Create new absence record
                 $ctoApplication = $customer->ctoApplications()->create([
                     'date_of_absence_start' => $startDate,
                     'date_of_absence_end' => $endDate,
-                    'no_of_days' => $daysToDeduct,
+                    'no_of_days' => $hoursToDeduct,
                     'is_activity' => false,
+                    'credits_earned' => 0,
+                    'special_order' => null,
+                    'activity' => null,
+                    'current_balance' => 0,
                 ]);
                 Log::info("Created new CTO Usage ID: {$ctoApplication->id}");
             }
 
-            // Deduct credits using FIFO and expiration logic
-            $this->deductCtoCredits($customer, $ctoApplication, $daysToDeduct);
+            $this->deductCtoCredits($customer, $ctoApplication, $hoursToDeduct);
 
-            // Recalculate balances for the customer after the deduction
             $this->recalculateBalancesForCustomer($customer);
 
             DB::commit();
@@ -141,50 +123,51 @@ class CtoService
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Error processing CTO usage: {$e->getMessage()}", ['trace' => $e->getTraceAsString()]);
-            // Re-throw the exception to be caught by the controller
             throw new \Exception("Failed to process CTO usage: " . $e->getMessage());
         }
     }
 
     /**
      * Deducts CTO credits from available activities using FIFO and expiration logic.
-     *
-     * @param \App\Customer $customer // Updated type hint in docblock
-     * @param \App\CtoApplication $ctoAbsence The CTO application record for the absence. // Updated type hint in docblock
-     * @param float $daysToDeduct The total number of days to deduct.
+     * @param \App\Customer $customer
+     * @param \App\CtoApplication $ctoAbsence The CTO application record for the absence.
+     * @param float $hoursToDeduct The total number of hours to deduct.
      * @throws \Exception If insufficient credits are available.
      */
-    protected function deductCtoCredits(Customer $customer, CtoApplication $ctoAbsence, $daysToDeduct)
+    protected function deductCtoCredits(Customer $customer, CtoApplication $ctoAbsence, $hoursToDeduct)
     {
-        $remainingDeduction = $daysToDeduct;
+        $remainingDeduction = $hoursToDeduct;
 
-        // Get all activity records for the customer, ordered by activity end date (FIFO)
-        // and then by creation date to handle activities ending on the same day.
         $availableActivities = $customer->ctoApplications()
             ->where('is_activity', true)
-            ->where('credits_earned', '>', 0)
-            ->orderBy('date_of_activity_end', 'asc') // FIFO by end date
-            ->orderBy('id', 'asc') // Then by ID for consistent tie-breaking
-            ->get();
+            ->get()
+            ->filter(function($activity) use ($ctoAbsence) {
+                return $activity->remaining_credits > 0 && !$activity->isExpiredAt($ctoAbsence->date_of_absence_start);
+            })
+            ->sortBy(function($activity) {
+                $sortDate = $activity->date_of_activity_end ?? $activity->created_at;
+                $expirationDate = ($activity->date_of_activity_end instanceof \Carbon\Carbon) ? $activity->date_of_activity_end->copy()->addYear() : (\Carbon\Carbon::parse($activity->date_of_activity_end)->addYear() ?? Carbon::maxValue());
 
-        foreach ($availableActivities as $activity) {
-            // Check if the activity is expired as of the absence start date
-            if ($activity->isExpiredAt($ctoAbsence->date_of_absence_start)) {
-                Log::info("Skipping expired CTO Activity ID: {$activity->id} for absence ID: {$ctoAbsence->id}. Expiration Date: {$activity->date_of_activity_end->copy()->addYear()->format('Y-m-d')}, Absence Date: {$ctoAbsence->date_of_absence_start->format('Y-m-d')}");
-                continue;
-            }
+                return $expirationDate->timestamp . '-' . ($sortDate instanceof \Carbon\Carbon ? $sortDate->timestamp : \Carbon\Carbon::parse($sortDate)->timestamp) . '-' . $activity->id;
+            })
+            ->values();
 
-            $remainingActivityCredits = $activity->remaining_credits;
+        Log::info("Absence ID {$ctoAbsence->id} needs {$hoursToDeduct} hours. Available activities before deduction process:", $availableActivities->pluck('id', 'remaining_credits')->toArray());
 
-            if ($remainingActivityCredits <= 0) {
-                continue; // This activity has no remaining usable credits
-            }
-
+        // FIX: Iterate over keys, modify the object's property, which persists for Eloquent models
+        foreach ($availableActivities as $key => $activity) { // No & needed if modifying model properties
             if ($remainingDeduction <= 0) {
-                break; // All required days have been deducted
+                break;
             }
 
-            $deductFromThisActivity = min($remainingDeduction, $remainingActivityCredits);
+            $activityRemainingCredits = $activity->remaining_credits; 
+
+            if ($activityRemainingCredits <= 0) {
+                Log::debug("Activity ID {$activity->id} (earned {$activity->credits_earned}) has no remaining credits ({$activityRemainingCredits}) left before deduction. Skipping.");
+                continue; 
+            }
+
+            $deductFromThisActivity = min($remainingDeduction, $activityRemainingCredits);
 
             if ($deductFromThisActivity > 0) {
                 CtoCreditUsage::create([
@@ -192,183 +175,193 @@ class CtoService
                     'cto_absence_id' => $ctoAbsence->id,
                     'days_used' => $deductFromThisActivity,
                 ]);
+                
+                // Directly modify the Eloquent model object's property. This should persist.
+                $activity->remaining_credits -= $deductFromThisActivity; 
                 $remainingDeduction -= $deductFromThisActivity;
-                Log::info("Deducted {$deductFromThisActivity} days from CTO Activity ID: {$activity->id} for Absence ID: {$ctoAbsence->id}. Remaining deduction: {$remainingDeduction}");
+                Log::info("Deducted {$deductFromThisActivity} hours from CTO Activity ID: {$activity->id} for Absence ID: {$ctoAbsence->id}. Remaining deduction for absence: {$remainingDeduction}. Activity remaining: {$activity->remaining_credits}");
             }
         }
+        // No unset needed when not using & reference
 
         if ($remainingDeduction > 0) {
-            // This should ideally not happen if getEligibleCtoBalance check was accurate
-            Log::error("Insufficient CTO credits after deduction process for customer ID: {$customer->id}. Remaining deduction: {$remainingDeduction}");
+            Log::error("Insufficient CTO credits after deduction process for customer ID: {$customer->id}. Remaining deduction: {$remainingDeduction} for absence ID {$ctoAbsence->id}. This should have been caught by getEligibleCtoBalance.");
             throw new \Exception("Insufficient CTO credits available to cover the full absence after FIFO deduction and expiration.");
         }
     }
 
     /**
      * Recalculates all CTO balances for a given customer.
-     * This method iterates through all CTO records (activities and absences) chronologically,
-     * maintaining a running balance and applying FIFO/expiration rules.
-     *
-     * @param \App\Customer $customer // Updated type hint in docblock
+     * @param \App\Customer $customer
      * @return void
      */
     public function recalculateBalancesForCustomer(Customer $customer)
     {
         DB::beginTransaction();
         try {
-            // Fetch all CTO records for the customer, ordered by effective date and then ID
-            // Eager load creditUsages and consumedActivities to ensure remaining_credits is accurate
             $ctoRecords = $customer->ctoApplications()
                 ->with(['creditUsages', 'consumedActivities'])
                 ->get()
                 ->sortBy(function($cto) {
-                    // Ensure strict chronological order. Prioritize activities on the same date.
-                    return $cto->effective_date->timestamp . ($cto->is_activity ? '0' : '1');
+                    $sortDate = null;
+                    if ($cto->is_activity && ($cto->date_of_activity_start instanceof \Carbon\Carbon || $cto->date_of_activity_start)) {
+                        $sortDate = \Carbon\Carbon::parse($cto->date_of_activity_start);
+                    } elseif (!$cto->is_activity && ($cto->date_of_absence_start instanceof \Carbon\Carbon || $cto->date_of_absence_start)) {
+                        $sortDate = \Carbon\Carbon::parse($cto->date_of_absence_start);
+                    }
+                    $sortDate = $sortDate ?? $cto->created_at;
+
+                    return $sortDate->timestamp . ($cto->is_activity ? '0' : '1') . $cto->id;
                 })
-                ->values(); // Re-index the collection after sorting
+                ->values();
 
-            $currentRunningBalance = 0.0;
-            // This pool represents credits that are currently 'active' and not expired/consumed.
-            // Key: cto_activity_id, Value: ['record', 'remaining', 'expiration_date', 'original_credits']
-            // 'remaining' in this pool is the amount still available from that specific activity.
-            $activeCreditPools = collect(); 
+            $ctoApplicationIds = $ctoRecords->pluck('id');
+            if ($ctoApplicationIds->isNotEmpty()) {
+                CtoCreditUsage::whereIn('cto_activity_id', $ctoApplicationIds)
+                              ->orWhereIn('cto_absence_id', $ctoApplicationIds)
+                              ->delete();
+                Log::info("Deleted CtoCreditUsage records for customer ID: {$customer->id} based on application IDs.");
+            } else {
+                 Log::info("No CTO applications found for customer ID: {$customer->id}, skipping CtoCreditUsage deletion.");
+            }
 
-            // Reset existing CtoCreditUsage records for the customer to rebuild them from scratch.
-            // This is crucial for accurate recalculation, especially after edits or deletions.
-            CtoCreditUsage::whereIn('cto_absence_id', $ctoRecords->where('is_activity', false)->pluck('id'))
-                          ->orWhereIn('cto_activity_id', $ctoRecords->where('is_activity', true)->pluck('id'))
-                          ->delete();
 
             Log::info("--- START RECALCULATION FOR EMPLOYEE ID: " . $customer->id . " ---");
-            Log::info("Initial State: Current Running Balance = " . $currentRunningBalance);
+            $currentRunningBalance = (float)$customer->balance_forwarded_cto; 
+            Log::info("Initial Customer Forwarded Balance: " . $customer->balance_forwarded_cto . " | Running Balance after forwarded: " . $currentRunningBalance);
             Log::info("Total CTO Applications to process: " . $ctoRecords->count());
 
-            foreach ($ctoRecords as $record) {
+            $activeCreditPool = collect(); 
+
+            // FIX: Iterate over $ctoRecords by value. Modifications to $record will persist because $ctoRecords
+            // holds Eloquent models, and model properties are modified directly.
+            foreach ($ctoRecords as $record) { // Removed & here
+                $currentEventDateForLog = $record->is_activity ? $record->date_of_activity_start : $record->date_of_absence_start;
+                $currentEventDateForLog = Carbon::parse($currentEventDateForLog ?? $record->created_at);
+
                 Log::info("Processing Record ID: " . $record->id . 
                           " | Type: " . ($record->is_activity ? "Activity (Earned " . $record->credits_earned . ")" : "Absence (Used " . $record->no_of_days . ")") .
-                          " | Date: " . $record->effective_date->toDateString() .
-                          " | Balance before transaction & expiry check: " . $currentRunningBalance);
-                Log::info("  Active Credits Pool before this transaction:", $activeCreditPools->toArray());
+                          " | Date (Sorted): " . $currentEventDateForLog->toDateString() .
+                          " | Running Balance before record & expiry check: " . $currentRunningBalance);
+                Log::info("  Active Credits Pool before this transaction:", $activeCreditPool->pluck('remaining', 'record.id')->toArray());
 
-                // --- Step 1: Check for and process EXPIRED credits from the active pool ---
-                // Iterate over a copy of keys to safely remove items from activeCreditPools during iteration
-                foreach ($activeCreditPools->keys() as $activityIdInPool) {
-                    if (!$activeCreditPools->has($activityIdInPool)) { 
-                        continue; // Already removed
-                    }
+                // FIX: Iterate over keys, get item, modify its property, then put back if it's an array.
+                // $activeCreditPool stores arrays like ['record' => model, 'remaining' => float, ...].
+                // So, we need to get the array, modify its 'remaining' key, and put the array back.
+                foreach ($activeCreditPool->sortBy('expiration_date')->keys() as $poolKey) {
+                    $poolEntry = $activeCreditPool->get($poolKey); // This is an array, it's a copy
+                    $currentEventDate = $record->is_activity ? $record->date_of_activity_start : $record->date_of_absence_start;
+                    $currentEventDate = Carbon::parse($currentEventDate ?? $record->created_at);
 
-                    $poolEntry = $activeCreditPools->get($activityIdInPool);
-                    $expiryDate = $poolEntry['expiration_date']; // This is Carbon instance
-
-                    Log::info("    Checking Pool Activity ID: " . $activityIdInPool . 
-                              " | Expiry Date: " . $expiryDate->toDateString() .
-                              " | Remaining in Pool: " . $poolEntry['remaining'] .
-                              " | Current Transaction Date: " . $record->effective_date->toDateString() .
-                              " | Is Expired At Current Transaction Date: " . ($record->effective_date->greaterThanOrEqualTo($expiryDate) ? 'YES' : 'NO'));
-
-                    // If the activity's expiry date is before or on the effective date of the current transaction, it expires.
-                    if ($record->effective_date->greaterThanOrEqualTo($expiryDate)) {
-                        $amountToDeduct = $poolEntry['remaining']; // Deduct whatever is left in this pool item
-                        if ($amountToDeduct > 0) { // Only deduct if there's something left
-                            $currentRunningBalance -= $amountToDeduct;
-                            Log::info("      -> EXPIRED: Deducting " . $amountToDeduct . " from running balance. Balance now: " . $currentRunningBalance);
-                        } else {
-                            Log::info("      -> EXPIRED: Activity had 0 remaining, no deduction from running balance.");
+                    if ($poolEntry && $currentEventDate->greaterThanOrEqualTo($poolEntry['expiration_date'])) {
+                        $expiredAmount = (float)$poolEntry['remaining']; 
+                        if ($expiredAmount > 0) {
+                            $currentRunningBalance -= $expiredAmount;
+                            Log::info("    -> EXPIRED: Activity ID {$poolKey} expired on {$poolEntry['expiration_date']->toDateString()} at transaction date {$currentEventDate->toDateString()}. Deducting {$expiredAmount} from running balance. Balance now: {$currentRunningBalance}");
                         }
-                        $activeCreditPools->forget($activityIdInPool); // Remove from active pool
+                        $activeCreditPool->forget($poolKey); // Remove by key
                     }
                 }
-                Log::info("  Active Credits Pool after expiry check:", $activeCreditPools->toArray());
+                Log::info("  Active Credits Pool after expiry check:", $activeCreditPool->pluck('remaining', 'record.id')->toArray());
 
-
-                // --- Step 2: Process the current CTO transaction (Activity or Absence) ---
                 if ($record->is_activity) {
                     $earnedCredits = (float)$record->credits_earned;
                     $currentRunningBalance += $earnedCredits;
                     Log::info("  Processing Activity (ID: " . $record->id . "): Added " . $earnedCredits . ". Running Balance now: " . $currentRunningBalance);
 
-                    // Add this new activity to the pool of eligible credits if it's not immediately expired
-                    if (!$record->isExpiredAt($record->effective_date)) { 
-                        $activeCreditPools->put($record->id, [
-                            'record' => $record, // Store the actual model instance
-                            'remaining' => $earnedCredits, // Initial remaining amount for this activity in the pool
-                            'expiration_date' => $record->date_of_activity_end->copy()->addYear(),
-                            'original_credits' => $earnedCredits, // Store original for reference
+                    $activityStartDate = Carbon::parse($record->date_of_activity_start ?? $record->created_at);
+
+                    if (!$record->isExpiredAt($activityStartDate)) {
+                        $activeCreditPool->put($record->id, [
+                            'record' => $record,
+                            'remaining' => $earnedCredits,
+                            'expiration_date' => ($record->date_of_activity_end instanceof \Carbon\Carbon) ? $record->date_of_activity_end->copy()->addYear() : (\Carbon\Carbon::parse($record->date_of_activity_end ?? $record->created_at)->addYear() ?? Carbon::maxValue()),
+                            'original_credits' => $earnedCredits,
                         ]);
-                        Log::info("  Activity ID " . $record->id . " added to active pool. Pool:", $activeCreditPools->toArray());
+                        Log::info("  Activity ID " . $record->id . " added to active pool. Pool:", $activeCreditPool->pluck('remaining', 'record.id')->toArray());
                     } else {
-                        Log::info("  Activity ID " . $record->id . " earned but immediately expired. Not added to active pool.");
+                        Log::info("  Activity ID " . $record->id . " earned but immediately expired on its effective date. Not added to active pool.");
                     }
 
                 } else { // This is an absence
-                    $daysToDeduct = (float)$record->no_of_days;
-                    $currentRunningBalance -= $daysToDeduct;
-                    Log::info("  Processing Absence (ID: " . $record->id . "): Deducted " . $daysToDeduct . ". Running Balance now: " . $currentRunningBalance);
+                    $hoursToDeduct = (float)$record->no_of_days;
+                    $currentRunningBalance -= $hoursToDeduct; 
+                    Log::info("  Processing Absence (ID: " . $record->id . "): Deducted " . $hoursToDeduct . ". Running Balance now: " . $currentRunningBalance);
 
-                    $remainingDeductionForThisAbsence = $daysToDeduct;
+                    $remainingDeductionForThisAbsence = $hoursToDeduct;
 
-                    // Sort the pool by expiration date (earliest first), then by activity end date, then ID (FIFO)
-                    $activeCreditPools = $activeCreditPools->sort(function($a, $b) {
+                    $activeCreditPool = $activeCreditPool->sort(function($a, $b) {
                         $expA = $a['expiration_date'];
                         $expB = $b['expiration_date'];
                         if ($expA->equalTo($expB)) {
-                            // If expiration dates are same, use activity end date
-                            $endA = $a['record']->date_of_activity_end;
-                            $endB = $b['record']->date_of_activity_end;
+                            $endA = ($a['record']->date_of_activity_end instanceof \Carbon\Carbon) ? $a['record']->date_of_activity_end : \Carbon\Carbon::parse($a['record']->date_of_activity_end ?? $a['record']->created_at);
+                            $endB = ($b['record']->date_of_activity_end instanceof \Carbon\Carbon) ? $b['record']->date_of_activity_end : \Carbon\Carbon::parse($b['record']->date_of_activity_end ?? $b['record']->created_at);
+                            
                             if ($endA->equalTo($endB)) {
-                                return $a['record']->id <=> $b['record']->id; // Finally, by ID
+                                return $a['record']->id <=> $b['record']->id;
                             }
                             return $endA <=> $endB;
                         }
                         return $expA <=> $expB;
-                    });
-                    
-                    Log::info("  Absence {$record->id}: Needs {$daysToDeduct} days. Current sorted pool:", $activeCreditPools->toArray());
+                    })->values();
 
-                    foreach ($activeCreditPools as $activityId => &$poolEntry) { // <--- FIX: Added '&' here
+                    Log::info("  Absence ID {$record->id}: Needs {$hoursToDeduct} hours. Current sorted pool:", $activeCreditPool->pluck('remaining', 'record.id')->toArray());
+
+                    // FIX: Iterate over keys, get item, modify its property, then put back into the collection
+                    foreach ($activeCreditPool->keys() as $poolKey) { // Iterate over keys
+                        $poolEntry = $activeCreditPool->get($poolKey); // Get the item array (this is a copy)
+                        
                         if ($remainingDeductionForThisAbsence <= 0) {
-                            break; // All days deducted for this absence
+                            break;
                         }
 
-                        $availableFromActivity = $poolEntry['remaining']; // Use 'remaining' from pool entry
+                        $availableFromActivity = (float)$poolEntry['remaining'];
 
                         if ($availableFromActivity > 0) {
                             $deductAmount = min($remainingDeductionForThisAbsence, $availableFromActivity);
 
                             if ($deductAmount > 0) {
-                                // Create CtoCreditUsage record for this deduction
                                 CtoCreditUsage::create([
-                                    'cto_activity_id' => $activityId,
+                                    'cto_activity_id' => $poolEntry['record']->id,
                                     'cto_absence_id' => $record->id,
                                     'days_used' => $deductAmount,
                                 ]);
-                                // Update the remaining credits in the pool entry directly
-                                $poolEntry['remaining'] -= $deductAmount; // Direct modification
+                                
+                                $poolEntry['remaining'] -= $deductAmount; // Modify the copy of the array
+                                $activeCreditPool->put($poolKey, $poolEntry); // Put the modified array back into the collection
+                                
                                 $remainingDeductionForThisAbsence -= $deductAmount;
-                                Log::info("    Used {$deductAmount} from Activity ID {$activityId} for Absence ID {$record->id}. Pool remaining for activity: {$poolEntry['remaining']}. Deduction remaining for absence: {$remainingDeductionForThisAbsence}");
+                                Log::info("    Used {$deductAmount} hours from Activity ID {$poolEntry['record']->id} for Absence ID {$record->id}. Pool remaining for activity: {$activeCreditPool->get($poolKey)['remaining']}. Deduction remaining for absence: {$remainingDeductionForThisAbsence}");
                             }
                         }
                     }
-                    unset($poolEntry); // Unset reference after loop to prevent unintended modifications
+                    
                     if ($remainingDeductionForThisAbsence > 0) {
-                        Log::warning("Customer ID: {$customer->id}, Absence ID: {$record->id} could not be fully covered during recalculation. Remaining: {$remainingDeductionForThisAbsence}. This might indicate a data discrepancy.");
+                        Log::warning("Customer ID: {$customer->id}, Absence ID: {$record->id} could not be fully covered during recalculation by available *active pool credits*. Remaining: {$remainingDeductionForThisAbsence}. This suggests a discrepancy in `getEligibleCtoBalance` or data corruption.");
                     }
                 }
 
-                // --- Step 3: Update the balance field for the current CTO record and save ---
-                $newBalanceValue = round($currentRunningBalance, 2);
-                if ($record->current_balance !== $newBalanceValue) { // Use current_balance
-                    $record->current_balance = $newBalanceValue; // Write to current_balance
-                    $record->save();
-                    Log::info("   CTO record ID " . $record->id . " current_balance updated to: " . $newBalanceValue);
+                $newRunningBalanceValue = round($currentRunningBalance, 2);
+                
+                $record->balance = $newRunningBalanceValue; 
+
+                if ($record->is_activity) {
+                    $poolDataForThisActivity = $activeCreditPool->firstWhere('record.id', $record->id);
+                    $record->current_balance = $poolDataForThisActivity['remaining'] ?? 0;
                 } else {
-                    Log::info("  CTO record ID " . $record->id . " balance unchanged: " . $newBalanceValue);
+                    $record->current_balance = 0;
                 }
+
+                $record->save(); 
+                Log::info("  CTO record ID " . $record->id . " running total 'balance' updated to: " . $newRunningBalanceValue . ". 'current_balance' updated to: " . $record->current_balance);
                 Log::info("--- END OF RECORD ID: " . $record->id . " PROCESSING ---");
             }
+            // No unset needed if $record is not by reference here
+
+            $customer->update(['balance_cto' => round($currentRunningBalance, 2)]);
+            Log::info("Final Customer ID: {$customer->id} Overall CTO Balance updated to: " . round($currentRunningBalance, 2));
 
             DB::commit();
-            Log::info("Final Recalculation for Customer ID: {$customer->id}. Ending Eligible Balance: " . round($currentRunningBalance, 2));
             Log::info("--- END RECALCULATION FOR EMPLOYEE ID: {$customer->id} ---");
         } catch (\Exception $e) {
             DB::rollBack();
@@ -380,8 +373,7 @@ class CtoService
 
     /**
      * Deletes a CTO record (activity or absence) and recalculates balances.
-     *
-     * @param \App\CtoApplication $ctoApplication // Updated type hint in docblock
+     * @param \App\CtoApplication $ctoApplication
      * @return void
      * @throws \Exception
      */
@@ -389,9 +381,6 @@ class CtoService
     {
         DB::beginTransaction();
         try {
-            $customer = $ctoApplication->customer;
-
-            // Delete associated CtoCreditUsage records first
             if ($ctoApplication->is_activity) {
                 CtoCreditUsage::where('cto_activity_id', $ctoApplication->id)->delete();
                 Log::info("Deleted CtoCreditUsage for activity ID: {$ctoApplication->id}");
@@ -400,12 +389,10 @@ class CtoService
                 Log::info("Deleted CtoCreditUsage for absence ID: {$ctoApplication->id}");
             }
 
-            // Delete the CTO application record
             $ctoApplication->delete();
             Log::info("Deleted CTO Application ID: {$ctoApplication->id}");
 
-            // Recalculate balances for the customer
-            $this->recalculateBalancesForCustomer($customer);
+            $this->recalculateBalancesForCustomer($ctoApplication->customer);
 
             DB::commit();
         } catch (\Exception $e) {
@@ -417,7 +404,6 @@ class CtoService
 
     /**
      * Calculates the number of working days (excluding weekends) between two dates.
-     *
      * @param string|Carbon $startDate
      * @param string|Carbon $endDate
      * @return float
@@ -428,7 +414,7 @@ class CtoService
         $end = Carbon::parse($endDate);
 
         if ($start->greaterThan($end)) {
-            return 0.0; // Return float for consistency
+            return 0.0;
         }
 
         $days = 0;
@@ -442,10 +428,8 @@ class CtoService
     }
 
     /**
-     * Get the total eligible CTO balance for an customer as of a specific date.
-     * This considers only non-expired credits.
-     *
-     * @param \App\Customer $customer // Updated type hint in docblock
+     * Get the total eligible CTO balance for a customer as of a specific date.
+     * @param \App\Customer $customer
      * @param Carbon $asOfDate The date to check the balance against.
      * @return float
      */
@@ -453,43 +437,40 @@ class CtoService
     {
         $asOfDate = $asOfDate ?? Carbon::now();
 
-        // Debugging logs for getEligibleCtoBalance
         Log::debug("Calculating eligible CTO balance for customer ID: {$customer->id} as of {$asOfDate->format('Y-m-d')}");
 
-        // Fetch all CTO activities for the customer that are not expired as of $asOfDate
-        $eligibleActivities = $customer->ctoApplications()
+        $totalEligibleCredits = $customer->ctoApplications()
             ->where('is_activity', true)
-            ->with('creditUsages') // Eager load usages to correctly calculate remaining_credits
+            ->where(function($query) use ($asOfDate) {
+                $query->whereDate('date_of_activity_start', '<=', $asOfDate);
+            })
             ->get()
             ->filter(function($activity) use ($asOfDate) {
-                // Filter out activities that have expired by the asOfDate
                 $isExpired = $activity->isExpiredAt($asOfDate);
+                $hasRemaining = $activity->remaining_credits > 0;
+                
                 if ($isExpired) {
-                    Log::debug("  Activity ID {$activity->id} is expired as of {$asOfDate->format('Y-m-d')}. Expiration Date: {$activity->date_of_activity_end->copy()->addYear()->format('Y-m-d')}. Skipping.");
+                    Log::debug("   Skipping Activity ID {$activity->id} (earned {$activity->credits_earned}) because it expired on {$activity->date_of_activity_end->copy()->addYear()->format('Y-m-d')} as of {$asOfDate->format('Y-m-d')}.");
+                } elseif (!$hasRemaining) {
+                    Log::debug("   Skipping Activity ID {$activity->id} (earned {$activity->credits_earned}) because it has 0 remaining credits.");
                 }
-                return !$isExpired;
-            });
+                
+                return !$isExpired && $hasRemaining;
+            })
+            ->sum('remaining_credits');
 
-        $totalEligibleCredits = 0.0;
-        foreach ($eligibleActivities as $activity) {
-            $remaining = $activity->remaining_credits;
-            if ($remaining > 0) {
-                $totalEligibleCredits += $remaining;
-                Log::debug("  Adding remaining credits ({$remaining}) from Activity ID {$activity->id}. Current total: {$totalEligibleCredits}");
-            } else {
-                Log::debug("  Activity ID {$activity->id} has no remaining credits ({$remaining}). Skipping.");
-            }
-        }
+        $totalEligibleCredits += $customer->balance_forwarded_cto;
 
-        Log::debug("Final eligible CTO balance for customer ID {$customer->id}: {$totalEligibleCredits}");
+        $finalEligibleBalance = (float)round($totalEligibleCredits, 2);
+        Log::debug("Final eligible CTO balance for customer ID {$customer->id}: {$finalEligibleBalance}");
 
-        return (float)round($totalEligibleCredits, 2);
+        return max(0.0, $finalEligibleBalance);
     }
 
     /**
-     * Get current *total* CTO balance for an customer (sum of all earned - sum of all used).
-     * This does NOT consider expiration or FIFO for the total.
-     * Use getEligibleCtoBalance() for checks against new absences.
+     * Get current *total* CTO balance for a customer (sum of all earned - sum of all used).
+     * @param \App\Customer $customer
+     * @return float
      */
     public function getCurrentCtoBalance(Customer $customer)
     {
@@ -501,6 +482,6 @@ class CtoService
             ->where('is_activity', false)
             ->sum('no_of_days');
 
-        return (float)($totalEarned - $totalUsed);
+        return (float)($totalEarned - $totalUsed + $customer->balance_forwarded_cto);
     }
 }

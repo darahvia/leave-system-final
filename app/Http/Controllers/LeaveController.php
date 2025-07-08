@@ -225,25 +225,6 @@ class LeaveController extends Controller
             }
         }
 
-    // unused
-    // public function getCustomerLeaveBalances($customerId)
-    // {
-    //     $customer = Customer::find($customerId);
-        
-    //     if (!$customer) {
-    //         return response()->json(['error' => 'Customer not found'], 404);
-    //     }
-
-    //     $balances = [];
-    //     $leaveTypes = ['vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl', 'ra9710', 'rl', 'sel', 'study_leave', 'adopt'];
-        
-    //     foreach ($leaveTypes as $type) {
-    //         $balances[$type] = $customer->getCurrentLeaveBalance($type);
-    //     }
-
-    //     return response()->json($balances);
-    // }
-
     public function customerAutocomplete(Request $request)
     {
         if (ob_get_level()) {
@@ -262,7 +243,7 @@ class LeaveController extends Controller
                         ->orWhere('given_name', 'LIKE', "%{$search}%")
                         ->orWhere('middle_name', 'LIKE', "%{$search}%");
                 })
-                ->whereBetween('office_id', [1, 14])
+                ->whereBetween('office_id', [1, 14])    // non-teaching personnel
                 ->limit(10)
                 ->get(['surname', 'given_name', 'middle_name', 'id'])
                 ->map(function ($customer) {

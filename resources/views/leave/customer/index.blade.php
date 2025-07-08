@@ -6,7 +6,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
-
     <style>
         .tab-nav {
             display: flex;
@@ -117,7 +116,7 @@
                     <label>Leave Type:</label>
                     <select name="leave_type" class="form-control" required>
                         @foreach ($leaveTypes as $code => $label)
-                            @if (!in_array($code, ['vl', 'sl']))
+                             @if (!in_array($code, ['VL', 'SL']))
                                 <option value="{{ $code }}" {{ old('leave_type') == $code ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>

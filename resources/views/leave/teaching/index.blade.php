@@ -63,6 +63,8 @@
         </div>
 
         <div class="search-bar-section">
+        <a href="{{ route('leave.select') }}" class="home-button">Home</a>
+
             <form method="POST" action="{{ route('teaching.find') }}" class="search-form" autocomplete="off">
                 @csrf
                 <div class="search-box">

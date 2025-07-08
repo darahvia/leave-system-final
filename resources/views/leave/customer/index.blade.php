@@ -205,7 +205,9 @@
                                     @endif
                                 @endif
                             </td>
-                            <td data-label="DATE LEAVE FILED">{{ $app->date_filed ? \Carbon\Carbon::parse($app->date_filed)->format('F j, Y') : '' }}</td>
+                            <td data-label="DATE LEAVE FILED">
+                                {{ $app->is_credit_earned ? '' : ($app->date_filed ? \Carbon\Carbon::parse($app->date_filed)->format('F j, Y') : '') }}
+                            </td>
                             <td data-label="DATE LEAVE INCURRED">
                                 @if($app->inclusive_date_start && $app->inclusive_date_end)
                                     @if(\Carbon\Carbon::parse($app->inclusive_date_start)->isSameDay(\Carbon\Carbon::parse($app->inclusive_date_end)))

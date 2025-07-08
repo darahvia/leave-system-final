@@ -97,8 +97,11 @@
             <div class="error">{{ session('error') }}</div>
         @endif
 
-    @include('partials.header', ['pageTitle' => 'Leave Credit System - CTO'])
-
+        @include('partials.header', [
+            'pageTitle' => 'Leave Credit System - CTO',
+            'customer' => $customer ?? null,
+            'ctoService' => app(\App\Services\CtoService::class)
+        ])
         <div class="tab-nav" style="margin-bottom: 1.5rem;">
             <a href="{{ route('leave.customer.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('leave.customer.index') || request()->routeIs('leave.customer.index') ? ' active' : '' }}">Leave</a>
             <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>

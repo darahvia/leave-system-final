@@ -106,6 +106,14 @@
                 <div class="emp-form">
                     <label>Earned Date:</label>
                     <input type="date" name="earned_date" required>
+                    <div class="form-group">
+                        <label for="earned_vl">VL Credits:</label>
+                        <input type="number" name="earned_vl" id="earned_vl" value="1.25" step="0.001" min="0" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="earned_sl">SL Credits:</label>
+                        <input type="number" name="earned_sl" id="earned_sl" value="1.25" step="0.001" min="0" class="form-control" required>
+                    </div>
                     <button type="submit">Add Credits Earned</button>
                 </div>
             </form>

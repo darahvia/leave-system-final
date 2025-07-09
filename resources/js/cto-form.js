@@ -102,17 +102,23 @@ $(document).ready(function() {
     const activityForm = $('#activity-form'); 
 
     const singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
+        let startHalfDayUsage = null;
+        let endHalfDayUsage = null;
+
     const absenceEndDateField = document.getElementById('inclusive_date_end_usage');
     const absenceEndDateLabel = document.getElementById('absence-end-date-label');
     const dateFiledUsageField = document.getElementById('usage_date_filed'); 
     const inclusiveDateStartUsageField = document.getElementById('inclusive_date_start_usage');
     const hoursAppliedUsageField = document.getElementById('hours_applied_usage'); 
+    const endHalfdaySpan = document.getElementById('end-halfday-span-usage');
 
     const submitUsageBtn = document.getElementById('submit-usage-btn');
     const cancelUsageEditBtn = document.getElementById('cancel-usage-edit-btn');
     const usageCtoIdField = document.getElementById('usage_cto_id');
     const usageFormMethodField = document.getElementById('usage_form_method');
     const usageForm = $('#usage-form'); 
+
+    
 
 
     // Initial state for single day checkboxes (ensure end date fields are hidden/shown correctly on load)
@@ -145,23 +151,31 @@ $(document).ready(function() {
             absenceEndDateField.style.display = 'none';
             absenceEndDateField.removeAttribute('required');
             absenceEndDateLabel.style.display = 'none';
+            if (endHalfdaySpan) endHalfdaySpan.style.display = 'none'; // ✅ NEW
         } else {
             absenceEndDateField.style.display = 'block';
             absenceEndDateField.setAttribute('required', 'required');
             absenceEndDateLabel.style.display = 'block';
+            if (endHalfdaySpan) endHalfdaySpan.style.display = 'inline-block'; // ✅ NEW
         }
+
         singleDayAbsenceCheckbox.addEventListener('change', function() {
             if (this.checked) {
                 absenceEndDateField.style.display = 'none';
                 absenceEndDateField.value = ''; 
                 absenceEndDateField.removeAttribute('required');
                 absenceEndDateLabel.style.display = 'none';
+
+                if (endHalfdaySpan) endHalfdaySpan.style.display = 'none'; // ✅ needed
             } else {
                 absenceEndDateField.style.display = 'block';
                 absenceEndDateField.setAttribute('required', 'required');
                 absenceEndDateLabel.style.display = 'block';
+
+                if (endHalfdaySpan) endHalfdaySpan.style.display = 'inline-block'; // ✅ needed
             }
         });
+
     }
 
     // Function to calculate working days (for CTO usage)
@@ -188,7 +202,15 @@ $(document).ready(function() {
                 if (response.ok) {
                     console.log('Calculated working days (for usage form):', data.days);
                     // FIX: Populate the hoursAppliedUsageField with the calculated days
-                    hoursAppliedUsageField.value = data.days; 
+                    let days = data.days;
+                    if (singleDayAbsenceCheckbox.checked) {
+                        days = startHalfDayUsage ? 0.5 : 1;
+                    } else {
+                        if (startHalfDayUsage) days -= 0.5;
+                        if (endHalfDayUsage) days -= 0.5;
+                    }
+                    hoursAppliedUsageField.value = days;
+
                 } else {
                     console.error('Error calculating days:', data.message);
                     displayMessage('Error calculating days: ' + data.message, 'error');
@@ -309,6 +331,22 @@ $(document).ready(function() {
             // calculateWorkingDaysForUsage(); // This might be too early if DOM hasn't settled. Trigger manually or on next event.
 
             usageForm[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Set the checkbox state
+        const singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
+        const endHalfdaySpan = document.getElementById('end-halfday-span-usage');
+
+        if (singleDayAbsenceCheckbox && endHalfdaySpan) {
+            if (data.date_of_absence_start && (!data.date_of_absence_end || data.date_of_absence_start === data.date_of_absence_end)) {
+                // Single day usage
+                singleDayAbsenceCheckbox.checked = true;
+                endHalfdaySpan.style.display = 'none';
+            } else {
+                // Multi-day usage
+                singleDayAbsenceCheckbox.checked = false;
+                endHalfdaySpan.style.display = 'inline-block';
+            }
         }
     };
 
@@ -507,5 +545,41 @@ $(document).ready(function() {
         document.getElementById('confirm-message-text').textContent = message;
         modalOverlay.style.display = 'flex';
     }
+        // These must come BEFORE the button click listeners
+        function toggleHalfDayUsage(dateType, period) {
+            if (dateType === 'start') {
+                startHalfDayUsage = (startHalfDayUsage === period) ? null : period;
+            } else {
+                endHalfDayUsage = (endHalfDayUsage === period) ? null : period;
+            }
+            updateToggleButtonsUsage();
+            calculateWorkingDaysForUsage();
+        }
 
-}); // End of document.ready //for pull request 
+        function updateToggleButtonsUsage() {
+            const toggleBtn = (prefix, period) => {
+                const btn = document.getElementById(`${prefix}-${period.toLowerCase()}-btn-usage`);
+                const current = prefix === 'start' ? startHalfDayUsage : endHalfDayUsage;
+                if (btn) btn.classList.toggle('active', current === period);
+            };
+            ['start', 'end'].forEach(prefix => {
+                ['AM', 'PM'].forEach(period => toggleBtn(prefix, period));
+            });
+        }
+
+        // Now call addEventListener
+        document.getElementById('start-am-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('start', 'AM'));
+        document.getElementById('start-pm-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('start', 'PM'));
+        document.getElementById('end-am-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('end', 'AM'));
+        document.getElementById('end-pm-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('end', 'PM'));
+
+    // Ensure correct visibility on page load
+    if (singleDayAbsenceCheckbox && endHalfdaySpan) {
+        if (singleDayAbsenceCheckbox.checked) {
+            endHalfdaySpan.style.display = 'none';
+        } else {
+            endHalfdaySpan.style.display = 'inline-block';
+        }
+    }
+
+}); // End of document.ready

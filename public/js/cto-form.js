@@ -104,6 +104,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 // Ensure the DOM is fully loaded before executing scripts
 $(document).ready(function () {
+  var _document$getElementB, _document$getElementB2, _document$getElementB3, _document$getElementB4;
   // These global variables are expected to be set in the blade file
   // before this script is loaded.
   // window.autocompleteRoute
@@ -194,11 +195,14 @@ $(document).ready(function () {
   var activityFormMethodField = document.getElementById('activity_form_method');
   var activityForm = $('#activity-form');
   var singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
+  var startHalfDayUsage = null;
+  var endHalfDayUsage = null;
   var absenceEndDateField = document.getElementById('inclusive_date_end_usage');
   var absenceEndDateLabel = document.getElementById('absence-end-date-label');
   var dateFiledUsageField = document.getElementById('usage_date_filed');
   var inclusiveDateStartUsageField = document.getElementById('inclusive_date_start_usage');
   var hoursAppliedUsageField = document.getElementById('hours_applied_usage');
+  var endHalfdaySpan = document.getElementById('end-halfday-span-usage');
   var submitUsageBtn = document.getElementById('submit-usage-btn');
   var cancelUsageEditBtn = document.getElementById('cancel-usage-edit-btn');
   var usageCtoIdField = document.getElementById('usage_cto_id');
@@ -234,10 +238,12 @@ $(document).ready(function () {
       absenceEndDateField.style.display = 'none';
       absenceEndDateField.removeAttribute('required');
       absenceEndDateLabel.style.display = 'none';
+      if (endHalfdaySpan) endHalfdaySpan.style.display = 'none'; // ✅ NEW
     } else {
       absenceEndDateField.style.display = 'block';
       absenceEndDateField.setAttribute('required', 'required');
       absenceEndDateLabel.style.display = 'block';
+      if (endHalfdaySpan) endHalfdaySpan.style.display = 'inline-block'; // ✅ NEW
     }
     singleDayAbsenceCheckbox.addEventListener('change', function () {
       if (this.checked) {
@@ -245,10 +251,12 @@ $(document).ready(function () {
         absenceEndDateField.value = '';
         absenceEndDateField.removeAttribute('required');
         absenceEndDateLabel.style.display = 'none';
+        if (endHalfdaySpan) endHalfdaySpan.style.display = 'none'; // ✅ needed
       } else {
         absenceEndDateField.style.display = 'block';
         absenceEndDateField.setAttribute('required', 'required');
         absenceEndDateLabel.style.display = 'block';
+        if (endHalfdaySpan) endHalfdaySpan.style.display = 'inline-block'; // ✅ needed
       }
     });
   }
@@ -259,7 +267,7 @@ $(document).ready(function () {
   } // Attach event listeners for date changes in usage form to recalculate days
   function _calculateWorkingDaysForUsage() {
     _calculateWorkingDaysForUsage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
-      var startDate, endDate, response, data, _t;
+      var startDate, endDate, response, data, days, _t;
       return _regenerator().w(function (_context) {
         while (1) switch (_context.n) {
           case 0:
@@ -267,6 +275,7 @@ $(document).ready(function () {
               _context.n = 1;
               break;
             }
+            console.warn("Missing elements or window.ctoCalculateDaysRoute. Skipping calculateWorkingDaysForUsage.");
             return _context.a(2);
           case 1:
             startDate = inclusiveDateStartUsageField.value;
@@ -296,6 +305,15 @@ $(document).ready(function () {
             data = _context.v;
             if (response.ok) {
               console.log('Calculated working days (for usage form):', data.days);
+              // FIX: Populate the hoursAppliedUsageField with the calculated days
+              days = data.days;
+              if (singleDayAbsenceCheckbox.checked) {
+                days = startHalfDayUsage ? 0.5 : 1;
+              } else {
+                if (startHalfDayUsage) days -= 0.5;
+                if (endHalfDayUsage) days -= 0.5;
+              }
+              hoursAppliedUsageField.value = days;
             } else {
               console.error('Error calculating days:', data.message);
               displayMessage('Error calculating days: ' + data.message, 'error');
@@ -329,33 +347,17 @@ $(document).ready(function () {
     console.log("editCtoRecordFromData called with data:", data);
 
     // Check if elements exist before trying to access their properties
-    if (!activityCtoIdField || !activityForm || !activityFormMethodField || !submitActivityBtn || !cancelActivityEditBtn || !specialOrderField || !activityField || !hoursEarnedField || !dateOfActivityStartField || !singleDayActivityCheckbox || !activityEndDateField || !activityEndDateLabel || !usageCtoIdField || !usageForm || !usageFormMethodField || !submitUsageBtn || !cancelUsageEditBtn || !dateFiledUsageField || !inclusiveDateStartUsageField || !hoursAppliedUsageField || !singleDayAbsenceCheckbox || !absenceEndDateField || !absenceEndDateLabel) {
-      console.error("One or more required DOM elements for CTO forms are missing. Cannot process edit.", {
-        activityCtoIdField: activityCtoIdField,
-        activityForm: activityForm,
-        activityFormMethodField: activityFormMethodField,
-        submitActivityBtn: submitActivityBtn,
-        cancelActivityEditBtn: cancelActivityEditBtn,
-        specialOrderField: specialOrderField,
-        activityField: activityField,
-        hoursEarnedField: hoursEarnedField,
-        dateOfActivityStartField: dateOfActivityStartField,
-        singleDayActivityCheckbox: singleDayActivityCheckbox,
-        activityEndDateField: activityEndDateField,
-        activityEndDateLabel: activityEndDateLabel,
-        usageCtoIdField: usageCtoIdField,
-        usageForm: usageForm,
-        usageFormMethodField: usageFormMethodField,
-        submitUsageBtn: submitUsageBtn,
-        cancelUsageEditBtn: cancelUsageEditBtn,
-        dateFiledUsageField: dateFiledUsageField,
-        inclusiveDateStartUsageField: inclusiveDateStartUsageField,
-        hoursAppliedUsageField: hoursAppliedUsageField,
-        singleDayAbsenceCheckbox: singleDayAbsenceCheckbox,
-        absenceEndDateField: absenceEndDateField,
-        absenceEndDateLabel: absenceEndDateLabel
-      });
-      displayMessage("Error: Form elements not found. Page may not be fully loaded or structured incorrectly.", "error");
+    var requiredElements = [activityCtoIdField, activityForm, activityFormMethodField, submitActivityBtn, cancelActivityEditBtn, specialOrderField, activityField, hoursEarnedField, dateOfActivityStartField, singleDayActivityCheckbox, activityEndDateField, activityEndDateLabel, usageCtoIdField, usageForm, usageFormMethodField, submitUsageBtn, cancelUsageEditBtn, dateFiledUsageField, inclusiveDateStartUsageField, hoursAppliedUsageField, singleDayAbsenceCheckbox, absenceEndDateField, absenceEndDateLabel];
+    var missingElements = false;
+    var elementNames = ["activityCtoIdField", "activityForm", "activityFormMethodField", "submitActivityBtn", "cancelActivityEditBtn", "specialOrderField", "activityField", "hoursEarnedField", "dateOfActivityStartField", "singleDayActivityCheckbox", "activityEndDateField", "activityEndDateLabel", "usageCtoIdField", "usageForm", "usageFormMethodField", "submitUsageBtn", "cancelUsageEditBtn", "dateFiledUsageField", "inclusiveDateStartUsageField", "hoursAppliedUsageField", "singleDayAbsenceCheckbox", "absenceEndDateField", "absenceEndDateLabel"];
+    for (var i = 0; i < requiredElements.length; i++) {
+      if (!requiredElements[i]) {
+        console.error("Missing DOM element: ".concat(elementNames[i], ". Check HTML IDs."));
+        missingElements = true;
+      }
+    }
+    if (missingElements) {
+      displayMessage("Error: Required form elements not found. Please check HTML structure and IDs.", "error");
       return; // Stop execution if elements are missing
     }
     if (data.is_activity) {
@@ -395,7 +397,7 @@ $(document).ready(function () {
       usageFormMethodField.value = 'PUT';
       submitUsageBtn.textContent = 'Update CTO Usage';
       cancelUsageEditBtn.style.display = 'inline-block';
-      dateFiledUsageField.valueAsDate = new Date();
+      dateFiledUsageField.value = data.date_filed || new Date().toISOString().slice(0, 10);
       inclusiveDateStartUsageField.value = data.date_of_absence_start;
       hoursAppliedUsageField.value = data.hours_earned_or_applied; // This is no_of_days for usage
 
@@ -412,6 +414,10 @@ $(document).ready(function () {
         absenceEndDateField.value = data.date_of_absence_end;
         absenceEndDateLabel.style.display = 'block';
       }
+
+      // Immediately recalculate days for usage form after populating dates
+      // calculateWorkingDaysForUsage(); // This might be too early if DOM hasn't settled. Trigger manually or on next event.
+
       usageForm[0].scrollIntoView({
         behavior: 'smooth',
         block: 'center'
@@ -553,7 +559,43 @@ $(document).ready(function () {
     document.getElementById('confirm-message-text').textContent = message;
     modalOverlay.style.display = 'flex';
   }
-}); // End of document.ready
+  // These must come BEFORE the button click listeners
+  function toggleHalfDayUsage(dateType, period) {
+    if (dateType === 'start') {
+      startHalfDayUsage = startHalfDayUsage === period ? null : period;
+    } else {
+      endHalfDayUsage = endHalfDayUsage === period ? null : period;
+    }
+    updateToggleButtonsUsage();
+    calculateWorkingDaysForUsage();
+  }
+  function updateToggleButtonsUsage() {
+    var toggleBtn = function toggleBtn(prefix, period) {
+      var btn = document.getElementById("".concat(prefix, "-").concat(period.toLowerCase(), "-btn-usage"));
+      var current = prefix === 'start' ? startHalfDayUsage : endHalfDayUsage;
+      if (btn) btn.classList.toggle('active', current === period);
+    };
+    ['start', 'end'].forEach(function (prefix) {
+      ['AM', 'PM'].forEach(function (period) {
+        return toggleBtn(prefix, period);
+      });
+    });
+  }
+
+  // Now call addEventListener
+  (_document$getElementB = document.getElementById('start-am-btn-usage')) === null || _document$getElementB === void 0 || _document$getElementB.addEventListener('click', function () {
+    return toggleHalfDayUsage('start', 'AM');
+  });
+  (_document$getElementB2 = document.getElementById('start-pm-btn-usage')) === null || _document$getElementB2 === void 0 || _document$getElementB2.addEventListener('click', function () {
+    return toggleHalfDayUsage('start', 'PM');
+  });
+  (_document$getElementB3 = document.getElementById('end-am-btn-usage')) === null || _document$getElementB3 === void 0 || _document$getElementB3.addEventListener('click', function () {
+    return toggleHalfDayUsage('end', 'AM');
+  });
+  (_document$getElementB4 = document.getElementById('end-pm-btn-usage')) === null || _document$getElementB4 === void 0 || _document$getElementB4.addEventListener('click', function () {
+    return toggleHalfDayUsage('end', 'PM');
+  });
+}); // End of document.ready //for pull request
 
 /***/ }),
 
@@ -569,4 +611,4 @@ module.exports = __webpack_require__(/*! C:\xampp\htdocs\leave-system-final\reso
 
 /***/ })
 
-/******/ }); //for pull request
+/******/ });

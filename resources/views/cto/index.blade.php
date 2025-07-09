@@ -203,11 +203,26 @@
                             <label>Date Filed:</label>
                             <input type="date" name="date_filed" id="usage_date_filed" required>
 
-                            <label>Leave Date (Inclusive Start):</label>
-                            <input type="date" name="inclusive_date_start" id="inclusive_date_start_usage" required>
+                            <label>Inclusive Date Start:</label>
+                            <input type="date" id="inclusive_date_start_usage" name="inclusive_date_start" required>
 
-                            <label id="absence-end-date-label">CTO Date (Inclusive End):</label>
-                            <input type="date" name="inclusive_date_end" id="inclusive_date_end_usage">
+
+                            <!-- Under Start Date -->
+                            <span class="halfday-controls" id="start-halfday-span-usage">
+                                <button type="button" class="toggle-button" id="start-am-btn-usage" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="start-pm-btn-usage" data-value="PM">PM</button>
+                            </span>
+
+                            <label id="absence-end-date-label">Inclusive Date End:</label>
+                            <input type="date" id="inclusive_date_end_usage" name="inclusive_date_end">
+                            
+                            <!-- Under End Date -->
+                            <span class="halfday-controls" id="end-halfday-span-usage">
+                                <button type="button" class="toggle-button" id="end-am-btn-usage" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="end-pm-btn-usage" data-value="PM">PM</button>
+                            </span>
+
+
 
                             <label>Credits Used:</label>
                             <input type="number" name="hours_applied" id="hours_applied_usage" step="0.01" required>

@@ -63,6 +63,7 @@ class CustomerController extends Controller
 
     $model->nama = $nama;
     $model->email = $request->email;
+    $model->employee_id = $request->employee_id;
     $model->district = $request->district;
     $model->office_id = $request->office_id;
     $model->position_id = $request->position_id;

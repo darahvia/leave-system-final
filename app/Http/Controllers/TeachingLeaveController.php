@@ -23,7 +23,7 @@ class TeachingLeaveController extends Controller
                 try {
                     $query = TeachingLeaveApplications::where('customer_id', $customer->id);
                     
-                    $query = $query->orderBy('leave_incurred_date', 'desc')
+                    $query = $query->orderBy('leave_start_date', 'desc')
                                    ->orderBy('created_at', 'desc');
                     
                     $teachingLeaveApplications = $query->get();
@@ -34,7 +34,7 @@ class TeachingLeaveController extends Controller
 
                 try {
                     $teachingEarnedCredits = TeachingEarnedCredits::where('customer_id', $customer->id)
-                        ->orderBy('earned_date', 'desc')
+                        ->orderBy('earned_date_start', 'desc')
                         ->orderBy('created_at', 'desc')
                         ->get();
                 } catch (\Exception $e) {
@@ -45,9 +45,6 @@ class TeachingLeaveController extends Controller
 
         return view('leave.teaching.index', compact('customer', 'teachingLeaveApplications', 'teachingEarnedCredits'));
     }
-
-
-
 
     public function findCustomer(Request $request)
     {
@@ -62,34 +59,68 @@ class TeachingLeaveController extends Controller
             ->with('error', '❌ Customer not found.');
     }
     
-
     public function submitLeave(Request $request)
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'leave_incurred_date' => 'required|date',
-            'leave_incurred_days' => 'required|numeric|min:1|max:365',
+            'leave_start_date' => 'required|date',
+            'leave_end_date' => 'required|date|after_or_equal:leave_start_date',
+            'working_days' => 'required|numeric|min:0.5|max:365',
+            'is_leavewopay' => 'nullable|boolean',
         ]);
+        $isLeaveWithoutPay = $request->has('is_leavewopay') && $request->is_leavewopay == 1;
 
+        if (!$isLeaveWithoutPay) {
         try {
             $customer = Customer::findOrFail($request->customer_id);
+            $leaveDays = $request->working_days;
+            $leaveStartDate = Carbon::parse($request->leave_start_date);
+            $cutoffDate = Carbon::create(2024, 10, 1); // October 1
 
-            // Check if customer has sufficient leave credits
-            if ($customer->leave_credits < $request->leave_incurred_days) {
+            // Determine available leave credits
+            $totalAvailableCredits = $customer->leave_credits_old + $customer->leave_credits_new;
+
+            if ($totalAvailableCredits < $leaveDays) {
                 return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
-                    ->with('error', '❌ Insufficient leave credits. Available: ' . $customer->leave_credits . ' days');
+                    ->with('error', '❌ Insufficient leave credits. Available: ' . $totalAvailableCredits . ' days');
             }
+
+            // Deduct from appropriate buckets
+            if ($leaveStartDate->lt($cutoffDate)) {
+                // Old leave - deduct only from leave_credits_old
+                if ($customer->leave_credits_old < $leaveDays) {
+                    return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
+                        ->with('error', '❌ Insufficient OLD leave credits. Available: ' . $customer->leave_credits_old . ' days');
+                }
+                $customer->leave_credits_old -= $leaveDays;
+
+            } else {
+                // New leave - deduct from new first, then old if needed
+                if ($customer->leave_credits_new >= $leaveDays) {
+                    $customer->leave_credits_new -= $leaveDays;
+                } else {
+                    $remaining = $leaveDays - $customer->leave_credits_new;
+                    $customer->leave_credits_new = 0;
+
+                    if ($customer->leave_credits_old < $remaining) {
+                        return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
+                            ->with('error', '❌ Not enough leave credits. Needed: ' . $leaveDays . ' (short by ' . ($remaining - $customer->leave_credits_old) . ' days)');
+                    }
+
+                    $customer->leave_credits_old -= $remaining;
+                }
+            }
+
+            $customer->save();
 
             // Create leave application
             TeachingLeaveApplications::create([
                 'customer_id' => $customer->id,
-                'leave_incurred_date' => $request->leave_incurred_date,
-                'leave_incurred_days' => $request->leave_incurred_days,
+                'leave_start_date' => $request->leave_start_date,
+                'leave_end_date' => $request->leave_end_date,
+                'leave_incurred_date' => $request->leave_start_date,
+                'working_days' => $leaveDays,
             ]);
-
-            // Deduct leave credits from customer
-            $customer->leave_credits -= $request->leave_incurred_days;
-            $customer->save();
 
             return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
                 ->with('success', '✅ Teaching leave application submitted successfully!');
@@ -99,121 +130,213 @@ class TeachingLeaveController extends Controller
                 ->with('error', '❌ An error occurred: ' . $e->getMessage());
         }
     }
-
-    public function updateLeave(Request $request)
-    {
-        try {
-            $request->validate([
-                'edit_id' => 'required|integer|exists:teaching_leave_applications,id',
-                'customer_id' => 'required|integer|exists:customers,id',
-                'leave_incurred_date' => 'required|date',
-                'leave_incurred_days' => 'required|numeric|min:1|max:365',
-            ]);
-
-            $customer = Customer::findOrFail($request->customer_id);
-            $leaveApplication = TeachingLeaveApplications::findOrFail($request->edit_id);
-            
-            // Verify that this leave application belongs to the specified customer
-            if ($leaveApplication->customer_id != $request->customer_id) {
-                return back()->with('error', '❌ Unauthorized access to leave application.');
-            }
-
-            // Calculate the difference in days
-            $oldDays = $leaveApplication->leave_incurred_days;
-            $newDays = $request->leave_incurred_days;
-            $daysDifference = $newDays - $oldDays;
-
-            // Check if customer has sufficient credits for additional days
-            if ($daysDifference > 0 && $customer->leave_credits < $daysDifference) {
-                return back()->with('error', '❌ Insufficient leave credits for update. Available: ' . $customer->leave_credits . ' days');
-            }
-
-            // Update the leave application
-            $leaveApplication->update([
-                'leave_incurred_date' => $request->leave_incurred_date,
-                'leave_incurred_days' => $request->leave_incurred_days,
-            ]);
-
-            // Adjust customer's leave credits
-            $customer->leave_credits -= $daysDifference;
-            $customer->save();
-
-            return back()->with('success', '✅ Leave application updated successfully.');
-            
-        } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return back()->with('error', '❌ An error occurred while updating: ' . $e->getMessage());
-        }
     }
+
+
+public function updateLeave(Request $request, $id)
+{
+        $request->validate([
+            'customer_id' => 'required|integer|exists:customers,id',
+            'leave_start_date' => 'required|date',
+            'leave_end_date' => 'required|date|after_or_equal:leave_start_date',
+            'working_days' => 'required|numeric|min:0.5|max:365',
+            'is_leavewopay' => 'nullable|boolean',
+        ]);
+    try {
+
+        $customer = Customer::findOrFail($request->customer_id);
+        $leaveApplication = TeachingLeaveApplications::findOrFail($id);
+
+        if ($leaveApplication->customer_id != $request->customer_id) {
+            return back()->with('error', '❌ Unauthorized access to leave application.');
+        }
+
+        if ($leaveApplication->is_leavewopay) {
+            // Just update the dates and working_days
+            $leaveApplication->update([
+                'leave_start_date' => $request->leave_start_date,
+                'leave_end_date' => $request->leave_end_date,
+                'leave_incurred_date' => $request->leave_start_date,
+                'working_days' => $request->working_days,
+            ]);
+
+            return back()->with('success', '✅ Leave without pay updated successfully.');
+        }
+        $cutoffDate = Carbon::create(2024, 10, 1); // October 1 this year
+
+        // Step 1: Restore previous leave days
+        $oldLeaveDate = Carbon::parse($leaveApplication->leave_start_date);
+        $oldDays = $leaveApplication->working_days;
+
+        if ($oldLeaveDate->lt($cutoffDate)) {
+            $customer->leave_credits_old += $oldDays;
+        } else {
+            // Return to new first
+            $customer->leave_credits_new += $oldDays;
+        }
+
+        // Step 2: Deduct new leave days
+        $newLeaveDate = Carbon::parse($request->leave_start_date);
+        $newDays = $request->working_days;
+
+        if ($newLeaveDate->lt($cutoffDate)) {
+            // Must deduct fully from OLD
+            if ($customer->leave_credits_old < $newDays) {
+                return back()->with('error', '❌ Insufficient OLD leave credits for update. Available: ' . $customer->leave_credits_old . ' days');
+            }
+            $customer->leave_credits_old -= $newDays;
+
+        } else {
+            // Deduct from NEW first, then OLD if needed
+            if ($customer->leave_credits_new >= $newDays) {
+                $customer->leave_credits_new -= $newDays;
+            } else {
+                $remaining = $newDays - $customer->leave_credits_new;
+                $customer->leave_credits_new = 0;
+
+                if ($customer->leave_credits_old < $remaining) {
+                    return back()->with('error', '❌ Not enough leave credits for update. Needed: ' . $newDays . ', short by ' . ($remaining - $customer->leave_credits_old) . ' days');
+                }
+
+                $customer->leave_credits_old -= $remaining;
+            }
+        }
+
+        $customer->save();
+
+        // Step 3: Update the leave application
+        $leaveApplication->update([
+            'leave_start_date' => $request->leave_start_date,
+            'leave_end_date' => $request->leave_end_date,
+            'leave_incurred_date' => $request->leave_start_date,
+            'working_days' => $newDays,
+        ]);
+
+        return back()->with('success', '✅ Leave application updated successfully.');
+
+    } catch (ValidationException $e) {
+        return back()->withErrors($e->errors())->withInput();
+    } catch (\Exception $e) {
+        return back()->with('error', '❌ An error occurred while updating: ' . $e->getMessage());
+    }
+
+}
+
+
 
     public function deleteLeave(Request $request)
     {
-        try {
             $request->validate([
-                'id' => 'required|integer|exists:teaching_leave_applications,id',
-                'customer_id' => 'required|integer|exists:customers,id'
+                'id' => 'required|integer',
+                'customer_id' => 'required|integer|exists:customers,id',
+                'type' => 'required|string|in:leave,credit'
             ]);
 
-            $leaveApplication = TeachingLeaveApplications::findOrFail($request->id);
+
+        try {
+
+
             $customer = Customer::findOrFail($request->customer_id);
 
-            // Verify that this leave application belongs to the specified customer
-            if ($leaveApplication->customer_id != $request->customer_id) {
-                return back()->with('error', '❌ Unauthorized access to leave application.');
-            }
+            $cutoffDate = Carbon::create(2024, 10, 1); // October 1st of current year
 
-            // Restore leave credits to customer
-            $customer->leave_credits += $leaveApplication->leave_incurred_days;
-            $customer->save();
+            if ($request->type === 'leave') {
+                $leaveApplication = TeachingLeaveApplications::findOrFail($request->id);
 
-            // Delete the leave application
-            $leaveApplication->delete();
-            
-            // Return JSON for AJAX requests
-            if ($request->expectsJson()) {
+                if ($leaveApplication->customer_id != $request->customer_id) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Unauthorized access to leave application.'
+                    ], 403);
+                }
+                if (!$leaveApplication->is_leavewopay) {
+                    $leaveDate = Carbon::parse($leaveApplication->start_date);
+
+                    // Reverse leave credits in the appropriate column
+                    if ($leaveDate->lt($cutoffDate)) {
+                        $customer->leave_credits_old += $leaveApplication->working_days;
+                    } else {
+                        $customer->leave_credits_new += $leaveApplication->working_days;
+                    }
+
+                    $customer->save();
+                }
+                $leaveApplication->delete();
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Leave application deleted successfully.'
                 ]);
+
+            } elseif ($request->type === 'credit') {
+                $earnedCredit = TeachingEarnedCredits::findOrFail($request->id);
+
+                if ($earnedCredit->customer_id != $request->customer_id) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Unauthorized access to earned credit.'
+                    ], 403);
+                }
+
+                $earnedDate = Carbon::parse($earnedCredit->earned_date_start);
+
+                // Reverse earned credits in the appropriate column
+                if ($earnedDate->lt($cutoffDate)) {
+                    $customer->leave_credits_old -= $earnedCredit->days;
+                } else {
+                    $customer->leave_credits_new -= $earnedCredit->days;
+                }
+
+                $customer->save();
+                $earnedCredit->delete();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Earned credit deleted successfully.'
+                ]);
             }
 
-            return back()->with('success', '✅ Leave application deleted successfully.');
-            
         } catch (\Exception $e) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'An error occurred while deleting: ' . $e->getMessage()
-                ], 500);
-            }
-            
-            return back()->with('error', '❌ An error occurred while deleting: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'An error occurred while deleting: ' . $e->getMessage()
+            ], 500);
         }
     }
+
 
     public function addCreditsEarned(Request $request)
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'credits_to_add' => 'required|numeric|min:0.01|max:50',
-            'earned_date' => 'required|string',
-            'event' => 'nullable|string|max:255',
+            'earned_date_start' => 'required|date',
+            'earned_date_end' => 'required|date',
+            'event' => 'required|string|max:255',
             'special_order' => 'nullable|string|max:255',
             'reference' => 'nullable|string|max:255'
         ]);
 
         try {
             $customer = Customer::findOrFail($request->customer_id);
-            
-            // Add credits to customer
-            $customer->leave_credits += $request->credits_to_add;
+
+            // Determine the target credit column based on the earned date
+            $earnedDate = Carbon::parse($request->earned_date_start);
+            $cutoffDate = Carbon::create(2024, 10, 1); // October 1st of current year
+
+            if ($earnedDate->lt($cutoffDate)) {
+                $customer->leave_credits_old += $request->credits_to_add;
+            } else {
+                $customer->leave_credits_new += $request->credits_to_add;
+            }
+
             $customer->save();
 
-            // Create a record for the credit addition in teaching_earned_credits table
+            // Create a record in the teaching_earned_credits table
             TeachingEarnedCredits::create([
                 'customer_id' => $customer->id,
-                'earned_date' => $request->earned_date,
+                'earned_date_start' => $request->earned_date_start,
+                'earned_date_end' => $request->earned_date_end,
                 'event' => $request->event,
                 'days' => $request->credits_to_add,
                 'reference' => $request->reference ?? 'CREDIT_EARNED',
@@ -229,50 +352,7 @@ class TeachingLeaveController extends Controller
         }
     }
 
-    public function deleteCredit(Request $request)
-    {
-        try {
-            $request->validate([
-                'id' => 'required|integer|exists:teaching_earned_credits,id',
-                'customer_id' => 'required|integer|exists:customers,id'
-            ]);
 
-            $earnedCredit = TeachingEarnedCredits::findOrFail($request->id);
-            $customer = Customer::findOrFail($request->customer_id);
-
-            // Verify that this earned credit belongs to the specified customer
-            if ($earnedCredit->customer_id != $request->customer_id) {
-                return back()->with('error', '❌ Unauthorized access to earned credit.');
-            }
-
-            // Deduct credits from customer (reverse the credit addition)
-            $customer->leave_credits -= $earnedCredit->days;
-            $customer->save();
-
-            // Delete the earned credit record
-            $earnedCredit->delete();
-            
-            // Return JSON for AJAX requests
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Earned credit deleted successfully.'
-                ]);
-            }
-
-            return back()->with('success', '✅ Earned credit deleted successfully.');
-            
-        } catch (\Exception $e) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'An error occurred while deleting: ' . $e->getMessage()
-                ], 500);
-            }
-            
-            return back()->with('error', '❌ An error occurred while deleting: ' . $e->getMessage());
-        }
-    }
     public function customerAutocomplete(Request $request)
     {
         if (ob_get_level()) {

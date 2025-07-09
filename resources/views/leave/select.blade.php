@@ -48,8 +48,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="customer_id">Employee ID</label>
-                    <input type="text" id="customer_id" name="customer_id" value="{{ old('customer_id') }}" />
+                    <label for="employee_id">Employee ID</label>
+                    <input type="text" id="employee_id" name="employee_id" value="{{ old('employee_id') }}" />
                 </div>
 
                 <div class="form-group full-width">

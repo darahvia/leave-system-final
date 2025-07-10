@@ -182,7 +182,7 @@
                         </div>
                     </div>
                     <label>Working Days:</label>
-                    <input type="number" name="working_days" id="working_days_old" readonly>
+                    <input type="number" name="working_days" id="working_days_old" >
                         <button type="submit" id="submit-btn-old">Add Leave Application</button>
                         <button type="button" id="cancel-edit-btn-old" onclick="cancelEdit('old')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                         <label>
@@ -383,7 +383,7 @@
                         </div>
                     </div>
                     <label>Working Days:</label>
-                    <input type="number" name="working_days" id="working_days_new" readonly>
+                    <input type="number" name="working_days" id="working_days_new" >
                         <button type="submit" id="submit-btn-new">Add Leave Application</button>
                         <button type="button" id="cancel-edit-btn-new" onclick="cancelEdit('new')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                     </div>

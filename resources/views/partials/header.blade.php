@@ -76,12 +76,9 @@ $latestCtoApp = $customer->ctoApplications
                 <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
                 <td class="label">CTO BALANCE</td>
 
-                <td class="value">{{ number_format($ctoService->getEligibleCtoBalance($customer), 1) }}</td>
-
                 <td class="value">
                     {{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : number_format($ctoService->getEligibleCtoBalance($customer), 1) }}
                 </td>
-
 
             </tr>
             <tr>

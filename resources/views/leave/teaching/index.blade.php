@@ -788,7 +788,6 @@ window.addEventListener('click', function(event) {
     }
 });
 
-// Updated edit leave application function with tab parameter
 function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false) {
     document.getElementById('is_leavewopay_' + tab).checked = !!isLeaveWOPay;
 
@@ -797,19 +796,12 @@ function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab
     document.getElementById('leave_start_date_' + tab).value = leaveStartDate || '';
     document.getElementById('leave_end_date_' + tab).value = leaveEndDate || '';
     document.getElementById('working_days_' + tab).value = workingDays || '';
-    
-    // Set half day selections
-    setHalfDaySelection('start', tab, startHalfDay);
-    setHalfDaySelection('end', tab, endHalfDay);
-    updateToggleButtonState('start', tab);
-    updateToggleButtonState('end', tab);
+
     
     document.getElementById('submit-btn-' + tab).textContent = 'Update Leave Application';
     document.getElementById('cancel-edit-btn-' + tab).style.display = 'inline-block';
     
-    // Change form action to update route with the ID
-    const baseUrl = window.leaveUpdateRoute.replace(':id', id);
-    document.getElementById('leave-form-' + tab).action = baseUrl;
+    document.getElementById('leave-form-' + tab).action = window.leaveUpdateRoute;
 }
 
 // Updated cancel edit function with tab parameter

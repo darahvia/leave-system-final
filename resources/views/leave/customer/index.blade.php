@@ -93,7 +93,7 @@
                         </div>
                     </div>
                     <label>Working Days:</label>
-                    <input type="number" name="working_days" id="working_days" style="background-color: #f5f5f5;">
+                    <input type="number" name="working_days" step="0.01" id="working_days" style="background-color: #f5f5f5;">
                     <label>Remarks:</label>
                     <input type="text" name="leave_details" id="leave_details">
                     <button type="submit" id="submit-btn">Add Leave</button>

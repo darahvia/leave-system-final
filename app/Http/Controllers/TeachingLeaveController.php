@@ -134,20 +134,23 @@ class TeachingLeaveController extends Controller
     }
 
 
-public function updateLeave(Request $request, $id)
+public function updateLeave(Request $request)
 {
+    try {
         $request->validate([
+            'edit_id' => 'required|integer',
             'customer_id' => 'required|integer|exists:customers,id',
             'leave_start_date' => 'required|date',
             'leave_end_date' => 'required|date|after_or_equal:leave_start_date',
             'working_days' => 'required|numeric|min:0.5|max:365',
             'is_leavewopay' => 'nullable|boolean',
         ]);
-    try {
 
+        // Find the leave application to update
         $customer = Customer::findOrFail($request->customer_id);
-        $leaveApplication = TeachingLeaveApplications::findOrFail($id);
-
+        $leaveApplication = TeachingLeaveApplications::findOrFail($request->edit_id);
+        
+        // Verify that this leave application belongs to the specified customer
         if ($leaveApplication->customer_id != $request->customer_id) {
             return back()->with('error', '❌ Unauthorized access to leave application.');
         }
@@ -163,6 +166,7 @@ public function updateLeave(Request $request, $id)
 
             return back()->with('success', '✅ Leave without pay updated successfully.');
         }
+
         $cutoffDate = Carbon::create(2024, 10, 1); // October 1 this year
 
         // Step 1: Restore previous leave days
@@ -220,9 +224,7 @@ public function updateLeave(Request $request, $id)
     } catch (\Exception $e) {
         return back()->with('error', '❌ An error occurred while updating: ' . $e->getMessage());
     }
-
 }
-
 
 
     public function deleteLeave(Request $request)

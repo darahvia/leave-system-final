@@ -472,11 +472,6 @@ body {
   box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
-.emp-form input[readonly] {
-  background: var(--gray-50) !important;
-  cursor: not-allowed;
-}
-
 .emp-form button {
   padding: 1rem 2rem;
   background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);

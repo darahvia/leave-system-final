@@ -43,6 +43,16 @@
 @if($customer)
     @php
         $latestApp = $customer->leaveApplications->last();
+
+$latestCtoApp = $customer->ctoApplications
+    ->sortByDesc(function ($app) {
+        return $app->date_of_activity_start . $app->date_of_absence_start;
+    })
+    ->first();
+
+
+
+
     @endphp
 
     <div class="emp-details-table">
@@ -65,13 +75,14 @@
                 <td class="label">VACATION LEAVE BALANCE</td>
                 <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
                 <td class="label">CTO BALANCE</td>
-<<<<<<< Updated upstream
+
                 <td class="value">{{ number_format($ctoService->getEligibleCtoBalance($customer), 1) }}</td>
-=======
+
                 <td class="value">
                     {{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : number_format($ctoService->getEligibleCtoBalance($customer), 1) }}
                 </td>
->>>>>>> Stashed changes
+
+
             </tr>
             <tr>
                 <td class="label">MIDDLE NAME</td>

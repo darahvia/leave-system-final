@@ -34,8 +34,7 @@ class CreateCtoApplicationsTable extends Migration
             // For CTO usage (credits deducted)
             $table->date('date_of_absence_start')->nullable();
             $table->date('date_of_absence_end')->nullable();
-            $table->integer('no_of_days')->nullable();
-
+            $table->decimal('no_of_days', 5, 2)->nullable()->change();
 
             // Balance after this transaction
             $table->decimal('balance', 8, 2)->default(0);

@@ -281,10 +281,12 @@
                                 <td data-label="ACTIONS"></td>
                             </tr>
                             
-                            @if($teachingLeaveApplications && $teachingLeaveApplications->count())
-                                @foreach($teachingLeaveApplications->filter(function($app) {
-                                    return \Carbon\Carbon::parse($app->leave_start_date)->lt(\Carbon\Carbon::parse('2024-10-01'));
-                                }) as $app)
+@if($teachingLeaveApplications && $teachingLeaveApplications->count())
+    @foreach($teachingLeaveApplications->filter(function($app) {
+        return \Carbon\Carbon::parse($app->leave_start_date)->lt(\Carbon\Carbon::parse('2024-10-01'));
+    })->sortBy(function($app) {
+        return $app->leave_start_date ?: $app->created_at;
+    }) as $app)
                                     <tr>
                                         <td data-label="DATE LEAVE INCURRED">
                                             @if($app->leave_start_date && $app->leave_end_date)
@@ -396,7 +398,7 @@
                         </div>
                     </div>
                     <label>Working Days:</label>
-                    <input type="number" name="working_days" id="working_days_new" >
+                    <input type="number" name="working_days" step="0.01" id="working_days_new" >
                     <label>Remarks:</label>
                     <input type="text" name="remarks" id="remarks" >
                         <button type="submit" id="submit-btn-new">Add Leave Application</button>
@@ -489,10 +491,11 @@
                                 <td data-label="ACTIONS"></td>
                             </tr>
                             
-                            
 @if($teachingLeaveApplications && $teachingLeaveApplications->count())
     @foreach($teachingLeaveApplications->filter(function($app) {
         return \Carbon\Carbon::parse($app->leave_start_date)->gte(\Carbon\Carbon::parse('2024-10-01'));
+    })->sortBy(function($app) {
+        return $app->leave_start_date ?: $app->created_at;
     }) as $app)
         <tr>
             <td data-label="DATE LEAVE INCURRED">

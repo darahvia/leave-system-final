@@ -81,35 +81,29 @@
         </div>
     </div>
 
-    <!-- Customer Details Table -->
+    <!-- Customer Details Table FOLLOW NONTEACHING -->
     @if($customer)
         <div class="emp-details-table">
             <table class="customer-info-table">
                 <tr>
                     <td class="label">SURNAME</td>
                     <td class="value">{{ strtoupper($customer->surname) }}</td>
-                    <td class="label">SEX</td>
-                    <td class="value">{{ strtoupper($customer->sex) }}</td>
-                    <td class="label">POSITION</td>
-                    <td class="value">{{  strtoupper($customer->position->position) ?? '' }}</td>
-                    <td class="label">EMPLOYEE ID</td>
-                    <td class="value">{{ $customer->employee_id ?? '' }}</td>
+                    <td class="label">SCHOOL</td>
+                    <td class="value">{{ strtoupper($customer->office->office) ?? ''  }}</td>
+                    <td class="label">STATUS</td>
+                    <td class="value">{{ $customer->status ?? '' }}</td>
                 </tr>
                 <tr>
                     <td class="label">GIVEN NAME</td>
                     <td class="value">{{ strtoupper($customer->given_name)?? ''  }}</td>
-                    <td class="label">CIVIL STATUS</td>
-                    <td class="value">{{ strtoupper($customer->civil_status ?? '') }}</td>
-                    <td class="label">NAME OF SCHOOL</td>
-                    <td class="value">{{ strtoupper($customer->office->office) ?? ''  }}</td>
+                    <td class="label">POSITION</td>
+                    <td class="value">{{ strtoupper($customer->position->position) ?? '' }}</td>
                     <td class="label">LEAVE CREDITS BALANCE (OLD)</td>
                     <td class="value">{{ $customer->leave_credits_old ?? 0  }}</td>
                 </tr>
                 <tr>
                     <td class="label">MIDDLE NAME</td>
                     <td class="value">{{ strtoupper($customer->middle_name)?? ''  }}</td>
-                    <td class="label">EMAIL</td>
-                    <td class="value">{{ strtoupper($customer->email ?? '') }}</td>
                     <td class="label">ORIGINAL APPOINTMENT</td>
                     <td class="value">{{ $customer->origappnt_date ? \Carbon\Carbon::parse($customer->origappnt_date)->format('F j, Y') : '' }}</td>
                     <td class="label">LEAVE CREDITS BALANCE (NEW)</td>
@@ -893,7 +887,7 @@ function setupCustomerSearch() {
                     let suggestions = '';
                     if (data && data.length > 0) {
                         data.forEach(function(item) {
-                            suggestions += '<div class="suggestion-item" data-id="' + item.id + '">' + item.label + '</div>';
+                            suggestions += '<div class="suggestion-item" data-id="' + item.id + '" data-name="' + item.label + '">' + item.label + '</div>';
                         });
                         $('#suggestions').html(suggestions).show();
                     } else {
@@ -913,11 +907,64 @@ function setupCustomerSearch() {
         });
     });
 
+    // Handle suggestion click
     $(document).on('click', '.suggestion-item', function() {
-        $('#customer-search').val($(this).text());
+        let customerId = $(this).data('id');
+        let customerName = $(this).data('name');
+        
+        $('#customer-search').val(customerName);
         $('#suggestions').hide();
+        
+        // Store the selected customer ID for form submission
+        $('#customer-search').data('selected-id', customerId);
+        
+        // Redirect directly using the customer ID as query parameter
+        window.location.href = '/leave/teaching?customer_id=' + customerId;
     });
 
+    // Handle Enter key press
+    $('#customer-search').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            // Check if a customer was selected from suggestions
+            let selectedId = $(this).data('selected-id');
+            if (selectedId) {
+                window.location.href = '/leave/teaching?customer_id=' + selectedId;
+                return;
+            }
+            
+            // If no selection, try to find by name
+            let customerName = $(this).val().trim();
+            if (customerName.length > 0) {
+                $.ajax({
+                    url: '/find-customer',
+                    method: 'POST',
+                    data: {
+                        name: customerName,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error finding customer:', error);
+                        // Handle error - maybe show a message to user
+                        alert('Customer not found');
+                    }
+                });
+            }
+        }
+    });
+
+    // Clear selection when input changes
+    $('#customer-search').on('input', function() {
+        $(this).removeData('selected-id');
+    });
+
+    // Hide suggestions when clicking outside
     $(document).click(function(e) {
         if (!$(e.target).closest('#customer-search, #suggestions').length) {
             $('#suggestions').hide();

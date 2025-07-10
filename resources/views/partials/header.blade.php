@@ -60,24 +60,23 @@ $latestCtoApp = $customer->ctoApplications
             <tr>
                 <td class="label">SURNAME</td>
                 <td class="value">{{ strtoupper($customer->surname) }}</td>
-                <td class="label">DIVISION</td>
+                <td class="label">DIVISION/UNIT</td>
                 <td class="value">{{ strtoupper($customer->office->office) }}</td>
                 <td class="label">STATUS</td>
                 <td class="value">{{ strtoupper($customer->status ?? '') }}</td>
-                <td class="label"> FORCE LEAVE BALANCE </td>
-                <td class="value">{{ strtoupper($customer->fl) }}</td>
+                <td class="label"> CTO BALANCE </td>
+                <td class="value">{{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : number_format($ctoService->getEligibleCtoBalance($customer), 1) }}</td>
             </tr>
             <tr>
                 <td class="label">GIVEN NAME</td>
                 <td class="value">{{ strtoupper($customer->given_name) }}</td>
-                <td class="label">DESIGNATION</td>
+                <td class="label">POSITION</td>
                 <td class="value">{{ strtoupper($customer->position->position) }}</td>
                 <td class="label">VACATION LEAVE BALANCE</td>
                 <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
-                <td class="label">CTO BALANCE</td>
-
+                <td class="label">VIEW OTHER CREDITS</td>
                 <td class="value">
-                    {{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : number_format($ctoService->getEligibleCtoBalance($customer), 1) }}
+                    <button type="button" id="viewAllBtn" onclick="showOtherCreditsModal()">View All</button>
                 </td>
 
             </tr>
@@ -88,9 +87,8 @@ $latestCtoApp = $customer->ctoApplications
                 <td class="value">{{ $customer->origappnt_date ? \Carbon\Carbon::parse($customer->origappnt_date)->format('F j, Y') : '' }}</td>
                 <td class="label">SICK LEAVE BALANCE</td>
                 <td class="value">{{ $latestApp ? $latestApp->current_sl : ($customer->balance_forwarded_sl ?? 0) }}</td>
-                <td class="label"> VIEW OTHER LEAVE BALANCES </td>
+                <td class="label">EDIT EMPLOYEE</td>
                 <td class="value">
-                    <button type="button" id="viewAllBtn" onclick="showOtherCreditsModal()">View All</button>
                 </td>
             </tr>
         </table>

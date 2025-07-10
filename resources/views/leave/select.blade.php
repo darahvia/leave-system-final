@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="{{ asset('css/form.css') }}">
 </head>
 <body>
-<div class="container">
-    <h1>Select Leave Type</h1>
+
+
 
     @if(session('success'))
         <div class="success">{{ session('success') }}</div>
@@ -23,12 +23,25 @@
             </ul>
         </div>
     @endif
-
+    <div class="header-wrapper">
+        <div class="header-container">
+            <img src="/images/deped-logo.png" alt="DepEd Logo" class="header-logo">
+            <div class="header-text">
+                <div class="header-title">
+                    <span class="dep">Dep</span><span class="ed">Ed</span> Cadiz City
+                </div>
+                <div class="header-subtitle">{{ $pageTitle ?? 'Leave Credit System' }}</div>
+            </div>
+            <img src="/images/deped-cadiz-logo.png" alt="Division Logo" class="header-logo">
+        </div>
+    </div>
+    <h1>Select Leave Type</h1>
     <div class="leave-links">
         <a href="{{ url('leave/customer') }}">Non-Teaching Leave</a>
         <a href="{{ url('leave/teaching') }}">Teaching Leave</a>
     </div>
 
+    
     <div class="card">
         <h2>Add New Employee</h2>
 
@@ -63,17 +76,17 @@
             <h3>Personal Information</h3>
             <div class="grid">
                 <div class="form-group">
-                    <label for="surname">Surname </label>
+                    <label for="surname">Surname <span style="color: red;">*</span></label>
                     <input type="text" id="surname" name="surname" value="{{ old('surname') }}" />
                 </div>
 
                 <div class="form-group">
-                    <label for="given_name">Given Name </label>
+                    <label for="given_name">Given Name <span style="color: red;">*</span></label>
                     <input type="text" id="given_name" name="given_name" value="{{ old('given_name') }}" />
                 </div>
 
                 <div class="form-group">
-                    <label for="middle_name">Middle Name</label>
+                    <label for="middle_name">Middle Name<span style="color: red;">*</span></label>
                     <input type="text" id="middle_name" name="middle_name" value="{{ old('middle_name') }}" />
                 </div>
 
@@ -103,7 +116,7 @@
             <h3>Employment Details</h3>
             <div class="grid">
                 <div class="form-group">
-                    <label for="office_id">Office </label>
+                    <label for="office_id">Division/Unit/School<span style="color: red;">*</span></label>
                     <select id="office_id" name="office_id">
                         <option value="">Select Office</option>
                         @foreach($offices as $office)
@@ -115,7 +128,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="position_id">Position </label>
+                    <label for="position_id">Position <span style="color: red;">*</span></label>
                     <select id="position_id" name="position_id">
                         <option value="">Select Position</option>
                         @foreach($positions as $position)
@@ -132,7 +145,7 @@
             <h3>Important Dates</h3>
             <div class="grid">
                 <div class="form-group">
-                    <label for="origappnt_date">Original Appointment</label>
+                    <label for="origappnt_date">Original Appointment<span style="color: red;">*</span></label>
                     <input type="date" id="origappnt_date" name="origappnt_date" value="{{ old('origappnt_date') }}" />
                 </div>
 
@@ -142,7 +155,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="status">Status</label>
+                    <label for="status">Status<span style="color: red;">*</span></label>
                     <input type="text" id="status" name="status" value="{{ old('status') }}" />
                 </div>
             </div>
@@ -170,6 +183,6 @@
             </div>
         </form>
     </div>
-</div>
+
 </body>
 </html>

@@ -36,18 +36,21 @@ class LeaveController extends Controller
         }
 
 
-    public function findCustomer(Request $request)
-    {
-        $customer = Customer::whereRaw("CONCAT(surname, ', ', given_name, CASE WHEN middle_name IS NOT NULL AND middle_name != '' THEN CONCAT(' ', middle_name) ELSE '' END) = ?", [$request->name])
-            ->first(); // empty middle name
+public function findCustomer(Request $request)
+{
+    $customer = Customer::whereRaw("CONCAT(surname, ', ', given_name, CASE WHEN middle_name IS NOT NULL AND middle_name != '' THEN CONCAT(' ', middle_name) ELSE '' END) = ?", [$request->name])
+        ->first();
 
-        if ($customer) {
-            return redirect()->route('leave.customer.index', ['customer_id' => $customer->id]);
-        }
-
-        return redirect()->route('leave.customer.index')
-            ->with('error', '❌ Customer not found.');
+    if ($customer) {
+        return response()->json([
+            'redirect_url' => route('leave.customer.index', ['customer_id' => $customer->id])
+        ]);
     }
+
+    return response()->json([
+        'error' => '❌ Customer not found.'
+    ], 404);
+}
 
 
         public function submitLeave(Request $request)
@@ -245,7 +248,6 @@ class LeaveController extends Controller
                         ->orWhere('given_name', 'LIKE', "%{$search}%")
                         ->orWhere('middle_name', 'LIKE', "%{$search}%");
                 })
-                ->whereBetween('office_id', [1, 14])    // non-teaching personnel
                 ->limit(10)
                 ->get(['surname', 'given_name', 'middle_name', 'id'])
                 ->map(function ($customer) {

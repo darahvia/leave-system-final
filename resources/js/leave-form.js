@@ -337,7 +337,7 @@ function setupCustomerSearch() {
                     let suggestions = '';
                     if (data && data.length > 0) {
                         data.forEach(function(item) {
-                            suggestions += '<div class="suggestion-item" data-id="' + item.id + '">' + item.label + '</div>';
+                            suggestions += '<div class="suggestion-item" data-id="' + item.id + '" data-name="' + item.label + '">' + item.label + '</div>';
                         });
                         $('#suggestions').html(suggestions).show();
                     } else {
@@ -357,11 +357,64 @@ function setupCustomerSearch() {
         });
     });
 
+    // Handle suggestion click
     $(document).on('click', '.suggestion-item', function() {
-        $('#customer-search').val($(this).text());
+        let customerId = $(this).data('id');
+        let customerName = $(this).data('name');
+        
+        $('#customer-search').val(customerName);
         $('#suggestions').hide();
+        
+        // Store the selected customer ID for form submission
+        $('#customer-search').data('selected-id', customerId);
+        
+        // Redirect directly using the customer ID as query parameter
+        window.location.href = '/leave/customer?customer_id=' + customerId;
     });
 
+    // Handle Enter key press
+    $('#customer-search').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            // Check if a customer was selected from suggestions
+            let selectedId = $(this).data('selected-id');
+            if (selectedId) {
+                window.location.href = '/leave/customer?customer_id=' + selectedId;
+                return;
+            }
+            
+            // If no selection, try to find by name
+            let customerName = $(this).val().trim();
+            if (customerName.length > 0) {
+                $.ajax({
+                    url: '/find-customer',
+                    method: 'POST',
+                    data: {
+                        name: customerName,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error finding customer:', error);
+                        // Handle error - maybe show a message to user
+                        alert('Customer not found');
+                    }
+                });
+            }
+        }
+    });
+
+    // Clear selection when input changes
+    $('#customer-search').on('input', function() {
+        $(this).removeData('selected-id');
+    });
+
+    // Hide suggestions when clicking outside
     $(document).click(function(e) {
         if (!$(e.target).closest('#customer-search, #suggestions').length) {
             $('#suggestions').hide();

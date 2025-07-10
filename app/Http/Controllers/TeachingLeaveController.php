@@ -372,7 +372,6 @@ public function updateLeave(Request $request, $id)
                         ->orWhere('given_name', 'LIKE', "%{$search}%")
                         ->orWhere('middle_name', 'LIKE', "%{$search}%");
                 })
-                ->whereNotBetween('office_id', [1, 14])
                 ->limit(10)
                 ->get(['surname', 'given_name', 'middle_name', 'id'])
                 ->map(function ($customer) {

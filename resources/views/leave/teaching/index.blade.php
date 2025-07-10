@@ -266,7 +266,7 @@
                             <tr>
                                 <td data-label="DATE">INITIAL BALANCE</td>
                                 <td data-label="DAYS"></td>
-                                <td data-label="BALANCE">{{ $customer->leave_credits }}</td>
+                                <td data-label="BALANCE">{{ $customer->leave_credits_old }}</td>
                                 <td data-label="ACTIONS"></td>
                             </tr>
                             
@@ -468,7 +468,7 @@
                             <tr>
                                 <td data-label="DATE">INITIAL BALANCE</td>
                                 <td data-label="DAYS"></td>
-                                <td data-label="BALANCE">{{ $customer->leave_credits }}</td>
+                                <td data-label="BALANCE">{{ $customer->leave_credits_new }}</td>
                                 <td data-label="ACTIONS"></td>
                             </tr>
                             

@@ -98,16 +98,23 @@
                     <td class="value">{{ strtoupper($customer->given_name)?? ''  }}</td>
                     <td class="label">POSITION</td>
                     <td class="value">{{ strtoupper($customer->position->position) ?? '' }}</td>
-                    <td class="label">LEAVE CREDITS BALANCE (OLD)</td>
-                    <td class="value">{{ $customer->leave_credits_old ?? 0  }}</td>
+                    <td class="label">LEAVE CREDITS</td>
+                  <td class="value">
+                        OLD: {{ $customer->leave_credits_old ?? 0 }}<br>
+                        NEW: {{ $customer->leave_credits_new ?? 0 }}
+                    </td>
                 </tr>
                 <tr>
                     <td class="label">MIDDLE NAME</td>
                     <td class="value">{{ strtoupper($customer->middle_name)?? ''  }}</td>
                     <td class="label">ORIGINAL APPOINTMENT</td>
                     <td class="value">{{ $customer->origappnt_date ? \Carbon\Carbon::parse($customer->origappnt_date)->format('F j, Y') : '' }}</td>
-                    <td class="label">LEAVE CREDITS BALANCE (NEW)</td>
-                    <td class="value">{{ $customer->leave_credits_new ?? 0 }}</td>
+                    <td class="label">EDIT EMPLOYEE</td>
+                    <td class="value">
+                        <form style="display: inline;" method="GET" action="{{ route('customers.edit', $customer->id) }}">
+                            <button type="button" id="editBtn" onclick="window.location.href='{{ route('customers.edit', $customer->id) }}'" class="edit-button">Edit</button>
+                        </form>
+                    </td>
                 </tr>
             </table>
         </div>
@@ -183,11 +190,13 @@
                     </div>
                     <label>Working Days:</label>
                     <input type="number" name="working_days" step="0.01" id="working_days_old" >
-                        <button type="submit" id="submit-btn-old">Add Leave Application</button>
-                        <button type="button" id="cancel-edit-btn-old" onclick="cancelEdit('old')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
-                        <label>
+                    <label>Remarks:</label>
+                    <input type="text" name="remarks" id="remarks" >
+                    <button type="submit" id="submit-btn-old">Add Leave Application</button>
+                    <button type="button" id="cancel-edit-btn-old" onclick="cancelEdit('old')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
+                    <label>
                         <input type="checkbox" name="is_leavewopay" id="is_leavewopay_old" value="1"> Leave Without Pay
-                        </label>
+                    </label>
                     </div>
                 </form>
             </div>
@@ -259,6 +268,7 @@
                                 <th>DATE</th>
                                 <th>DAYS</th>
                                 <th>BALANCE</th>
+                                <th>REMARKS</th>
                                 <th>ACTIONS</th>
                             </tr>
                         </thead>
@@ -267,6 +277,7 @@
                                 <td data-label="DATE">INITIAL BALANCE</td>
                                 <td data-label="DAYS"></td>
                                 <td data-label="BALANCE">{{ $customer->leave_credits_old }}</td>
+                                <td data-label="REMARKS"></td>
                                 <td data-label="ACTIONS"></td>
                             </tr>
                             
@@ -294,6 +305,8 @@
 
                                         </td>
                                         <td data-label="BALANCE"></td>
+                                        <td data-label="REMARKS">{{ $app->remarks }}</td>
+                                        
                                         <td data-label="ACTIONS">
                                             <button type="button" class="edit-btn" onclick="editLeaveApplication(
                                                 {{ $app->id }},
@@ -384,6 +397,8 @@
                     </div>
                     <label>Working Days:</label>
                     <input type="number" name="working_days" id="working_days_new" >
+                    <label>Remarks:</label>
+                    <input type="text" name="remarks" id="remarks" >
                         <button type="submit" id="submit-btn-new">Add Leave Application</button>
                         <button type="button" id="cancel-edit-btn-new" onclick="cancelEdit('new')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                     </div>
@@ -461,6 +476,7 @@
                                 <th>DATE</th>
                                 <th>DAYS</th>
                                 <th>BALANCE</th>
+                                <th>REMARKS</th>
                                 <th>ACTIONS</th>
                             </tr>
                         </thead>
@@ -469,6 +485,7 @@
                                 <td data-label="DATE">INITIAL BALANCE</td>
                                 <td data-label="DAYS"></td>
                                 <td data-label="BALANCE">{{ $customer->leave_credits_new }}</td>
+                                <td data-label="REMARKS"></td>
                                 <td data-label="ACTIONS"></td>
                             </tr>
                             
@@ -494,6 +511,7 @@
                                     </span>
                                     </td>
                                         <td data-label="BALANCE"></td>
+                                         <td data-label="REMARKS">{{ $app->remarks }}</td>
                                         <td data-label="ACTIONS">
                                             <button type="button" class="edit-btn" onclick="editLeaveApplication(
                                                 {{ $app->id }},

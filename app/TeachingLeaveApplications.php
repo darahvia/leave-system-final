@@ -14,6 +14,7 @@ class TeachingLeaveApplications extends Model
         'leave_start_date',
         'leave_end_date',
         'working_days',
+        'remarks',
         'is_leavewopay',
     ];
 

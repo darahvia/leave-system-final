@@ -121,6 +121,7 @@ class TeachingLeaveController extends Controller
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
                 'working_days' => $leaveDays,
+                'remarks' => $request->remarks ?? '',
                 'is_leavewopay' => $isLeaveWithoutPay,
             ]);
 
@@ -143,6 +144,7 @@ public function updateLeave(Request $request)
             'leave_start_date' => 'required|date',
             'leave_end_date' => 'required|date|after_or_equal:leave_start_date',
             'working_days' => 'required|numeric|min:0.5|max:365',
+            'remarks' => 'nullable|string|max:255',
             'is_leavewopay' => 'nullable|boolean',
         ]);
 
@@ -162,6 +164,7 @@ public function updateLeave(Request $request)
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
                 'working_days' => $request->working_days,
+                'remarks' => $request->remarks ?? '',
             ]);
 
             return back()->with('success', '✅ Leave without pay updated successfully.');
@@ -215,6 +218,7 @@ public function updateLeave(Request $request)
             'leave_end_date' => $request->leave_end_date,
             'leave_incurred_date' => $request->leave_start_date,
             'working_days' => $newDays,
+            'remarks' => $request->remarks ?? '',
         ]);
 
         return back()->with('success', '✅ Leave application updated successfully.');

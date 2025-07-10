@@ -142,8 +142,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="permanency_date">Permanency Date</label>
-                    <input type="date" id="permanency_date" name="permanency_date" value="{{ old('permanency_date') }}" />
+                    <label for="status">Status</label>
+                    <input type="text" id="status" name="status" value="{{ old('status') }}" />
                 </div>
             </div>
 

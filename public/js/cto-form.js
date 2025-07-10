@@ -423,6 +423,21 @@ $(document).ready(function () {
         block: 'center'
       });
     }
+
+    // Set the checkbox state
+    var singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
+    var endHalfdaySpan = document.getElementById('end-halfday-span-usage');
+    if (singleDayAbsenceCheckbox && endHalfdaySpan) {
+      if (data.date_of_absence_start && (!data.date_of_absence_end || data.date_of_absence_start === data.date_of_absence_end)) {
+        // Single day usage
+        singleDayAbsenceCheckbox.checked = true;
+        endHalfdaySpan.style.display = 'none';
+      } else {
+        // Multi-day usage
+        singleDayAbsenceCheckbox.checked = false;
+        endHalfdaySpan.style.display = 'inline-block';
+      }
+    }
   };
 
   // Cancel Edit functions (exposed globally)
@@ -559,6 +574,7 @@ $(document).ready(function () {
     document.getElementById('confirm-message-text').textContent = message;
     modalOverlay.style.display = 'flex';
   }
+
   // These must come BEFORE the button click listeners
   function toggleHalfDayUsage(dateType, period) {
     if (dateType === 'start') {
@@ -595,7 +611,19 @@ $(document).ready(function () {
   (_document$getElementB4 = document.getElementById('end-pm-btn-usage')) === null || _document$getElementB4 === void 0 || _document$getElementB4.addEventListener('click', function () {
     return toggleHalfDayUsage('end', 'PM');
   });
-}); // End of document.ready //for pull request
+
+
+  // Ensure correct visibility on page load
+  if (singleDayAbsenceCheckbox && endHalfdaySpan) {
+    if (singleDayAbsenceCheckbox.checked) {
+      endHalfdaySpan.style.display = 'none';
+    } else {
+      endHalfdaySpan.style.display = 'inline-block';
+    }
+  }
+
+}); // End of document.ready
+
 
 /***/ }),
 

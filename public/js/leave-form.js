@@ -288,6 +288,8 @@ function calculateWorkingDays() {
 
 // Edit leave application
 function editLeaveApplication(id, leaveType, dateFiled, startDate, endDate, workingDays) {
+  var leaveDetails = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : '';
+  var isLeaveWithoutPay = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : false;
   isEditing = true;
   var form = document.getElementById('leave-form');
   var editIdInput = document.getElementById('edit_id');
@@ -300,8 +302,9 @@ function editLeaveApplication(id, leaveType, dateFiled, startDate, endDate, work
   var formContainer = document.getElementById('leave-form-container');
   var submitBtn = document.getElementById('submit-btn');
   var cancelBtn = document.getElementById('cancel-edit-btn');
-
-  // Store original form action if not already stored
+  var leaveDetailsInput = document.getElementById('leave_details');
+  if (leaveDetailsInput) leaveDetailsInput.value = leaveDetails;
+  document.getElementById('is_leavewopay').checked = !!isLeaveWithoutPay; // Store original form action if not already stored
   if (!originalFormAction && form) {
     originalFormAction = form.action;
   }
@@ -616,7 +619,7 @@ window.cancelEdit = cancelEdit;
 window.cancelLeaveApplication = cancelLeaveApplication;
 window.isCancelling = function () {
   return isCancelling;
-};
+}; //for pull request
 
 /***/ }),
 

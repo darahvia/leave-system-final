@@ -98,6 +98,9 @@
                     <input type="text" name="leave_details" id="leave_details">
                     <button type="submit" id="submit-btn">Add Leave</button>
                     <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
+                    <label>
+                    <input type="checkbox" name="is_leavewopay" id="is_leavewopay" value="1"> Leave Without Pay
+                    </label>
                 </div>
             </form>
             <form method="POST" action="{{ route('leave.credits') }}">
@@ -183,12 +186,12 @@
                     <td data-label="ACTIONS"></td>
                 </tr>
 @if($customer->leaveApplications && $customer->leaveApplications->count())
-    @php
-        $sortedApplications = $customer->leaveApplications->sortBy(function($app) {
-            return $app->earned_date ?? $app->date_filed ?? '1900-01-01';
-        });
-    @endphp
-    @foreach($sortedApplications as $app)
+@php
+    $sortedApplications = $customer->leaveApplications->sortBy(function($app) {
+        return $app->earned_date ?? $app->date_filed ?? '1900-01-01';
+    });
+@endphp
+@foreach($sortedApplications as $app)
                         <tr>
                             <td data-label="PERIOD">{{ $app->earned_date ? \Carbon\Carbon::parse($app->earned_date)->format('F j, Y') : '' }}</td>
                             <td data-label="VL EARNED">
@@ -260,7 +263,14 @@
                             </td>
                             <td data-label="REMARKS">
                                 @if(!$app->is_credit_earned)
-                                    {{ $app->leave_details  ?? '' }}
+                                    @if($app->is_leavewopay)
+                                        Leave Without Pay
+                                        @if($app->leave_details)
+                                            - {{ $app->leave_details }}
+                                        @endif
+                                    @else
+                                        {{ $app->leave_details ?? '' }}
+                                    @endif
                                 @endif
                             </td>
                             <td data-label="VL BALANCE">{{ $app->current_vl ?? '' }}</td>
@@ -287,7 +297,9 @@
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
                                         '{{ $app->working_days }}',
-                                        '{{ $app->leave_details ?? '' }}'
+                                        '{{ $app->leave_details ?? '' }}',
+                                        {{ $app->is_leavewopay ? 'true' : 'false' }}
+                                        
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -305,7 +317,8 @@
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
                                         '{{ $app->working_days }}',
-                                        '{{ $app->leave_details ?? '' }}'
+                                        '{{ $app->leave_details ?? '' }}',
+                                        {{ $app->is_leavewopay ? 'true' : 'false' }}
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>

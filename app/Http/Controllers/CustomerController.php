@@ -34,8 +34,8 @@ class CustomerController extends Controller
             'alamat' => 'nullable|string',
             'lastprmtn_date' => 'nullable|date',
             'origappnt_date' => 'nullable|date',
-            'permanency_date' => 'nullable|date',
-            'leave_credits' => 'nullable|numeric|min:0',
+            'status' => 'nullable|string',
+            'leave_credits_old' => 'nullable|numeric|min:0',
             'balance_forwarded_vl' => 'nullable|numeric',
             'balance_forwarded_sl' => 'nullable|numeric',
             'vl' => 'nullable|numeric|min:0',
@@ -76,8 +76,8 @@ class CustomerController extends Controller
     $model->alamat = $request->alamat;
     $model->lastprmtn_date = $request->lastprmtn_date;
     $model->origappnt_date = $request->origappnt_date;
-    $model->permanency_date = $request->permanency_date;
-    $model->leave_credits = $request->leave_credits ?? 0;
+    $model->status = $request->status;
+    $model->leave_credits_old = $request->leave_credits_old ?? 0;
     $model->balance_forwarded_vl = $request->balance_forwarded_vl ?? 0;
     $model->balance_forwarded_sl = $request->balance_forwarded_sl ?? 0;
     $model->vl = $request->vl ?? 0;

@@ -106,10 +106,10 @@
                 <tr>
                     <td class="label">MIDDLE NAME</td>
                     <td class="value">{{ strtoupper($customer->middle_name)?? ''  }}</td>
-                    <td class="label">DATE OF BIRTH</td>
-                    <td class="value">{{ $customer->date_of_birth ? \Carbon\Carbon::parse($customer->date_of_birth)->format('F j, Y') : '' }}</td>
-                    <td class="label">PERMANENCY</td>
-                    <td class="value">{{ strtoupper($customer->permanency ?? '') }}</td>
+                    <td class="label">EMAIL</td>
+                    <td class="value">{{ strtoupper($customer->email ?? '') }}</td>
+                    <td class="label">ORIGINAL APPOINTMENT</td>
+                    <td class="value">{{ $customer->origappnt_date ? \Carbon\Carbon::parse($customer->origappnt_date)->format('F j, Y') : '' }}</td>
                     <td class="label">LEAVE CREDITS BALANCE (NEW)</td>
                     <td class="value">{{ $customer->leave_credits_new ?? 0 }}</td>
                 </tr>
@@ -190,7 +190,7 @@
                         <button type="submit" id="submit-btn-old">Add Leave Application</button>
                         <button type="button" id="cancel-edit-btn-old" onclick="cancelEdit('old')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                         <label>
-                            <input type="checkbox" name="is_leavewopay" value="1"> Leave Without Pay
+                        <input type="checkbox" name="is_leavewopay" id="is_leavewopay_old" value="1"> Leave Without Pay
                         </label>
                     </div>
                 </form>
@@ -292,7 +292,10 @@
 
                                         </td>
                                         <td data-label="DAYS">
-                                            <span style="color: red;">-{{ $app->working_days }}</span>
+                                        <span style="{{ $app->is_leavewopay ? '' : 'color: red;' }}">
+                                            {{ $app->is_leavewopay ? $app->working_days : '-' . $app->working_days }}
+                                        </span>
+
                                         </td>
                                         <td data-label="BALANCE"></td>
                                         <td data-label="ACTIONS">
@@ -301,7 +304,8 @@
                                         '{{ \Carbon\Carbon::parse($app->leave_start_date)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
-                                                'old'
+                                                'old',
+                                                 {{ $app->is_leavewopay ? 'true' : 'false' }}
                                             )">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -364,29 +368,32 @@
                     <input type="hidden" name="edit_id" id="edit_id_new" value="">
                     <input type="hidden" name="_method" id="form_method_new" value="POST">
                     <div class="emp-form" id="leave-form-container-new">
-<div class="date-row">
-    <div class="date-col">
-        <label>Leave Start Date:</label>
-        <input type="date" name="leave_start_date" id="leave_start_date_new" required>
-        <span class="halfday-controls">
-            <button type="button" class="toggle-button" id="start-am-btn-new" data-value="AM">AM</button>
-            <button type="button" class="toggle-button" id="start-pm-btn-new" data-value="PM">PM</button>
-        </span>
-    </div>
-    <div class="date-col" id="end-date-col-new">
-        <label>Leave End Date:</label>
-        <input type="date" name="leave_end_date" id="leave_end_date_new" required>
-        <span class="halfday-controls">
-            <button type="button" class="toggle-button" id="end-am-btn-new" data-value="AM">AM</button>
-            <button type="button" class="toggle-button" id="end-pm-btn-new" data-value="PM">PM</button>
-        </span>
-    </div>
-</div>
-<label>Working Days:</label>
-<input type="number" name="working_days" id="working_days_new" readonly>
+                    <div class="date-row">
+                        <div class="date-col">
+                            <label>Leave Start Date:</label>
+                            <input type="date" name="leave_start_date" id="leave_start_date_new" required>
+                            <span class="halfday-controls">
+                                <button type="button" class="toggle-button" id="start-am-btn-new" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="start-pm-btn-new" data-value="PM">PM</button>
+                            </span>
+                        </div>
+                        <div class="date-col" id="end-date-col-new">
+                            <label>Leave End Date:</label>
+                            <input type="date" name="leave_end_date" id="leave_end_date_new" required>
+                            <span class="halfday-controls">
+                                <button type="button" class="toggle-button" id="end-am-btn-new" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="end-pm-btn-new" data-value="PM">PM</button>
+                            </span>
+                        </div>
+                    </div>
+                    <label>Working Days:</label>
+                    <input type="number" name="working_days" id="working_days_new" readonly>
                         <button type="submit" id="submit-btn-new">Add Leave Application</button>
                         <button type="button" id="cancel-edit-btn-new" onclick="cancelEdit('new')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                     </div>
+                        <label>
+                        <input type="checkbox" name="is_leavewopay" id="is_leavewopay_new" value="1"> Leave Without Pay
+                        </label>
                 </form>
             </div>
 
@@ -486,8 +493,10 @@
                     {{ \Carbon\Carbon::parse($app->created_at)->format('F j, Y') }}
                 @endif</td>
                                         <td data-label="DAYS">
-                                            <span style="color: red;">-{{ $app->working_days }}</span>
-                                        </td>
+                                    <span style="{{ $app->is_leavewopay ? '' : 'color: red;' }}">
+                                        {{ $app->is_leavewopay ? $app->working_days : '-' . $app->working_days }}
+                                    </span>
+                                    </td>
                                         <td data-label="BALANCE"></td>
                                         <td data-label="ACTIONS">
                                             <button type="button" class="edit-btn" onclick="editLeaveApplication(
@@ -495,7 +504,8 @@
                                         '{{ \Carbon\Carbon::parse($app->leave_start_date)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
-                                                'new'
+                                                'new',
+                                                {{ $app->is_leavewopay ? 'true' : 'false' }}
                                             )">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -728,18 +738,22 @@ function calculateWorkingDaysForTab(tab) {
         }
         currentDate.setDate(currentDate.getDate() + 1);
     }
-    
-    // Adjust for half days
-    // If start date is PM (half day), subtract 0.5
+
     if (startHalfDay === 'PM' && workingDays > 0) {
         workingDays -= 0.5;
     }
-    
-    // If end date is AM (half day), subtract 0.5
-    if (endHalfDay === 'AM' && workingDays > 0) {
+    if (startHalfDay === 'AM' && workingDays > 0) {
+
         workingDays -= 0.5;
     }
-    
+    if (endHalfDay === 'AM' && workingDays > 0) {
+
+        workingDays -= 0.5;
+    }
+    if (endHalfDay === 'PM' && workingDays > 0) {
+
+        workingDays -= 0.5;
+    }
     // Ensure minimum is 0
     workingDays = Math.max(0, workingDays);
     
@@ -779,7 +793,9 @@ window.addEventListener('click', function(event) {
 });
 
 // Updated edit leave application function with tab parameter
-function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab = 'old') {
+function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false) {
+    document.getElementById('is_leavewopay_' + tab).checked = !!isLeaveWOPay;
+
     document.getElementById('edit_id_' + tab).value = id;
     document.getElementById('form_method_' + tab).value = 'PUT';
     document.getElementById('leave_start_date_' + tab).value = leaveStartDate || '';

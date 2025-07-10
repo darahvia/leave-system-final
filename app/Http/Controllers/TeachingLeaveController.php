@@ -68,51 +68,52 @@ class TeachingLeaveController extends Controller
             'working_days' => 'required|numeric|min:0.5|max:365',
             'is_leavewopay' => 'nullable|boolean',
         ]);
-        $isLeaveWithoutPay = $request->has('is_leavewopay') && $request->is_leavewopay == 1;
 
-        if (!$isLeaveWithoutPay) {
         try {
+            $isLeaveWithoutPay = $request->has('is_leavewopay') && $request->is_leavewopay == 1;
+
             $customer = Customer::findOrFail($request->customer_id);
             $leaveDays = $request->working_days;
             $leaveStartDate = Carbon::parse($request->leave_start_date);
             $cutoffDate = Carbon::create(2024, 10, 1); // October 1
 
             // Determine available leave credits
-            $totalAvailableCredits = $customer->leave_credits_old + $customer->leave_credits_new;
+            if (!$isLeaveWithoutPay) {
+                $totalAvailableCredits = $customer->leave_credits_old + $customer->leave_credits_new;
 
-            if ($totalAvailableCredits < $leaveDays) {
-                return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
-                    ->with('error', '❌ Insufficient leave credits. Available: ' . $totalAvailableCredits . ' days');
-            }
-
-            // Deduct from appropriate buckets
-            if ($leaveStartDate->lt($cutoffDate)) {
-                // Old leave - deduct only from leave_credits_old
-                if ($customer->leave_credits_old < $leaveDays) {
+                if ($totalAvailableCredits < $leaveDays) {
                     return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
-                        ->with('error', '❌ Insufficient OLD leave credits. Available: ' . $customer->leave_credits_old . ' days');
+                        ->with('error', '❌ Insufficient leave credits. Available: ' . $totalAvailableCredits . ' days');
                 }
-                $customer->leave_credits_old -= $leaveDays;
 
-            } else {
-                // New leave - deduct from new first, then old if needed
-                if ($customer->leave_credits_new >= $leaveDays) {
-                    $customer->leave_credits_new -= $leaveDays;
-                } else {
-                    $remaining = $leaveDays - $customer->leave_credits_new;
-                    $customer->leave_credits_new = 0;
-
-                    if ($customer->leave_credits_old < $remaining) {
+                // Deduct from appropriate buckets
+                if ($leaveStartDate->lt($cutoffDate)) {
+                    // Old leave - deduct only from leave_credits_old
+                    if ($customer->leave_credits_old < $leaveDays) {
                         return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
-                            ->with('error', '❌ Not enough leave credits. Needed: ' . $leaveDays . ' (short by ' . ($remaining - $customer->leave_credits_old) . ' days)');
+                            ->with('error', '❌ Insufficient OLD leave credits. Available: ' . $customer->leave_credits_old . ' days');
                     }
+                    $customer->leave_credits_old -= $leaveDays;
 
-                    $customer->leave_credits_old -= $remaining;
+                } else {
+                    // New leave - deduct from new first, then old if needed
+                    if ($customer->leave_credits_new >= $leaveDays) {
+                        $customer->leave_credits_new -= $leaveDays;
+                    } else {
+                        $remaining = $leaveDays - $customer->leave_credits_new;
+                        $customer->leave_credits_new = 0;
+
+                        if ($customer->leave_credits_old < $remaining) {
+                            return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
+                                ->with('error', '❌ Not enough leave credits. Needed: ' . $leaveDays . ' (short by ' . ($remaining - $customer->leave_credits_old) . ' days)');
+                        }
+
+                        $customer->leave_credits_old -= $remaining;
+                    }
                 }
+
+                $customer->save();
             }
-
-            $customer->save();
-
             // Create leave application
             TeachingLeaveApplications::create([
                 'customer_id' => $customer->id,
@@ -120,6 +121,7 @@ class TeachingLeaveController extends Controller
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
                 'working_days' => $leaveDays,
+                'is_leavewopay' => $isLeaveWithoutPay,
             ]);
 
             return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
@@ -129,7 +131,6 @@ class TeachingLeaveController extends Controller
             return redirect()->route('leave.teaching.index', ['customer_id' => $request->customer_id])
                 ->with('error', '❌ An error occurred: ' . $e->getMessage());
         }
-    }
     }
 
 

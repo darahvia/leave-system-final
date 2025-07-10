@@ -21,6 +21,8 @@ class TeachingLeaveApplications extends Model
     protected $casts = [
     'leave_start_date' => 'date',
     'leave_end_date' => 'date',
+    'is_leavewopay' => 'boolean',
+    'working_days' => 'float',
     ];
 
     public function customer()

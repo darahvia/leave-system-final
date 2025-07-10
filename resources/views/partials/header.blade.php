@@ -52,8 +52,8 @@
                 <td class="value">{{ strtoupper($customer->surname) }}</td>
                 <td class="label">DIVISION</td>
                 <td class="value">{{ strtoupper($customer->office->office) }}</td>
-                <td class="label">BASIC SALARY</td>
-                <td class="value">{{ number_format($customer->salary, 2) }}</td>
+                <td class="label">STATUS</td>
+                <td class="value">{{ strtoupper($customer->status ?? '') }}</td>
                 <td class="label"> FORCE LEAVE BALANCE </td>
                 <td class="value">{{ strtoupper($customer->fl) }}</td>
             </tr>
@@ -65,7 +65,13 @@
                 <td class="label">VACATION LEAVE BALANCE</td>
                 <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
                 <td class="label">CTO BALANCE</td>
+<<<<<<< Updated upstream
                 <td class="value">{{ number_format($ctoService->getEligibleCtoBalance($customer), 1) }}</td>
+=======
+                <td class="value">
+                    {{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : number_format($ctoService->getEligibleCtoBalance($customer), 1) }}
+                </td>
+>>>>>>> Stashed changes
             </tr>
             <tr>
                 <td class="label">MIDDLE NAME</td>

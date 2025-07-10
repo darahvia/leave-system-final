@@ -391,6 +391,21 @@ $(document).ready(function () {
         block: 'center'
       });
     }
+
+    // Set the checkbox state
+    var singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
+    var endHalfdaySpan = document.getElementById('end-halfday-span-usage');
+    if (singleDayAbsenceCheckbox && endHalfdaySpan) {
+      if (data.date_of_absence_start && (!data.date_of_absence_end || data.date_of_absence_start === data.date_of_absence_end)) {
+        // Single day usage
+        singleDayAbsenceCheckbox.checked = true;
+        endHalfdaySpan.style.display = 'none';
+      } else {
+        // Multi-day usage
+        singleDayAbsenceCheckbox.checked = false;
+        endHalfdaySpan.style.display = 'inline-block';
+      }
+    }
   };
 
   // Cancel Edit functions (exposed globally)
@@ -515,6 +530,54 @@ $(document).ready(function () {
     document.getElementById('confirm-message-text').textContent = message;
     modalOverlay.style.display = 'flex';
   }
+<<<<<<< Updated upstream
+=======
+  // These must come BEFORE the button click listeners
+  function toggleHalfDayUsage(dateType, period) {
+    if (dateType === 'start') {
+      startHalfDayUsage = startHalfDayUsage === period ? null : period;
+    } else {
+      endHalfDayUsage = endHalfDayUsage === period ? null : period;
+    }
+    updateToggleButtonsUsage();
+    calculateWorkingDaysForUsage();
+  }
+  function updateToggleButtonsUsage() {
+    var toggleBtn = function toggleBtn(prefix, period) {
+      var btn = document.getElementById("".concat(prefix, "-").concat(period.toLowerCase(), "-btn-usage"));
+      var current = prefix === 'start' ? startHalfDayUsage : endHalfDayUsage;
+      if (btn) btn.classList.toggle('active', current === period);
+    };
+    ['start', 'end'].forEach(function (prefix) {
+      ['AM', 'PM'].forEach(function (period) {
+        return toggleBtn(prefix, period);
+      });
+    });
+  }
+
+  // Now call addEventListener
+  (_document$getElementB = document.getElementById('start-am-btn-usage')) === null || _document$getElementB === void 0 || _document$getElementB.addEventListener('click', function () {
+    return toggleHalfDayUsage('start', 'AM');
+  });
+  (_document$getElementB2 = document.getElementById('start-pm-btn-usage')) === null || _document$getElementB2 === void 0 || _document$getElementB2.addEventListener('click', function () {
+    return toggleHalfDayUsage('start', 'PM');
+  });
+  (_document$getElementB3 = document.getElementById('end-am-btn-usage')) === null || _document$getElementB3 === void 0 || _document$getElementB3.addEventListener('click', function () {
+    return toggleHalfDayUsage('end', 'AM');
+  });
+  (_document$getElementB4 = document.getElementById('end-pm-btn-usage')) === null || _document$getElementB4 === void 0 || _document$getElementB4.addEventListener('click', function () {
+    return toggleHalfDayUsage('end', 'PM');
+  });
+
+  // Ensure correct visibility on page load
+  if (singleDayAbsenceCheckbox && endHalfdaySpan) {
+    if (singleDayAbsenceCheckbox.checked) {
+      endHalfdaySpan.style.display = 'none';
+    } else {
+      endHalfdaySpan.style.display = 'inline-block';
+    }
+  }
+>>>>>>> Stashed changes
 }); // End of document.ready
 
 /***/ }),

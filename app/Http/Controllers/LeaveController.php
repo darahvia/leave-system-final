@@ -60,6 +60,7 @@ class LeaveController extends Controller
                 'inclusive_date_start' => 'required|date',
                 'inclusive_date_end' => 'required|date|after_or_equal:inclusive_date_start',
                 'is_cancellation' => 'sometimes|boolean',
+                'is_leavewopay' => 'sometimes|boolean',
             ]);
 
             try {
@@ -108,6 +109,7 @@ class LeaveController extends Controller
                     'inclusive_date_start' => 'required|date',
                     'inclusive_date_end' => 'required|date',
                     'working_days' => 'required|numeric',
+                    'is_leavewopay' => 'sometimes|boolean',
                 ]);
 
                 // Find the leave application to update

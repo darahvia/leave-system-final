@@ -101,6 +101,10 @@ class LeaveService
     private function processLeaveDeductions(Customer $customer, string $leaveType, float $workingDays)
     {
         switch ($leaveType) {
+            case 'vl':
+                break;
+            case 'sl':
+                break;
             case 'spl':
                 $customer->deductLeave('spl', $workingDays);
                 break;

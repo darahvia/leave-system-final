@@ -472,6 +472,10 @@ body {
     letter-spacing: 0.05em;
 }
 
+.edit-button{
+
+}
+
 .emp-form button:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
@@ -530,6 +534,23 @@ body {
 }
 
 #viewAllBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+#editBtn {
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--primary-blue) 100%);
+    color: var(--white);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+        font-size: 0.65rem;
+}
+
+#editBtn:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }

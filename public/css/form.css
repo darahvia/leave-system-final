@@ -63,18 +63,26 @@ h3 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+.success,
+.error {
+  padding: 1rem 1.5rem;
+  margin: 1rem auto;
+  max-width: 1200px;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-md);
+}
+
 .success {
-  background: #d4edda;
-  padding: 10px;
-  color: #155724;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border-left: 4px solid var(--success);
 }
 
 .error {
-  background: #f8d7da;
-  padding: 10px;
-  color: #721c24;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border-left: 4px solid var(--error);
 }
 
 .grid {
@@ -125,6 +133,20 @@ h3 {
   width: 100%;
   position: relative;
   z-index: 100;
+}
+
+.form-action .cancel-button {
+  background-color: transparent !important;
+  color: #dc3545 !important;
+  border: 1px solid #dc3545 !important;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-action .cancel-button:hover {
+  background-color: #dc3545 !important;
+  color: white !important;
 }
 
 .header-container {

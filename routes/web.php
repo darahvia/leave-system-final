@@ -24,6 +24,8 @@ Route::middleware('web')->group(function () {
     // Customer management routes
     Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
     Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
 
     // Non-teaching (customer) routes
     Route::prefix('leave/customer')->group(function () {

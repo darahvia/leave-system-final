@@ -251,7 +251,7 @@ public function updateLeave(Request $request, $id)
                     ], 403);
                 }
                 if (!$leaveApplication->is_leavewopay) {
-                    $leaveDate = Carbon::parse($leaveApplication->start_date);
+                    $leaveDate = Carbon::parse($leaveApplication->leave_start_date);
 
                     // Reverse leave credits in the appropriate column
                     if ($leaveDate->lt($cutoffDate)) {

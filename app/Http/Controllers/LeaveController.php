@@ -64,6 +64,7 @@ public function findCustomer(Request $request)
                 'inclusive_date_end' => 'required|date|after_or_equal:inclusive_date_start',
                 'is_cancellation' => 'sometimes|boolean',
                 'is_leavewopay' => 'sometimes|boolean',
+                'is_leavepay' => 'sometimes|boolean',
             ]);
 
             try {
@@ -113,6 +114,7 @@ public function findCustomer(Request $request)
                     'inclusive_date_end' => 'required|date',
                     'working_days' => 'required|numeric',
                     'is_leavewopay' => 'sometimes|boolean',
+                    'is_leavepay' => 'sometimes|boolean',
                 ]);
 
                 // Find the leave application to update

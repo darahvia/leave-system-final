@@ -93,13 +93,15 @@
                         </div>
                     </div>
                     <label>Working Days:</label>
-                    <input type="number" name="working_days" step="0.01" id="working_days" style="background-color: #f5f5f5;">
+                    <input type="number" name="working_days" step="0.01" id="working_days">
                     <label>Remarks:</label>
                     <input type="text" name="leave_details" id="leave_details">
                     <button type="submit" id="submit-btn">Add Leave</button>
                     <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                     <label>
                     <input type="checkbox" name="is_leavewopay" id="is_leavewopay" value="1"> Leave Without Pay
+                    </label>                   <label>
+                    <input type="checkbox" name="is_leavepay" id="is_leavepay" value="1"> Leave With Pay
                     </label>
                 </div>
             </form>
@@ -262,16 +264,17 @@
                                 @endif
                             </td>
                             <td data-label="REMARKS">
-                                @if(!$app->is_credit_earned)
-                                    @if($app->is_leavewopay)
-                                        Leave Without Pay
-                                        @if($app->leave_details)
-                                            - {{ $app->leave_details }}
-                                        @endif
-                                    @else
-                                        {{ $app->leave_details ?? '' }}
+                            @if(!$app->is_credit_earned)
+                                @if($app->is_leavewopay || $app->is_leavepay)
+                                    Leave {{ $app->is_leavewopay ? 'Without' : 'With' }} Pay
+                                    @if($app->leave_details)
+                                        - {{ $app->leave_details }}
                                     @endif
+                                @else
+                                    {{ $app->leave_details ?? '' }}
                                 @endif
+                            @endif
+
                             </td>
                             <td data-label="VL BALANCE">{{ $app->current_vl ?? '' }}</td>
                             <td data-label="SL BALANCE">{{ $app->current_sl ?? '' }}</td>
@@ -298,7 +301,8 @@
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
                                         '{{ $app->working_days }}',
                                         '{{ $app->leave_details ?? '' }}',
-                                        {{ $app->is_leavewopay ? 'true' : 'false' }}
+                                        @json($app->is_leavewopay),
+                                        @json($app->is_leavepay)
                                         
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -318,7 +322,8 @@
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
                                         '{{ $app->working_days }}',
                                         '{{ $app->leave_details ?? '' }}',
-                                        {{ $app->is_leavewopay ? 'true' : 'false' }}
+                                        @json($app->is_leavewopay),
+                                        @json($app->is_leavepay)
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -341,7 +346,9 @@
                                         '{{ $app->leave_type }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_start)->format('Y-m-d') }}',
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
-                                        '{{ $app->working_days }}'
+                                        '{{ $app->working_days }}',
+                                        @json($app->is_leavewopay),
+                                        @json($app->is_leavepay)
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="12" cy="12" r="10"></circle>

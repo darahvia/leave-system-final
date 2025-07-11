@@ -11,7 +11,7 @@ class LeaveApplication extends Model
         'customer_id', 'leave_type', 'leave_details', 'working_days',
         'inclusive_date_start', 'inclusive_date_end', 'date_filed',
         'date_incurred', 'commutation', 'current_vl', 'current_sl',
-        'is_credit_earned', 'earned_date', 'is_cancellation', 'is_leavewopay',        
+        'is_credit_earned', 'earned_date', 'is_cancellation', 'is_leavewopay', 'is_leavepay',     
         'earned_vl',
         'earned_sl',
     ];
@@ -25,7 +25,7 @@ class LeaveApplication extends Model
         'is_credit_earned' => 'boolean',
         'is_cancellation' => 'boolean',
         'is_leavewopay' => 'boolean', 
-
+        'is_leavepay' => 'boolean',
     ];
 
     public function customer()

@@ -67,10 +67,12 @@ class TeachingLeaveController extends Controller
             'leave_end_date' => 'required|date|after_or_equal:leave_start_date',
             'working_days' => 'required|numeric|min:0.5|max:365',
             'is_leavewopay' => 'nullable|boolean',
+            'is_leavepay' => 'nullable|boolean',
         ]);
 
         try {
             $isLeaveWithoutPay = $request->has('is_leavewopay') && $request->is_leavewopay == 1;
+            $isLeaveWithPay = $request->has('is_leavepay') && $request->is_leavepay == 1;
 
             $customer = Customer::findOrFail($request->customer_id);
             $leaveDays = $request->working_days;
@@ -78,7 +80,7 @@ class TeachingLeaveController extends Controller
             $cutoffDate = Carbon::create(2024, 10, 1); // October 1
 
             // Determine available leave credits
-            if (!$isLeaveWithoutPay) {
+            if (!$isLeaveWithoutPay || !$isLeaveWithPay) {
                 $totalAvailableCredits = $customer->leave_credits_old + $customer->leave_credits_new;
 
                 if ($totalAvailableCredits < $leaveDays) {
@@ -123,6 +125,7 @@ class TeachingLeaveController extends Controller
                 'working_days' => $leaveDays,
                 'remarks' => $request->remarks ?? '',
                 'is_leavewopay' => $isLeaveWithoutPay,
+                'is_leavepay' => $isLeaveWithPay,
             ]);
 
             return redirect()->route('leave.teaching.index', ['customer_id' => $customer->id])
@@ -146,6 +149,7 @@ public function updateLeave(Request $request)
             'working_days' => 'required|numeric|min:0.5|max:365',
             'remarks' => 'nullable|string|max:255',
             'is_leavewopay' => 'nullable|boolean',
+            'is_leavepay' => 'nullable|boolean',
         ]);
 
         // Find the leave application to update
@@ -157,71 +161,154 @@ public function updateLeave(Request $request)
             return back()->with('error', '❌ Unauthorized access to leave application.');
         }
 
-        if ($leaveApplication->is_leavewopay) {
-            // Just update the dates and working_days
+        $cutoffDate = Carbon::create(2024, 10, 1); // October 1 this year
+
+        // Determine current and new leave status
+        $currentIsLeaveWoPay = $leaveApplication->is_leavewopay;
+        $currentIsLeavePay = $leaveApplication->is_leavepay;
+        $currentIsDeducting = !$currentIsLeaveWoPay && !$currentIsLeavePay;
+
+        $newIsLeaveWoPay = $request->is_leavewopay ?? false;
+        $newIsLeavePay = $request->is_leavepay ?? false;
+        $newIsDeducting = !$newIsLeaveWoPay && !$newIsLeavePay;
+
+        // Handle different scenarios
+        if ($currentIsDeducting && !$newIsDeducting) {
+            // Changing from deducting to non-deducting (restore balance)
+            $oldLeaveDate = Carbon::parse($leaveApplication->leave_start_date);
+            $oldDays = $leaveApplication->working_days;
+
+            if ($oldLeaveDate->lt($cutoffDate)) {
+                $customer->leave_credits_old += $oldDays;
+            } else {
+                $customer->leave_credits_new += $oldDays;
+            }
+
+            $customer->save();
+
+            // Just update the leave application without further balance changes
             $leaveApplication->update([
                 'leave_start_date' => $request->leave_start_date,
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
                 'working_days' => $request->working_days,
                 'remarks' => $request->remarks ?? '',
+                'is_leavewopay' => $newIsLeaveWoPay,
+                'is_leavepay' => $newIsLeavePay,
             ]);
 
-            return back()->with('success', '✅ Leave without pay updated successfully.');
-        }
+            return back()->with('success', '✅ Leave updated successfully. Balance restored.');
 
-        $cutoffDate = Carbon::create(2024, 10, 1); // October 1 this year
+        } elseif (!$currentIsDeducting && $newIsDeducting) {
+            // Changing from non-deducting to deducting (apply deduction)
+            $newLeaveDate = Carbon::parse($request->leave_start_date);
+            $newDays = $request->working_days;
 
-        // Step 1: Restore previous leave days
-        $oldLeaveDate = Carbon::parse($leaveApplication->leave_start_date);
-        $oldDays = $leaveApplication->working_days;
-
-        if ($oldLeaveDate->lt($cutoffDate)) {
-            $customer->leave_credits_old += $oldDays;
-        } else {
-            // Return to new first
-            $customer->leave_credits_new += $oldDays;
-        }
-
-        // Step 2: Deduct new leave days
-        $newLeaveDate = Carbon::parse($request->leave_start_date);
-        $newDays = $request->working_days;
-
-        if ($newLeaveDate->lt($cutoffDate)) {
-            // Must deduct fully from OLD
-            if ($customer->leave_credits_old < $newDays) {
-                return back()->with('error', '❌ Insufficient OLD leave credits for update. Available: ' . $customer->leave_credits_old . ' days');
-            }
-            $customer->leave_credits_old -= $newDays;
-
-        } else {
-            // Deduct from NEW first, then OLD if needed
-            if ($customer->leave_credits_new >= $newDays) {
-                $customer->leave_credits_new -= $newDays;
-            } else {
-                $remaining = $newDays - $customer->leave_credits_new;
-                $customer->leave_credits_new = 0;
-
-                if ($customer->leave_credits_old < $remaining) {
-                    return back()->with('error', '❌ Not enough leave credits for update. Needed: ' . $newDays . ', short by ' . ($remaining - $customer->leave_credits_old) . ' days');
+            if ($newLeaveDate->lt($cutoffDate)) {
+                // Must deduct fully from OLD
+                if ($customer->leave_credits_old < $newDays) {
+                    return back()->with('error', '❌ Insufficient OLD leave credits. Available: ' . $customer->leave_credits_old . ' days');
                 }
+                $customer->leave_credits_old -= $newDays;
 
-                $customer->leave_credits_old -= $remaining;
+            } else {
+                // Deduct from NEW first, then OLD if needed
+                if ($customer->leave_credits_new >= $newDays) {
+                    $customer->leave_credits_new -= $newDays;
+                } else {
+                    $remaining = $newDays - $customer->leave_credits_new;
+                    $customer->leave_credits_new = 0;
+
+                    if ($customer->leave_credits_old < $remaining) {
+                        return back()->with('error', '❌ Not enough leave credits. Needed: ' . $newDays . ', short by ' . ($remaining - $customer->leave_credits_old) . ' days');
+                    }
+
+                    $customer->leave_credits_old -= $remaining;
+                }
             }
+
+            $customer->save();
+
+            $leaveApplication->update([
+                'leave_start_date' => $request->leave_start_date,
+                'leave_end_date' => $request->leave_end_date,
+                'leave_incurred_date' => $request->leave_start_date,
+                'working_days' => $newDays,
+                'remarks' => $request->remarks ?? '',
+                'is_leavewopay' => $newIsLeaveWoPay,
+                'is_leavepay' => $newIsLeavePay,
+            ]);
+
+            return back()->with('success', '✅ Leave updated successfully. Balance deducted.');
+
+        } elseif (!$currentIsDeducting && !$newIsDeducting) {
+            // Both non-deducting (leave without pay or leave with pay)
+            $leaveApplication->update([
+                'leave_start_date' => $request->leave_start_date,
+                'leave_end_date' => $request->leave_end_date,
+                'leave_incurred_date' => $request->leave_start_date,
+                'working_days' => $request->working_days,
+                'remarks' => $request->remarks ?? '',
+                'is_leavewopay' => $newIsLeaveWoPay,
+                'is_leavepay' => $newIsLeavePay,
+            ]);
+
+            return back()->with('success', '✅ Leave updated successfully.');
+
+        } else {
+            // Both deducting - restore old balance and apply new deduction
+            // Step 1: Restore previous leave days
+            $oldLeaveDate = Carbon::parse($leaveApplication->leave_start_date);
+            $oldDays = $leaveApplication->working_days;
+
+            if ($oldLeaveDate->lt($cutoffDate)) {
+                $customer->leave_credits_old += $oldDays;
+            } else {
+                $customer->leave_credits_new += $oldDays;
+            }
+
+            // Step 2: Deduct new leave days
+            $newLeaveDate = Carbon::parse($request->leave_start_date);
+            $newDays = $request->working_days;
+
+            if ($newLeaveDate->lt($cutoffDate)) {
+                // Must deduct fully from OLD
+                if ($customer->leave_credits_old < $newDays) {
+                    return back()->with('error', '❌ Insufficient OLD leave credits for update. Available: ' . $customer->leave_credits_old . ' days');
+                }
+                $customer->leave_credits_old -= $newDays;
+
+            } else {
+                // Deduct from NEW first, then OLD if needed
+                if ($customer->leave_credits_new >= $newDays) {
+                    $customer->leave_credits_new -= $newDays;
+                } else {
+                    $remaining = $newDays - $customer->leave_credits_new;
+                    $customer->leave_credits_new = 0;
+
+                    if ($customer->leave_credits_old < $remaining) {
+                        return back()->with('error', '❌ Not enough leave credits for update. Needed: ' . $newDays . ', short by ' . ($remaining - $customer->leave_credits_old) . ' days');
+                    }
+
+                    $customer->leave_credits_old -= $remaining;
+                }
+            }
+
+            $customer->save();
+
+            // Step 3: Update the leave application
+            $leaveApplication->update([
+                'leave_start_date' => $request->leave_start_date,
+                'leave_end_date' => $request->leave_end_date,
+                'leave_incurred_date' => $request->leave_start_date,
+                'working_days' => $newDays,
+                'remarks' => $request->remarks ?? '',
+                'is_leavewopay' => $newIsLeaveWoPay,
+                'is_leavepay' => $newIsLeavePay,
+            ]);
+
+            return back()->with('success', '✅ Leave application updated successfully.');
         }
-
-        $customer->save();
-
-        // Step 3: Update the leave application
-        $leaveApplication->update([
-            'leave_start_date' => $request->leave_start_date,
-            'leave_end_date' => $request->leave_end_date,
-            'leave_incurred_date' => $request->leave_start_date,
-            'working_days' => $newDays,
-            'remarks' => $request->remarks ?? '',
-        ]);
-
-        return back()->with('success', '✅ Leave application updated successfully.');
 
     } catch (ValidationException $e) {
         return back()->withErrors($e->errors())->withInput();
@@ -256,7 +343,7 @@ public function updateLeave(Request $request)
                         'error' => 'Unauthorized access to leave application.'
                     ], 403);
                 }
-                if (!$leaveApplication->is_leavewopay) {
+                if (!$leaveApplication->is_leavewopay && !$leaveApplication->is_leavepay) {
                     $leaveDate = Carbon::parse($leaveApplication->leave_start_date);
 
                     // Reverse leave credits in the appropriate column

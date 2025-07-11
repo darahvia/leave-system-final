@@ -16,6 +16,7 @@ class TeachingLeaveApplications extends Model
         'working_days',
         'remarks',
         'is_leavewopay',
+        'is_leavepay',
     ];
 
 
@@ -23,6 +24,7 @@ class TeachingLeaveApplications extends Model
     'leave_start_date' => 'date',
     'leave_end_date' => 'date',
     'is_leavewopay' => 'boolean',
+    'is_leavepay' => 'boolean',
     'working_days' => 'float',
     ];
 

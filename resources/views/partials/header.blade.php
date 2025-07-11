@@ -60,7 +60,7 @@ $latestCtoApp = $customer->ctoApplications
             <tr>
                 <td class="label">SURNAME</td>
                 <td class="value">{{ strtoupper($customer->surname) }}</td>
-                <td class="label">DIVISION/UNIT</td>
+                <td class="label">DIVISION/UNIT/SCHOOL</td>
                 <td class="value">{{ strtoupper($customer->office->office) }}</td>
                 <td class="label">STATUS</td>
                 <td class="value">{{ strtoupper($customer->status ?? '') }}</td>

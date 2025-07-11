@@ -197,6 +197,9 @@
                     <label>
                         <input type="checkbox" name="is_leavewopay" id="is_leavewopay_old" value="1"> Leave Without Pay
                     </label>
+                    <label>
+                        <input type="checkbox" name="is_leavepay" id="is_leavepay_old" value="1"> Leave With Pay
+                    </label>
                     </div>
                 </form>
             </div>
@@ -302,12 +305,23 @@
                                         </td>
                                         <td data-label="DAYS">
                                         <span style="{{ $app->is_leavewopay ? '' : 'color: red;' }}">
-                                            {{ $app->is_leavewopay ? $app->working_days : '-' . $app->working_days }}
+                                            {{ $app->is_leavewopay || $app->is_leavepay ? $app->working_days : '-' . $app->working_days }}
                                         </span>
 
                                         </td>
                                         <td data-label="BALANCE"></td>
-                                        <td data-label="REMARKS">{{ $app->remarks }}</td>
+                                        <td data-label="REMARKS">
+                                            @if(!$app->is_credit_earned)
+                                                @if($app->is_leavewopay || $app->is_leavepay)
+                                                    Leave {{ $app->is_leavewopay ? 'Without' : 'With' }} Pay
+                                                    @if($app->remarks)
+                                                        - {{ $app->remarks }}
+                                                    @endif
+                                                @else
+                                                    {{ $app->remarks ?? '' }}
+                                                @endif
+                                            @endif
+                                        </td>
                                         
                                         <td data-label="ACTIONS">
                                             <button type="button" class="edit-btn" onclick="editLeaveApplication(
@@ -316,7 +330,8 @@
                                         '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
                                                 'old',
-                                                 {{ $app->is_leavewopay ? 'true' : 'false' }}
+                                        @json($app->is_leavewopay),
+                                        @json($app->is_leavepay)
                                             )">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -406,6 +421,9 @@
                     </div>
                         <label>
                         <input type="checkbox" name="is_leavewopay" id="is_leavewopay_new" value="1"> Leave Without Pay
+                        </label>
+                       <label>
+                        <input type="checkbox" name="is_leavepay" id="is_leavepay_new" value="1"> Leave With Pay
                         </label>
                 </form>
             </div>
@@ -509,12 +527,23 @@
                     {{ \Carbon\Carbon::parse($app->created_at)->format('F j, Y') }}
                 @endif</td>
                                         <td data-label="DAYS">
-                                    <span style="{{ $app->is_leavewopay ? '' : 'color: red;' }}">
-                                        {{ $app->is_leavewopay ? $app->working_days : '-' . $app->working_days }}
+                                    <span style="{{ $app->is_leavewopay || $app->is_leavepay ? '' : 'color: red;' }}">
+                                        {{ $app->is_leavewopay || $app->is_leavepay ? $app->working_days : '-' . $app->working_days }}
                                     </span>
                                     </td>
                                         <td data-label="BALANCE"></td>
-                                         <td data-label="REMARKS">{{ $app->remarks }}</td>
+                                         <td data-label="REMARKS">
+                                            @if(!$app->is_credit_earned)
+                                                @if($app->is_leavewopay || $app->is_leavepay)
+                                                    Leave {{ $app->is_leavewopay ? 'Without' : 'With' }} Pay
+                                                    @if($app->remarks)
+                                                        - {{ $app->remarks }}
+                                                    @endif
+                                                @else
+                                                    {{ $app->remarks ?? '' }}
+                                                @endif
+                                            @endif
+                                         </td>
                                         <td data-label="ACTIONS">
                                             <button type="button" class="edit-btn" onclick="editLeaveApplication(
                                                 {{ $app->id }},
@@ -522,7 +551,8 @@
                                         '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
                                                 'new',
-                                                {{ $app->is_leavewopay ? 'true' : 'false' }}
+                                                @json($app->is_leavewopay),
+                                                @json($app->is_leavepay)
                                             )">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -809,8 +839,12 @@ window.addEventListener('click', function(event) {
     }
 });
 
-function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false) {
-    document.getElementById('is_leavewopay_' + tab).checked = !!isLeaveWOPay;
+function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false, isLeaveWPay = false) {
+    const isLeaveWithoutPayBool = isLeaveWOPay === true || isLeaveWOPay === 'true';
+    const isLeavePayBool = isLeaveWPay === true || isLeaveWPay === 'true';
+
+    document.getElementById('is_leavewopay_' + tab).checked = isLeaveWithoutPayBool;
+    document.getElementById('is_leavepay_' + tab).checked = isLeavePayBool;
 
     document.getElementById('edit_id_' + tab).value = id;
     document.getElementById('form_method_' + tab).value = 'PUT';

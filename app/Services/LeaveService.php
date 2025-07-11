@@ -11,90 +11,180 @@ class LeaveService
     /**
      * Process leave application and calculate balances
      */
-    public function processLeaveApplication(Customer $customer, array $leaveData, LeaveApplication $leaveApplication = null)
-    {
-        $leaveType = strtolower($leaveData['leave_type']);
-        $workingDays = $leaveData['working_days'];
-        $leaveDate = $leaveData['date_filed']; 
-        $isLeaveWithoutPay = $leaveData['is_leavewopay'] ?? false;
+public function processLeaveApplication(Customer $customer, array $leaveData, LeaveApplication $leaveApplication = null)
+{
+    $leaveType = strtolower($leaveData['leave_type']);
+    $workingDays = $leaveData['working_days'];
+    $leaveDate = $leaveData['date_filed']; 
+    $isLeaveWithoutPay = $leaveData['is_leavewopay'] ?? false;
+    $isLeaveWithPay = $leaveData['is_leavepay'] ?? false;
 
-        // For new applications, check if customer has sufficient leave balance
-        if(!$isLeaveWithoutPay){
-            if (!$leaveApplication && !$this->hasSufficientBalance($customer, $leaveType, $workingDays)) {
+    // For new applications, check if customer has sufficient leave balance
+    if(!$isLeaveWithoutPay && !$isLeaveWithPay) {
+        if (!$leaveApplication && !$this->hasSufficientBalance($customer, $leaveType, $workingDays)) {
+            throw new \Exception("Insufficient {$leaveType} balance. Available: " .
+                $this->getAvailableBalance($customer, $leaveType) . " days");
+        }
+    }
+
+    // Get current balances before processing
+    $currentBalances = $this->getCurrentBalances($customer);
+    $newVlBalance = $currentBalances['vl'];
+    $newSlBalance = $currentBalances['sl'];
+
+    if ($leaveApplication) {
+        // Update existing leave
+        $previousWasDeducting = !$leaveApplication->is_leavewopay && !$leaveApplication->is_leavepay;
+        $nowIsNonDeducting = $isLeaveWithoutPay || $isLeaveWithPay;
+
+        // Restore balance if previously deducted and now not deducting
+        if ($previousWasDeducting && $nowIsNonDeducting) {
+            $previousLeaveType = strtolower($leaveApplication->leave_type);
+            
+            if ($previousLeaveType === 'vl') {
+                $newVlBalance += $leaveApplication->working_days;
+            } elseif ($previousLeaveType === 'sl') {
+                $newSlBalance += $leaveApplication->working_days;
+            } elseif ($previousLeaveType === 'fl') {
+                // Force Leave also deducts from VL, so restore to VL
+                $newVlBalance += $leaveApplication->working_days;
+            }
+            // Note: For other leave types that were deducted via processLeaveDeductions,
+            // you might need to reverse those deductions as well
+        }
+
+        // If changing from non-deducting to deducting, check balance and deduct
+        $previousWasNonDeducting = $leaveApplication->is_leavewopay || $leaveApplication->is_leavepay;
+        $nowIsDeducting = !$isLeaveWithoutPay && !$isLeaveWithPay;
+
+        if ($previousWasNonDeducting && $nowIsDeducting) {
+            // Check if sufficient balance for the new deduction
+            if (!$this->hasSufficientBalance($customer, $leaveType, $workingDays)) {
                 throw new \Exception("Insufficient {$leaveType} balance. Available: " .
                     $this->getAvailableBalance($customer, $leaveType) . " days");
             }
-        }
 
-
-        // Get current balances before processing
-        $currentBalances = $this->getCurrentBalances($customer);
-
-        if ($leaveApplication) {
-            // Update existing leave
-            $leaveApplication->update([
-                'leave_type' => $leaveData['leave_type'],
-                'leave_details' => $leaveData['leave_details'] ?? null,
-                'working_days' => $workingDays,
-                'inclusive_date_start' => $leaveData['inclusive_date_start'] ?? null,
-                'inclusive_date_end' => $leaveData['inclusive_date_end'] ?? null,
-                'date_filed' => $leaveData['date_filed'],
-                'commutation' => $leaveData['commutation'] ?? null,
-                'is_leavewopay' => $isLeaveWithoutPay,
-                'current_vl' => $currentBalances['vl'],
-                'current_sl' => $currentBalances['sl'],
-            ]);
-        } else {
-            $newVlBalance = $currentBalances['vl'];
-            $newSlBalance = $currentBalances['sl'];
-            if (!$isLeaveWithoutPay){
-                // Process leave deductions first (for non-VL/SL types)
+            // Process deductions for non-VL/SL types first
+            if ($leaveType !== 'vl' && $leaveType !== 'sl') {
                 $this->processLeaveDeductions($customer, $leaveType, $workingDays);
-                
-                // Calculate new VL/SL balances manually
+                // Refresh balances after deductions
                 $currentBalances = $this->getCurrentBalances($customer);
                 $newVlBalance = $currentBalances['vl'];
                 $newSlBalance = $currentBalances['sl'];
-                
-                // Apply VL/SL deductions with proper balance checking
-                if ($leaveType === 'vl') {
-                    if ($newVlBalance < $workingDays) {
-                        throw new \Exception("Insufficient VL balance. Available: {$newVlBalance} days, Required: {$workingDays} days");
-                    }
-                    $newVlBalance = $newVlBalance - $workingDays;
-                } elseif ($leaveType === 'sl') {
-                    if ($newSlBalance < $workingDays) {
-                        throw new \Exception("Insufficient SL balance. Available: {$newSlBalance} days, Required: {$workingDays} days");
-                    }
-                    $newSlBalance = $newSlBalance - $workingDays;
-                } elseif ($leaveType === 'fl') {
-                    // Force Leave also deducts from VL - balance already checked in hasSufficientBalance
-                    if ($newVlBalance < $workingDays) {
-                        throw new \Exception("Insufficient VL balance for Force Leave. Available: {$newVlBalance} days, Required: {$workingDays} days");
-                    }
-                    $newVlBalance = $newVlBalance - $workingDays;
-                }
             }
-            
-            // Create new leave with calculated balances
-            $leaveApplication = LeaveApplication::create([
-                'customer_id' => $customer->id,
-                'leave_type' => $leaveData['leave_type'],
-                'leave_details' => $leaveData['leave_details'] ?? null,
-                'working_days' => $workingDays,
-                'inclusive_date_start' => $leaveData['inclusive_date_start'] ?? null,
-                'inclusive_date_end' => $leaveData['inclusive_date_end'] ?? null,
-                'date_filed' => $leaveData['date_filed'],
-                'commutation' => $leaveData['commutation'] ?? null,
-                'is_leavewopay' => $isLeaveWithoutPay,
-                'current_vl' => $newVlBalance,
-                'current_sl' => $newSlBalance,
-            ]);
+
+            // Apply VL/SL deductions
+            if ($leaveType === 'vl') {
+                $newVlBalance -= $workingDays;
+            } elseif ($leaveType === 'sl') {
+                $newSlBalance -= $workingDays;
+            } elseif ($leaveType === 'fl') {
+                // Force Leave deducts from VL
+                $newVlBalance -= $workingDays;
+            }
         }
 
-        return $leaveApplication;
+        // If both were deducting but leave type or working days changed
+        if ($previousWasDeducting && $nowIsDeducting) {
+            $previousLeaveType = strtolower($leaveApplication->leave_type);
+            
+            // First restore the previous deduction
+            if ($previousLeaveType === 'vl') {
+                $newVlBalance += $leaveApplication->working_days;
+            } elseif ($previousLeaveType === 'sl') {
+                $newSlBalance += $leaveApplication->working_days;
+            } elseif ($previousLeaveType === 'fl') {
+                $newVlBalance += $leaveApplication->working_days;
+            }
+
+            // Then apply new deduction if sufficient balance
+            if (!$this->hasSufficientBalance($customer, $leaveType, $workingDays)) {
+                throw new \Exception("Insufficient {$leaveType} balance. Available: " .
+                    $this->getAvailableBalance($customer, $leaveType) . " days");
+            }
+
+            // Process deductions for non-VL/SL types
+            if ($leaveType !== 'vl' && $leaveType !== 'sl') {
+                $this->processLeaveDeductions($customer, $leaveType, $workingDays);
+                // Refresh balances after deductions
+                $currentBalances = $this->getCurrentBalances($customer);
+                $newVlBalance = $currentBalances['vl'];
+                $newSlBalance = $currentBalances['sl'];
+            }
+
+            // Apply new VL/SL deductions
+            if ($leaveType === 'vl') {
+                $newVlBalance -= $workingDays;
+            } elseif ($leaveType === 'sl') {
+                $newSlBalance -= $workingDays;
+            } elseif ($leaveType === 'fl') {
+                $newVlBalance -= $workingDays;
+            }
+        }
+
+        $leaveApplication->update([
+            'leave_type' => $leaveData['leave_type'],
+            'leave_details' => $leaveData['leave_details'] ?? null,
+            'working_days' => $workingDays,
+            'inclusive_date_start' => $leaveData['inclusive_date_start'] ?? null,
+            'inclusive_date_end' => $leaveData['inclusive_date_end'] ?? null,
+            'date_filed' => $leaveData['date_filed'],
+            'commutation' => $leaveData['commutation'] ?? null,
+            'is_leavewopay' => $isLeaveWithoutPay,
+            'is_leavepay' => $isLeaveWithPay,
+            'current_vl' => $newVlBalance,
+            'current_sl' => $newSlBalance,
+        ]);
+    } else {
+        // Creating new leave application
+        if (!$isLeaveWithoutPay && !$isLeaveWithPay){
+            // Process leave deductions first (for non-VL/SL types)
+            $this->processLeaveDeductions($customer, $leaveType, $workingDays);
+            
+            // Calculate new VL/SL balances manually
+            $currentBalances = $this->getCurrentBalances($customer);
+            $newVlBalance = $currentBalances['vl'];
+            $newSlBalance = $currentBalances['sl'];
+            
+            // Apply VL/SL deductions with proper balance checking
+            if ($leaveType === 'vl') {
+                if ($newVlBalance < $workingDays) {
+                    throw new \Exception("Insufficient VL balance. Available: {$newVlBalance} days, Required: {$workingDays} days");
+                }
+                $newVlBalance = $newVlBalance - $workingDays;
+            } elseif ($leaveType === 'sl') {
+                if ($newSlBalance < $workingDays) {
+                    throw new \Exception("Insufficient SL balance. Available: {$newSlBalance} days, Required: {$workingDays} days");
+                }
+                $newSlBalance = $newSlBalance - $workingDays;
+            } elseif ($leaveType === 'fl') {
+                // Force Leave also deducts from VL - balance already checked in hasSufficientBalance
+                if ($newVlBalance < $workingDays) {
+                    throw new \Exception("Insufficient VL balance for Force Leave. Available: {$newVlBalance} days, Required: {$workingDays} days");
+                }
+                $newVlBalance = $newVlBalance - $workingDays;
+            }
+        }
+        
+        // Create new leave with calculated balances
+        $leaveApplication = LeaveApplication::create([
+            'customer_id' => $customer->id,
+            'leave_type' => $leaveData['leave_type'],
+            'leave_details' => $leaveData['leave_details'] ?? null,
+            'working_days' => $workingDays,
+            'inclusive_date_start' => $leaveData['inclusive_date_start'] ?? null,
+            'inclusive_date_end' => $leaveData['inclusive_date_end'] ?? null,
+            'date_filed' => $leaveData['date_filed'],
+            'commutation' => $leaveData['commutation'] ?? null,
+            'is_leavewopay' => $isLeaveWithoutPay,
+            'is_leavepay' => $isLeaveWithPay,
+            'current_vl' => $newVlBalance,
+            'current_sl' => $newSlBalance,
+        ]);
     }
 
+    return $leaveApplication;
+}
     /**
      * Process leave deductions based on leave type
      */
@@ -273,10 +363,10 @@ class LeaveService
     {
         switch ($leaveType) {
             case 'vl':
-                // VL is managed through leave applications, not customer balance
+                $customer->addLeaveCredits('vl', $workingDays);
                 break;
             case 'sl':
-                // SL is managed through leave applications, not customer balance
+                $customer->addLeaveCredits('sl', $workingDays);
                 break;
             case 'spl':
                 $customer->addLeaveCredits('spl', $workingDays);
@@ -325,6 +415,8 @@ class LeaveService
         $leaveType = strtolower($cancellationData['leave_type']);
         $workingDays = $cancellationData['working_days']; // Credits to restore
         $cancellationDate = $cancellationData['date_filed']; // Date cancellation was filed
+        $isLeaveWithoutPay = $cancellationData['is_leavewopay'] ?? false;
+        $isLeaveWithPay = $cancellationData['is_leavepay'] ?? false;
 
         // Get current balances
         $currentBalances = $this->getCurrentBalances($customer);
@@ -332,20 +424,23 @@ class LeaveService
         // Calculate new balances after restoration
         $newVlBalance = $currentBalances['vl'];
         $newSlBalance = $currentBalances['sl'];
-        
-        // Apply credit restoration
-        if ($leaveType === 'vl') {
-            $newVlBalance = $newVlBalance + $workingDays;
-        } elseif ($leaveType === 'sl') {
-            $newSlBalance = $newSlBalance + $workingDays;
-        } elseif ($leaveType === 'fl') {
-            // Force Leave also restores VL
-            $newVlBalance = $newVlBalance + $workingDays;
-        }
 
-        // For non-VL/SL leave types, restore the customer balance
-        if (!in_array($leaveType, ['vl', 'sl'])) {
-            $this->restoreLeaveBalance($customer, $leaveType, $workingDays);
+
+        // Apply credit restoration
+        if ((!$isLeaveWithoutPay && !$isLeaveWithPay)) {
+                if ($leaveType === 'vl') {
+                    $newVlBalance = $newVlBalance + $workingDays;
+                } elseif ($leaveType === 'sl') {
+                    $newSlBalance = $newSlBalance + $workingDays;
+                } elseif ($leaveType === 'fl') {
+                    // Force Leave also restores VL
+                    $newVlBalance = $newVlBalance + $workingDays;
+                }
+
+                // For non-VL/SL leave types, restore the customer balance
+                if (!in_array($leaveType, ['vl', 'sl'])) {
+                    $this->restoreLeaveBalance($customer, $leaveType, $workingDays);
+                }
         }
 
         // Create a new leave application record for the cancellation
@@ -358,9 +453,11 @@ class LeaveService
             'inclusive_date_end' => $cancellationData['inclusive_date_end'],
             'date_filed' => $cancellationDate,
             'commutation' => null,
-            'is_cancellation' => true, // Mark as cancellation entry
+            'is_cancellation' => true, 
             'current_vl' => $newVlBalance,
             'current_sl' => $newSlBalance,
+            'is_leavewopay' => $isLeaveWithoutPay,
+            'is_leavepay' => $isLeaveWithPay,
         ]);
 
         return $cancellationApplication;

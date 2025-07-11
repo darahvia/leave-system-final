@@ -290,6 +290,7 @@ function calculateWorkingDays() {
 function editLeaveApplication(id, leaveType, dateFiled, startDate, endDate, workingDays) {
   var leaveDetails = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : '';
   var isLeaveWithoutPay = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : false;
+  var isLeaveWPay = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : false;
   isEditing = true;
   var form = document.getElementById('leave-form');
   var editIdInput = document.getElementById('edit_id');
@@ -304,7 +305,10 @@ function editLeaveApplication(id, leaveType, dateFiled, startDate, endDate, work
   var cancelBtn = document.getElementById('cancel-edit-btn');
   var leaveDetailsInput = document.getElementById('leave_details');
   if (leaveDetailsInput) leaveDetailsInput.value = leaveDetails;
-  document.getElementById('is_leavewopay').checked = !!isLeaveWithoutPay; // Store original form action if not already stored
+  var isLeaveWithoutPayBool = isLeaveWithoutPay === true || isLeaveWithoutPay === 'true';
+  var isLeavePayBool = isLeaveWPay === true || isLeaveWPay === 'true';
+  document.getElementById('is_leavewopay').checked = isLeaveWithoutPayBool;
+  document.getElementById('is_leavepay').checked = isLeavePayBool;
   if (!originalFormAction && form) {
     originalFormAction = form.action;
   }
@@ -600,6 +604,8 @@ function deleteRecordWithForm(id, type) {
   }
 }
 function cancelLeaveApplication(id, leaveType, startDate, endDate, workingDays) {
+  var isLeaveWithoutPay = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+  var isLeaveWPay = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
   // Reset any existing edit state
   cancelEdit();
 
@@ -628,6 +634,10 @@ function cancelLeaveApplication(id, leaveType, startDate, endDate, workingDays) 
   // Update UI to indicate cancellation mode
   if (formContainer) formContainer.classList.add('cancelling');
   if (submitBtn) submitBtn.textContent = 'Cancel Leave (Add Credits Back)';
+  var isLeaveWithoutPayBool = isLeaveWithoutPay === true || isLeaveWithoutPay === 'true';
+  var isLeavePayBool = isLeaveWPay === true || isLeaveWPay === 'true';
+  document.getElementById('is_leavewopay').checked = isLeaveWithoutPayBool;
+  document.getElementById('is_leavepay').checked = isLeavePayBool;
 
   // Make working days field editable for cancellation
   if (workingDaysInput) {
@@ -639,7 +649,7 @@ function cancelLeaveApplication(id, leaveType, startDate, endDate, workingDays) 
   var formTitle = document.createElement('div');
   formTitle.id = 'cancel-mode-title';
   formTitle.style.cssText = 'background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-weight: bold;';
-  formTitle.innerHTML = '⚠️ CANCELLATION MODE: This will add back ' + workingDays + ' ' + leaveType + ' credits';
+  formTitle.innerHTML = '⚠️ CANCELLATION MODE: This will add back ' + leaveType + ' credits';
 
   // Remove any existing title
   var existingTitle = document.getElementById('cancel-mode-title');

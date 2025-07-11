@@ -17,6 +17,7 @@ class Customer extends Model
         'balance_forwarded_cto', 
         'cto', 
         'salary', 
+        'status',
         'surname', 'given_name', 'middle_name', 'division', 'designation', 
     ];
 

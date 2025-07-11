@@ -194,7 +194,7 @@
     });
 @endphp
 @foreach($sortedApplications as $app)
-                        <tr>
+                        <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
                             <td data-label="PERIOD">{{ $app->earned_date ? \Carbon\Carbon::parse($app->earned_date)->format('F j, Y') : '' }}</td>
                             <td data-label="VL EARNED">
                                 @if($app->is_credit_earned)

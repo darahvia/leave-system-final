@@ -158,7 +158,13 @@
 
                 <div class="form-group">
                     <label for="status">Status<span style="color: red;">*</span></label>
-                    <input type="text" id="status" name="status" value="{{ old('status', $customer->status ?? '') }}" />
+                    <select id="status" name="status">
+                        <option value="">Select Status</option>
+                        <option value="Casual" {{ old('status', $customer->status ?? '') == 'Single' ? 'selected' : '' }}>Casual</option>
+                        <option value="Permanent" {{ old('status', $customer->status ?? '') == 'Married' ? 'selected' : '' }}>Permanent</option>
+                        <option value="Retired" {{ old('status', $customer->status ?? '') == 'Divorced' ? 'selected' : '' }}>Retired</option>
+                        <option value="Resigned" {{ old('status', $customer->status ?? '') == 'Widowed' ? 'selected' : '' }}>Resigned</option>
+                    </select>
                 </div>
             </div>
 

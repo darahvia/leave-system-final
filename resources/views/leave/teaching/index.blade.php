@@ -290,7 +290,7 @@
     })->sortBy(function($app) {
         return $app->leave_start_date ?: $app->created_at;
     }) as $app)
-                                    <tr>
+                                    <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
                                         <td data-label="DATE LEAVE INCURRED">
                                             @if($app->leave_start_date && $app->leave_end_date)
                                                 @if(\Carbon\Carbon::parse($app->leave_start_date)->isSameDay(\Carbon\Carbon::parse($app->leave_end_date)))
@@ -515,7 +515,7 @@
     })->sortBy(function($app) {
         return $app->leave_start_date ?: $app->created_at;
     }) as $app)
-        <tr>
+       <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
             <td data-label="DATE LEAVE INCURRED">
                 @if($app->leave_start_date && $app->leave_end_date)
                     @if(\Carbon\Carbon::parse($app->leave_start_date)->isSameDay(\Carbon\Carbon::parse($app->leave_end_date)))

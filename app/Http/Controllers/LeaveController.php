@@ -251,6 +251,7 @@ public function findCustomer(Request $request)
                         ->orWhere('middle_name', 'LIKE', "%{$search}%");
                 })
                 ->limit(10)
+                ->whereBetween('position_id', [1, 39])  
                 ->get(['surname', 'given_name', 'middle_name', 'id'])
                 ->map(function ($customer) {
                     return [

@@ -23,7 +23,7 @@ class TeachingLeaveController extends Controller
                 try {
                     $query = TeachingLeaveApplications::where('customer_id', $customer->id);
                     
-                    $query = $query->orderBy('leave_start_date', 'desc')
+                    $query = $query->orderBy('date_filed', 'desc')
                                    ->orderBy('created_at', 'desc');
                     
                     $teachingLeaveApplications = $query->get();
@@ -63,6 +63,7 @@ class TeachingLeaveController extends Controller
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
+            'date_filed' => 'nullable|date',
             'leave_start_date' => 'required|date',
             'leave_end_date' => 'required|date|after_or_equal:leave_start_date',
             'working_days' => 'required|numeric|min:0.5|max:365',
@@ -76,6 +77,7 @@ class TeachingLeaveController extends Controller
 
             $customer = Customer::findOrFail($request->customer_id);
             $leaveDays = $request->working_days;
+            $dateFiled = Carbon::parse($request->date_filed);
             $leaveStartDate = Carbon::parse($request->leave_start_date);
             $cutoffDate = Carbon::create(2024, 10, 1); // October 1
 
@@ -119,6 +121,7 @@ class TeachingLeaveController extends Controller
             // Create leave application
             TeachingLeaveApplications::create([
                 'customer_id' => $customer->id,
+                'date_filed' =>$request->date_filed,
                 'leave_start_date' => $request->leave_start_date,
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
@@ -144,6 +147,7 @@ public function updateLeave(Request $request)
         $request->validate([
             'edit_id' => 'required|integer',
             'customer_id' => 'required|integer|exists:customers,id',
+            'date_filed' => 'required|date',
             'leave_start_date' => 'required|date',
             'leave_end_date' => 'required|date|after_or_equal:leave_start_date',
             'working_days' => 'required|numeric|min:0.5|max:365',
@@ -188,6 +192,7 @@ public function updateLeave(Request $request)
 
             // Just update the leave application without further balance changes
             $leaveApplication->update([
+                'date_filed' => $request->date_filed,
                 'leave_start_date' => $request->leave_start_date,
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
@@ -230,6 +235,7 @@ public function updateLeave(Request $request)
             $customer->save();
 
             $leaveApplication->update([
+                'date_filed' => $request->date_filed,
                 'leave_start_date' => $request->leave_start_date,
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
@@ -244,6 +250,7 @@ public function updateLeave(Request $request)
         } elseif (!$currentIsDeducting && !$newIsDeducting) {
             // Both non-deducting (leave without pay or leave with pay)
             $leaveApplication->update([
+                'date_filed' => $request->date_filed,
                 'leave_start_date' => $request->leave_start_date,
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
@@ -298,6 +305,7 @@ public function updateLeave(Request $request)
 
             // Step 3: Update the leave application
             $leaveApplication->update([
+                'date_filed' => $request->date_filed,
                 'leave_start_date' => $request->leave_start_date,
                 'leave_end_date' => $request->leave_end_date,
                 'leave_incurred_date' => $request->leave_start_date,
@@ -344,7 +352,7 @@ public function updateLeave(Request $request)
                     ], 403);
                 }
                 if (!$leaveApplication->is_leavewopay && !$leaveApplication->is_leavepay) {
-                    $leaveDate = Carbon::parse($leaveApplication->leave_start_date);
+                    $leaveDate = Carbon::parse($leaveApplication->date_filed);
 
                     // Reverse leave credits in the appropriate column
                     if ($leaveDate->lt($cutoffDate)) {

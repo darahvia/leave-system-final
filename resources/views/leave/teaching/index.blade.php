@@ -170,6 +170,8 @@
                     <input type="hidden" name="edit_id" id="edit_id_old" value="">
                     <input type="hidden" name="_method" id="form_method_old" value="POST">
                     <div class="emp-form" id="leave-form-container-old">
+                    <label>Date Filed:</label>
+                    <input type="date" name="date_filed" id="date_filed_old" required>
                     <div class="date-row">
                         <div class="date-col">
                             <label>Leave Start Date:</label>
@@ -268,6 +270,7 @@
                     <table class="leave-table">
                         <thead>
                             <tr>
+                                <th>DATE FILED</th>
                                 <th>DATE</th>
                                 <th>DAYS</th>
                                 <th>BALANCE</th>
@@ -277,7 +280,8 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td data-label="DATE">INITIAL BALANCE</td>
+                                <td data-label="DATE FILED">INITIAL BALANCE</td>
+                                <td data-label="DATE"></td>
                                 <td data-label="DAYS"></td>
                                 <td data-label="BALANCE">{{ $customer->leave_credits_old }}</td>
                                 <td data-label="REMARKS"></td>
@@ -286,11 +290,18 @@
                             
 @if($teachingLeaveApplications && $teachingLeaveApplications->count())
     @foreach($teachingLeaveApplications->filter(function($app) {
-        return \Carbon\Carbon::parse($app->leave_start_date)->lt(\Carbon\Carbon::parse('2024-10-01'));
+        return \Carbon\Carbon::parse($app->date_filed)->lt(\Carbon\Carbon::parse('2024-10-01'));
     })->sortBy(function($app) {
-        return $app->leave_start_date ?: $app->created_at;
+        return $app->date_filed ?: $app->created_at;
     }) as $app)
                                     <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
+                                        <td date-label="DATE FILED">
+                                            @if($app->date_filed)
+                                                {{ \Carbon\Carbon::parse($app->date_filed)->format('F j, Y') }}
+                                            @else
+                                                {{ \Carbon\Carbon::parse($app->created_at)->format('F j, Y') }}
+                                            @endif
+                                        </td>
                                         <td data-label="DATE LEAVE INCURRED">
                                             @if($app->leave_start_date && $app->leave_end_date)
                                                 @if(\Carbon\Carbon::parse($app->leave_start_date)->isSameDay(\Carbon\Carbon::parse($app->leave_end_date)))
@@ -326,12 +337,13 @@
                                         <td data-label="ACTIONS">
                                             <button type="button" class="edit-btn" onclick="editLeaveApplication(
                                                 {{ $app->id }},
-                                        '{{ \Carbon\Carbon::parse($app->leave_start_date)->format('Y-m-d') }}',
-                                        '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
+                                                '{{ \Carbon\Carbon::parse($app->date_filed)->format('Y-m-d') }}',  
+                                                '{{ \Carbon\Carbon::parse($app->leave_start_date)->format('Y-m-d') }}',
+                                                '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
                                                 'old',
-                                        @json($app->is_leavewopay),
-                                        @json($app->is_leavepay)
+                                                @json($app->is_leavewopay),
+                                                @json($app->is_leavepay)
                                             )">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -394,37 +406,39 @@
                     <input type="hidden" name="edit_id" id="edit_id_new" value="">
                     <input type="hidden" name="_method" id="form_method_new" value="POST">
                     <div class="emp-form" id="leave-form-container-new">
-                    <div class="date-row">
-                        <div class="date-col">
-                            <label>Leave Start Date:</label>
-                            <input type="date" name="leave_start_date" id="leave_start_date_new" required>
-                            <span class="halfday-controls">
-                                <button type="button" class="toggle-button" id="start-am-btn-new" data-value="AM">AM</button>
-                                <button type="button" class="toggle-button" id="start-pm-btn-new" data-value="PM">PM</button>
-                            </span>
+                        <label>Date Filed:</label>
+                        <input type="date" name="date_filed" id="date_filed_new" required>
+                        <div class="date-row">
+                            <div class="date-col">
+                                <label>Leave Start Date:</label>
+                                <input type="date" name="leave_start_date" id="leave_start_date_new" required>
+                                <span class="halfday-controls">
+                                    <button type="button" class="toggle-button" id="start-am-btn-new" data-value="AM">AM</button>
+                                    <button type="button" class="toggle-button" id="start-pm-btn-new" data-value="PM">PM</button>
+                                </span>
+                            </div>
+                            <div class="date-col" id="end-date-col-new">
+                                <label>Leave End Date:</label>
+                                <input type="date" name="leave_end_date" id="leave_end_date_new" required>
+                                <span class="halfday-controls">
+                                    <button type="button" class="toggle-button" id="end-am-btn-new" data-value="AM">AM</button>
+                                    <button type="button" class="toggle-button" id="end-pm-btn-new" data-value="PM">PM</button>
+                                </span>
+                            </div>
                         </div>
-                        <div class="date-col" id="end-date-col-new">
-                            <label>Leave End Date:</label>
-                            <input type="date" name="leave_end_date" id="leave_end_date_new" required>
-                            <span class="halfday-controls">
-                                <button type="button" class="toggle-button" id="end-am-btn-new" data-value="AM">AM</button>
-                                <button type="button" class="toggle-button" id="end-pm-btn-new" data-value="PM">PM</button>
-                            </span>
-                        </div>
-                    </div>
-                    <label>Working Days:</label>
-                    <input type="number" name="working_days" step="0.01" id="working_days_new" >
-                    <label>Remarks:</label>
-                    <input type="text" name="remarks" id="remarks" >
+                        <label>Working Days:</label>
+                        <input type="number" name="working_days" step="0.01" id="working_days_new" >
+                        <label>Remarks:</label>
+                        <input type="text" name="remarks" id="remarks" >
                         <button type="submit" id="submit-btn-new">Use Leave Credits</button>
                         <button type="button" id="cancel-edit-btn-new" onclick="cancelEdit('new')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
-                    </div>
                         <label>
                         <input type="checkbox" name="is_leavewopay" id="is_leavewopay_new" value="1"> Leave Without Pay
                         </label>
                        <label>
                         <input type="checkbox" name="is_leavepay" id="is_leavepay_new" value="1"> Leave With Pay
                         </label>
+                    </div>  
                 </form>
             </div>
 
@@ -493,6 +507,7 @@
                     <table class="leave-table">
                         <thead>
                             <tr>
+                                <th>DATE FILED</th>
                                 <th>DATE</th>
                                 <th>DAYS</th>
                                 <th>BALANCE</th>
@@ -502,7 +517,8 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td data-label="DATE">INITIAL BALANCE</td>
+                                <td data-label="DATE FILED">INITIAL BALANCE</td>
+                                <td data-label="DATE"></td>
                                 <td data-label="DAYS"></td>
                                 <td data-label="BALANCE">{{ $customer->leave_credits_new }}</td>
                                 <td data-label="REMARKS"></td>
@@ -511,21 +527,28 @@
                             
 @if($teachingLeaveApplications && $teachingLeaveApplications->count())
     @foreach($teachingLeaveApplications->filter(function($app) {
-        return \Carbon\Carbon::parse($app->leave_start_date)->gte(\Carbon\Carbon::parse('2024-10-01'));
+        return \Carbon\Carbon::parse($app->date_filed)->gte(\Carbon\Carbon::parse('2024-10-01'));
     })->sortBy(function($app) {
-        return $app->leave_start_date ?: $app->created_at;
+        return $app->date_filed ?: $app->created_at;
     }) as $app)
        <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
-            <td data-label="DATE LEAVE INCURRED">
-                @if($app->leave_start_date && $app->leave_end_date)
-                    @if(\Carbon\Carbon::parse($app->leave_start_date)->isSameDay(\Carbon\Carbon::parse($app->leave_end_date)))
-                        {{ \Carbon\Carbon::parse($app->leave_start_date)->format('F j, Y') }}
-                    @else
-                        {{ \Carbon\Carbon::parse($app->leave_start_date)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($app->leave_end_date)->format('F j, Y') }}
-                    @endif
-                @elseif($app->created_at)
-                    {{ \Carbon\Carbon::parse($app->created_at)->format('F j, Y') }}
-                @endif</td>
+                                <td date-label="DATE FILED">
+                                    @if($app->date_filed)
+                                        {{ \Carbon\Carbon::parse($app->date_filed)->format('F j, Y') }}
+                                    @else
+                                        {{ \Carbon\Carbon::parse($app->created_at)->format('F j, Y') }}
+                                    @endif
+                                </td>
+                                <td data-label="DATE LEAVE INCURRED">
+                                    @if($app->leave_start_date && $app->leave_end_date)
+                                        @if(\Carbon\Carbon::parse($app->leave_start_date)->isSameDay(\Carbon\Carbon::parse($app->leave_end_date)))
+                                            {{ \Carbon\Carbon::parse($app->leave_start_date)->format('F j, Y') }}
+                                        @else
+                                            {{ \Carbon\Carbon::parse($app->leave_start_date)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($app->leave_end_date)->format('F j, Y') }}
+                                        @endif
+                                    @elseif($app->created_at)
+                                        {{ \Carbon\Carbon::parse($app->created_at)->format('F j, Y') }}
+                                    @endif</td>
                                         <td data-label="DAYS">
                                     <span style="{{ $app->is_leavewopay || $app->is_leavepay ? '' : 'color: red;' }}">
                                         {{ $app->is_leavewopay || $app->is_leavepay ? $app->working_days : '-' . $app->working_days }}
@@ -547,8 +570,9 @@
                                         <td data-label="ACTIONS">
                                             <button type="button" class="edit-btn" onclick="editLeaveApplication(
                                                 {{ $app->id }},
-                                        '{{ \Carbon\Carbon::parse($app->leave_start_date)->format('Y-m-d') }}',
-                                        '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
+                                                '{{ \Carbon\Carbon::parse($app->date_filed)->format('Y-m-d') }}',
+                                                '{{ \Carbon\Carbon::parse($app->leave_start_date)->format('Y-m-d') }}',
+                                                '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
                                                 'new',
                                                 @json($app->is_leavewopay),
@@ -839,7 +863,7 @@ window.addEventListener('click', function(event) {
     }
 });
 
-function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false, isLeaveWPay = false) {
+function editLeaveApplication(id, dateFiled, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false, isLeaveWPay = false) {
     const isLeaveWithoutPayBool = isLeaveWOPay === true || isLeaveWOPay === 'true';
     const isLeavePayBool = isLeaveWPay === true || isLeaveWPay === 'true';
 
@@ -848,6 +872,7 @@ function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab
 
     document.getElementById('edit_id_' + tab).value = id;
     document.getElementById('form_method_' + tab).value = 'PUT';
+    document.getElementById('date_filed_' + tab).value = dateFiled || '';
     document.getElementById('leave_start_date_' + tab).value = leaveStartDate || '';
     document.getElementById('leave_end_date_' + tab).value = leaveEndDate || '';
     document.getElementById('working_days_' + tab).value = workingDays || '';

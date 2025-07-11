@@ -11,6 +11,7 @@ class TeachingLeaveApplications extends Model
 
     protected $fillable = [
         'customer_id',
+        'date_filed',
         'leave_start_date',
         'leave_end_date',
         'working_days',
@@ -21,6 +22,7 @@ class TeachingLeaveApplications extends Model
 
 
     protected $casts = [
+    'date_filed' => 'date',
     'leave_start_date' => 'date',
     'leave_end_date' => 'date',
     'is_leavewopay' => 'boolean',

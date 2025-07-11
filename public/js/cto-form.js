@@ -505,7 +505,7 @@ $(document).ready(function () {
     if (!messageBox) {
       messageBox = document.createElement('div');
       messageBox.id = 'custom-message-box';
-      messageBox.style.cssText = "\n                position: fixed;\n                top: 20px;\n                left: 50%;\n                transform: translateX(-50%);\n                padding: 15px 25px;\n                border-radius: 8px;\n                font-weight: bold;\n                color: white;\n                z-index: 1000;\n                display: none; \n                opacity: 0;\n                transition: opacity 0.3s ease-in-out;\n            ";
+      messageBox.style.cssText = "\n                position: fixed;\n                top: 20px;\n                left: 50%;\n                transform: translateX(-50%);\n                padding: 15px 25px;\n                border-radius: 8px;\n                font-weight: bold;\n                color: white;\n                z-index: 1000;\n                display: none;\n                opacity: 0;\n                transition: opacity 0.3s ease-in-out;\n            ";
       document.body.appendChild(messageBox);
     }
     messageBox.textContent = message;

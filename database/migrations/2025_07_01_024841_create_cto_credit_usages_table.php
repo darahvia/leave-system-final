@@ -34,7 +34,7 @@ class CreateCtoCreditUsagesTable extends Migration
 
 
             // Ensures that a specific activity credit is only linked to a specific absence once
-            $table->unique(['cto_activity_id', 'cto_absence_id']);
+            // $table->unique(['cto_activity_id', 'cto_absence_id']);
         });
     }
 

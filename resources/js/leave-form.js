@@ -306,7 +306,9 @@ function cancelEdit() {
     if (cancelTitle) cancelTitle.remove();
 }
 
+
 // Customer search functionality
+
 function initializeCustomerSearch() {
     // Wait for jQuery to be loaded
     if (typeof $ !== 'undefined') {

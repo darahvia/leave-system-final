@@ -178,6 +178,60 @@
                     <input type="number" id="balance_forwarded_vl" step="0.001" name="balance_forwarded_vl" value="{{ old('balance_forwarded_vl', $customer->balance_forwarded_vl ?? 0) }}" />
                     <label for="balance_forwarded_sl">Sick Leave Forwarded Balance:</label>
                     <input type="number" id="balance_forwarded_sl" step="0.001" name="balance_forwarded_sl" value="{{ old('balance_forwarded_sl', $customer->balance_forwarded_sl ?? 0) }}" />
+                    <button
+                        type="button"
+                        class="collapsible-btn"
+                        onclick="toggleCreditsSection()"
+                        style="
+                            margin: 10px 0px;
+                            padding: 6px 12px;
+                            font-size: 14px;
+                            background-color: #f3f4f6;
+                            border: 1px solid #ccc;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: 500;
+                        "
+                    >
+                        <span id="credits-toggle-icon">▼</span> Show/Hide Other Leave Credits
+                    </button>
+
+                    <div id="other-credits-section" style="display: none; margin-bottom: 20px; padding: 10px 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <label for="spl">Special Leave (SPL):</label>
+                            <input type="number" id="spl" step="0.001" name="spl" value="{{ old('spl', $customer->spl ?? 0) }}" />
+
+                            <label for="fl">Force Leave (FL):</label>
+                            <input type="number" id="fl" step="0.001" name="fl" value="{{ old('fl', $customer->fl ?? 0) }}" />
+
+                            <label for="solo_parent">Solo Parent:</label>
+                            <input type="number" id="solo_parent" step="0.001" name="solo_parent" value="{{ old('solo_parent', $customer->solo_parent ?? 0) }}" />
+
+                            <label for="ml">Maternity Leave (ML):</label>
+                            <input type="number" id="ml" step="0.001" name="ml" value="{{ old('ml', $customer->ml ?? 0) }}" />
+
+                            <label for="pl">Paternity Leave (PL):</label>
+                            <input type="number" id="pl" step="0.001" name="pl" value="{{ old('pl', $customer->pl ?? 0) }}" />
+
+                            <label for="ra9710">RA 9710 (Magna Carta of Women):</label>
+                            <input type="number" id="ra9710" step="0.001" name="ra9710" value="{{ old('ra9710', $customer->ra9710 ?? 0) }}" />
+
+                            <label for="rl">Rehabilitation Leave (RL):</label>
+                            <input type="number" id="rl" step="0.001" name="rl" value="{{ old('rl', $customer->rl ?? 0) }}" />
+
+                            <label for="sel">Special Emergency Leave (SEL):</label>
+                            <input type="number" id="sel" step="0.001" name="sel" value="{{ old('sel', $customer->sel ?? 0) }}" />
+
+                            <label for="study_leave">Study Leave:</label>
+                            <input type="number" id="study_leave" step="0.001" name="study_leave" value="{{ old('study_leave', $customer->study_leave ?? 0) }}" />
+
+                            <label for="vawc">VAWC Leave:</label>
+                            <input type="number" id="vawc" step="0.001" name="vawc" value="{{ old('vawc', $customer->vawc ?? 0) }}" />
+
+                            <label for="adopt">Adoption Leave:</label>
+                            <input type="number" id="adopt" step="0.001" name="adopt" value="{{ old('adopt', $customer->adopt ?? 0) }}" />
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <h4>For Teaching Employees</h4>
@@ -198,4 +252,17 @@
     </div>
 
 </body>
+<script>
+    function toggleCreditsSection() {
+        var section = document.getElementById('other-credits-section');
+        var icon = document.getElementById('credits-toggle-icon');
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            section.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
+    </script>
 </html>

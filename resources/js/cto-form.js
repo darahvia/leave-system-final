@@ -1,10 +1,13 @@
 // resources/js/cto-form.js
 
+
 // This script contains the CTO-specific JavaScript logic,
 // including form handling, date calculations, and action button functionality.
 
+
 // Ensure the DOM is fully loaded before executing scripts
 $(document).ready(function() {
+
 
     // These global variables are expected to be set in the blade file
     // before this script is loaded.
@@ -18,17 +21,18 @@ $(document).ready(function() {
     // window.customerId
     // window.ctoIndexRoute (NEWLY ADDED)
 
+
     // --- Customer Search (Common for both Leave and CTO pages) ---
     let debounceTimer;
     $('#customer-search').on('input', function() {
         clearTimeout(debounceTimer);
         const query = $(this).val();
-        
+       
         if (query.length < 2) {
             $('#suggestions').empty().hide();
             return;
         }
-        
+       
         debounceTimer = setTimeout(() => {
             $.ajax({
                 url: window.autocompleteRoute,
@@ -36,7 +40,7 @@ $(document).ready(function() {
                 data: { query: query },
                 success: function(data) {
                     $('#suggestions').empty();
-                    
+                   
                     if (data.length > 0) {
                         data.forEach(function(item) {
                             $('#suggestions').append(
@@ -56,12 +60,14 @@ $(document).ready(function() {
         }, 300);
     });
 
+
     // Handle suggestion clicks
     $(document).on('click', '.suggestion-item', function() {
         const label = $(this).data('label');
         $('#customer-search').val(label);
         $('#suggestions').empty().hide();
     });
+
 
     // Hide suggestions when clicking outside
     $(document).on('click', function(e) {
@@ -70,10 +76,12 @@ $(document).ready(function() {
         }
     });
 
+
     // --- Modal functionality (Add Customer) ---
     const showAddCustomerModalBtn = document.getElementById('showAddCustomerModal');
     const closeAddCustomerModalBtn = document.getElementById('closeAddCustomerModal');
     const addCustomerModal = document.getElementById('addCustomerModal');
+
 
     if (showAddCustomerModalBtn && addCustomerModal) {
         showAddCustomerModalBtn.addEventListener('click', function() {
@@ -81,11 +89,13 @@ $(document).ready(function() {
         });
     }
 
+
     if (closeAddCustomerModalBtn && addCustomerModal) {
         closeAddCustomerModalBtn.addEventListener('click', function() {
             addCustomerModal.style.display = 'none';
         });
     }
+
 
     // --- CTO Specific JavaScript (conditional on customer existence) ---
     const singleDayActivityCheckbox = document.getElementById('single-day-activity');
@@ -94,31 +104,37 @@ $(document).ready(function() {
     const dateOfActivityStartField = document.getElementById('date_of_activity_start');
     const specialOrderField = document.getElementById('special_order');
     const activityField = document.getElementById('activity');
-    const hoursEarnedField = document.getElementById('hours_earned'); 
+    const hoursEarnedField = document.getElementById('hours_earned');
     const submitActivityBtn = document.getElementById('submit-activity-btn');
     const cancelActivityEditBtn = document.getElementById('cancel-activity-edit-btn');
     const activityCtoIdField = document.getElementById('activity_cto_id');
     const activityFormMethodField = document.getElementById('activity_form_method');
-    const activityForm = $('#activity-form'); 
+    const activityForm = $('#activity-form');
+
 
     const singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
         let startHalfDayUsage = null;
         let endHalfDayUsage = null;
 
+
     const absenceEndDateField = document.getElementById('inclusive_date_end_usage');
     const absenceEndDateLabel = document.getElementById('absence-end-date-label');
-    const dateFiledUsageField = document.getElementById('usage_date_filed'); 
+    const dateFiledUsageField = document.getElementById('usage_date_filed');
     const inclusiveDateStartUsageField = document.getElementById('inclusive_date_start_usage');
-    const hoursAppliedUsageField = document.getElementById('hours_applied_usage'); 
+    const hoursAppliedUsageField = document.getElementById('hours_applied_usage');
     const endHalfdaySpan = document.getElementById('end-halfday-span-usage');
+
 
     const submitUsageBtn = document.getElementById('submit-usage-btn');
     const cancelUsageEditBtn = document.getElementById('cancel-usage-edit-btn');
     const usageCtoIdField = document.getElementById('usage_cto_id');
     const usageFormMethodField = document.getElementById('usage_form_method');
-    const usageForm = $('#usage-form'); 
+    const usageForm = $('#usage-form');
 
-    
+
+   
+
+
 
 
     // Initial state for single day checkboxes (ensure end date fields are hidden/shown correctly on load)
@@ -135,7 +151,7 @@ $(document).ready(function() {
         singleDayActivityCheckbox.addEventListener('change', function() {
             if (this.checked) {
                 activityEndDateField.style.display = 'none';
-                activityEndDateField.value = ''; 
+                activityEndDateField.value = '';
                 activityEndDateField.removeAttribute('required');
                 activityEndDateLabel.style.display = 'none';
             } else {
@@ -145,6 +161,7 @@ $(document).ready(function() {
             }
         });
     }
+
 
     if (singleDayAbsenceCheckbox && absenceEndDateField && absenceEndDateLabel) {
         if (singleDayAbsenceCheckbox.checked) {
@@ -159,12 +176,14 @@ $(document).ready(function() {
             if (endHalfdaySpan) endHalfdaySpan.style.display = 'inline-block'; // ✅ NEW
         }
 
+
         singleDayAbsenceCheckbox.addEventListener('change', function() {
             if (this.checked) {
                 absenceEndDateField.style.display = 'none';
-                absenceEndDateField.value = ''; 
+                absenceEndDateField.value = '';
                 absenceEndDateField.removeAttribute('required');
                 absenceEndDateLabel.style.display = 'none';
+
 
                 if (endHalfdaySpan) endHalfdaySpan.style.display = 'none'; // ✅ needed
             } else {
@@ -172,11 +191,14 @@ $(document).ready(function() {
                 absenceEndDateField.setAttribute('required', 'required');
                 absenceEndDateLabel.style.display = 'block';
 
+
                 if (endHalfdaySpan) endHalfdaySpan.style.display = 'inline-block'; // ✅ needed
             }
         });
 
+
     }
+
 
     // Function to calculate working days (for CTO usage)
     async function calculateWorkingDaysForUsage() {
@@ -185,12 +207,14 @@ $(document).ready(function() {
             return;
         }
 
+
         const startDate = inclusiveDateStartUsageField.value;
         const endDate = singleDayAbsenceCheckbox.checked ? startDate : absenceEndDateField.value;
 
+
         if (startDate && endDate) {
             try {
-                const response = await fetch(window.ctoCalculateDaysRoute, { 
+                const response = await fetch(window.ctoCalculateDaysRoute, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -209,7 +233,9 @@ $(document).ready(function() {
                         if (startHalfDayUsage) days -= 0.5;
                         if (endHalfDayUsage) days -= 0.5;
                     }
-                    hoursAppliedUsageField.value = days;
+                    $('#hours_applied_usage').val(days).trigger('input');
+
+
 
                 } else {
                     console.error('Error calculating days:', data.message);
@@ -222,6 +248,7 @@ $(document).ready(function() {
         }
     }
 
+
     // Attach event listeners for date changes in usage form to recalculate days
     if (inclusiveDateStartUsageField) {
         inclusiveDateStartUsageField.addEventListener('change', calculateWorkingDaysForUsage);
@@ -233,9 +260,11 @@ $(document).ready(function() {
         singleDayAbsenceCheckbox.addEventListener('change', calculateWorkingDaysForUsage);
     }
 
+
     // NEW: Unified edit function that accepts a data object
     window.editCtoRecordFromData = function(data) {
         console.log("editCtoRecordFromData called with data:", data);
+
 
         // Check if elements exist before trying to access their properties
         const requiredElements = [
@@ -247,6 +276,7 @@ $(document).ready(function() {
             singleDayAbsenceCheckbox, absenceEndDateField, absenceEndDateLabel
         ];
 
+
         let missingElements = false;
         const elementNames = [
             "activityCtoIdField", "activityForm", "activityFormMethodField", "submitActivityBtn", "cancelActivityEditBtn",
@@ -257,6 +287,7 @@ $(document).ready(function() {
             "singleDayAbsenceCheckbox", "absenceEndDateField", "absenceEndDateLabel"
         ];
 
+
         for (let i = 0; i < requiredElements.length; i++) {
             if (!requiredElements[i]) {
                 console.error(`Missing DOM element: ${elementNames[i]}. Check HTML IDs.`);
@@ -264,10 +295,13 @@ $(document).ready(function() {
             }
         }
 
+
         if (missingElements) {
             displayMessage("Error: Required form elements not found. Please check HTML structure and IDs.", "error");
             return; // Stop execution if elements are missing
         }
+
+
 
 
         if (data.is_activity) {
@@ -279,10 +313,12 @@ $(document).ready(function() {
             submitActivityBtn.textContent = 'Update CTO Activity';
             cancelActivityEditBtn.style.display = 'inline-block';
 
+
             specialOrderField.value = data.special_order;
             activityField.value = data.activity;
             hoursEarnedField.value = data.hours_earned_or_applied; // This is credits_earned for activity
             dateOfActivityStartField.value = data.date_start;
+
 
             if (data.date_start === data.date_end || !data.date_end) {
                 singleDayActivityCheckbox.checked = true;
@@ -298,7 +334,9 @@ $(document).ready(function() {
                 activityEndDateLabel.style.display = 'block';
             }
 
+
             activityForm[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
 
         } else {
             console.log("Editing CTO Usage (deducted credit)");
@@ -309,9 +347,11 @@ $(document).ready(function() {
             submitUsageBtn.textContent = 'Update CTO Usage';
             cancelUsageEditBtn.style.display = 'inline-block';
 
-            dateFiledUsageField.value = data.date_filed || new Date().toISOString().slice(0, 10); 
+
+            dateFiledUsageField.value = data.date_filed || new Date().toISOString().slice(0, 10);
             inclusiveDateStartUsageField.value = data.date_of_absence_start;
             hoursAppliedUsageField.value = data.hours_earned_or_applied; // This is no_of_days for usage
+
 
             if (data.date_of_absence_start === data.date_of_absence_end || !data.date_of_absence_end) {
                 singleDayAbsenceCheckbox.checked = true;
@@ -327,15 +367,19 @@ $(document).ready(function() {
                 absenceEndDateLabel.style.display = 'block';
             }
 
+
             // Immediately recalculate days for usage form after populating dates
             // calculateWorkingDaysForUsage(); // This might be too early if DOM hasn't settled. Trigger manually or on next event.
+
 
             usageForm[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
+
         // Set the checkbox state
         const singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
         const endHalfdaySpan = document.getElementById('end-halfday-span-usage');
+
 
         if (singleDayAbsenceCheckbox && endHalfdaySpan) {
             if (data.date_of_absence_start && (!data.date_of_absence_end || data.date_of_absence_start === data.date_of_absence_end)) {
@@ -350,15 +394,16 @@ $(document).ready(function() {
         }
     };
 
+
     // Cancel Edit functions (exposed globally)
     window.cancelCtoActivityEdit = function() {
         console.log("cancelCtoActivityEdit called.");
         activityCtoIdField.value = '';
-        activityForm.attr('action', window.ctoStoreActivityRoute); 
+        activityForm.attr('action', window.ctoStoreActivityRoute);
         activityFormMethodField.value = 'POST';
         submitActivityBtn.textContent = 'Add CTO Activity';
         cancelActivityEditBtn.style.display = 'none';
-        activityForm[0].reset(); 
+        activityForm[0].reset();
         singleDayActivityCheckbox.checked = false;
         activityEndDateField.style.display = 'block';
         activityEndDateField.setAttribute('required', 'required');
@@ -366,14 +411,15 @@ $(document).ready(function() {
         activityEndDateLabel.style.display = 'block';
     };
 
+
     window.cancelCtoUsageEdit = function() {
         console.log("cancelCtoUsageEdit called.");
         usageCtoIdField.value = '';
-        usageForm.attr('action', window.ctoStoreUsageRoute); 
+        usageForm.attr('action', window.ctoStoreUsageRoute);
         usageFormMethodField.value = 'POST';
         submitUsageBtn.textContent = 'Add CTO Usage';
         cancelUsageEditBtn.style.display = 'none';
-        usageForm[0].reset(); 
+        usageForm[0].reset();
         singleDayAbsenceCheckbox.checked = false;
         absenceEndDateField.style.display = 'block';
         absenceEndDateField.setAttribute('required', 'required');
@@ -382,34 +428,36 @@ $(document).ready(function() {
     };
 
 
+
+
     // Delete function for CTO records (exposed globally)
     window.deleteCtoRecord = function(id) {
         console.log("deleteCtoRecord called for ID:", id);
         showConfirmationModal('Are you sure you want to delete this CTO record? This action cannot be undone and will recalculate balances.', function() {
-            const deleteUrl = window.ctoDeleteRoute.replace(':id', id); 
+            const deleteUrl = window.ctoDeleteRoute.replace(':id', id);
             console.log("Attempting to delete record with URL:", deleteUrl);
             $.ajax({
                 url: deleteUrl,
-                type: 'POST', 
+                type: 'POST',
                 data: {
-                    _method: 'DELETE', 
+                    _method: 'DELETE',
                     _token: window.csrfToken
                 },
                 success: function(response) {
                     console.log("Delete successful:", response);
                     if (response.success) {
-                        let redirectUrl = window.ctoIndexRoute; 
+                        let redirectUrl = window.ctoIndexRoute;
                         let params = new URLSearchParams();
                         params.set('status', 'success');
                         params.set('message', response.message || 'CTO record deleted successfully!');
-                        
-                        const customerIdToRedirect = response.customer_id || window.customerId; 
+                       
+                        const customerIdToRedirect = response.customer_id || window.customerId;
                         if (customerIdToRedirect) {
                             params.set('customer_id', customerIdToRedirect);
                         } else {
                             console.warn("No customer_id available for redirect after delete. Check response or window.customerId.");
                         }
-                        
+                       
                         window.location.href = redirectUrl + '?' + params.toString();
                     } else {
                         displayMessage(response.error || 'Failed to delete CTO record.', 'error');
@@ -423,14 +471,18 @@ $(document).ready(function() {
         });
     };
 
+
     // --- Custom Modal/Message Box Functions ---
 
-    let messageHideTimeout; 
 
-    function displayMessage(message, type) { 
+    let messageHideTimeout;
+
+
+    function displayMessage(message, type) {
         if (messageHideTimeout) {
             clearTimeout(messageHideTimeout);
         }
+
 
         let messageBox = document.getElementById('custom-message-box');
         if (!messageBox) {
@@ -446,25 +498,28 @@ $(document).ready(function() {
                 font-weight: bold;
                 color: white;
                 z-index: 1000;
-                display: none; 
+                display: none;
                 opacity: 0;
                 transition: opacity 0.3s ease-in-out;
             `;
             document.body.appendChild(messageBox);
         }
 
+
         messageBox.textContent = message;
         messageBox.style.backgroundColor = type === 'success' ? '#28a745' : '#dc3545';
         messageBox.style.display = 'block';
-        setTimeout(() => { messageBox.style.opacity = '1'; }, 10); 
+        setTimeout(() => { messageBox.style.opacity = '1'; }, 10);
+
 
         messageHideTimeout = setTimeout(() => {
-            messageBox.style.opacity = '0'; 
+            messageBox.style.opacity = '0';
             setTimeout(() => {
-                messageBox.style.display = 'none'; 
-            }, 300); 
-        }, 5000); 
+                messageBox.style.display = 'none';
+            }, 300);
+        }, 5000);
     }
+
 
     function showConfirmationModal(message, onConfirmCallback) {
         let modalOverlay = document.getElementById('custom-confirm-overlay');
@@ -485,6 +540,7 @@ $(document).ready(function() {
             `;
             document.body.appendChild(modalOverlay);
 
+
             const modalContent = document.createElement('div');
             modalContent.style.cssText = `
                 background: white;
@@ -497,11 +553,13 @@ $(document).ready(function() {
             `;
             modalOverlay.appendChild(modalContent);
 
+
             const messagePara = document.createElement('p');
             messagePara.id = 'confirm-message-text';
             messagePara.style.marginBottom = '20px';
             messagePara.style.fontSize = '1.1em';
             modalContent.appendChild(messagePara);
+
 
             const buttonContainer = document.createElement('div');
             const confirmButton = document.createElement('button');
@@ -524,6 +582,7 @@ $(document).ready(function() {
             };
             buttonContainer.appendChild(confirmButton);
 
+
             const cancelButton = document.createElement('button');
             cancelButton.textContent = 'Cancel';
             cancelButton.style.cssText = `
@@ -542,6 +601,7 @@ $(document).ready(function() {
             modalContent.appendChild(buttonContainer);
         }
 
+
         document.getElementById('confirm-message-text').textContent = message;
         modalOverlay.style.display = 'flex';
     }
@@ -556,6 +616,7 @@ $(document).ready(function() {
             calculateWorkingDaysForUsage();
         }
 
+
         function updateToggleButtonsUsage() {
             const toggleBtn = (prefix, period) => {
                 const btn = document.getElementById(`${prefix}-${period.toLowerCase()}-btn-usage`);
@@ -567,11 +628,13 @@ $(document).ready(function() {
             });
         }
 
+
         // Now call addEventListener
         document.getElementById('start-am-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('start', 'AM'));
         document.getElementById('start-pm-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('start', 'PM'));
         document.getElementById('end-am-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('end', 'AM'));
         document.getElementById('end-pm-btn-usage')?.addEventListener('click', () => toggleHalfDayUsage('end', 'PM'));
+
 
     // Ensure correct visibility on page load
     if (singleDayAbsenceCheckbox && endHalfdaySpan) {
@@ -582,4 +645,47 @@ $(document).ready(function() {
         }
     }
 
+            // --- AUTO-FILL FIFO DEDUCTIONS WHEN CREDITS USED CHANGES ---
+        $('#hours_applied_usage').on('input', function () {
+            const totalToDeduct = parseFloat(this.value);
+            if (isNaN(totalToDeduct) || totalToDeduct <= 0) return;
+
+            let remaining = totalToDeduct;
+
+            // Clear all SO fields first
+            $('.so-deduction-input').each(function () {
+                $(this).val('');
+            });
+
+            // Fill using FIFO
+            $('.so-deduction-input').each(function () {
+                const available = parseFloat($(this).data('remaining'));
+                if (remaining > 0 && available > 0) {
+                    const toUse = Math.min(available, remaining);
+                    $(this).val(toUse.toFixed(2));
+                    remaining -= toUse;
+                }
+            });
+        });
+
+        // --- VALIDATE THAT SO DEDUCTIONS MATCH CREDITS USED ---
+        $('#usage-form').on('submit', function (e) {
+            const totalToDeduct = parseFloat($('#hours_applied_usage').val() || 0);
+            let totalFromSOs = 0;
+
+            $('.so-deduction-input').each(function () {
+                totalFromSOs += parseFloat($(this).val() || 0);
+            });
+
+            if (Math.abs(totalToDeduct - totalFromSOs) > 0.01) {
+                e.preventDefault();
+                displayMessage('Total SO deductions must match the Credits Used field.', 'error');
+            }
+        });
+
+
+
+
 }); // End of document.ready
+
+

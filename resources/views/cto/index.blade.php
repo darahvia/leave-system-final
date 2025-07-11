@@ -23,6 +23,7 @@
             border-bottom: 2px solid #007bff;
         }
 
+
         /* Styles for action buttons and table rows */
         .actions-column {
             display: flex;
@@ -67,6 +68,7 @@
             margin-top: 1rem;
         }
 
+
         /* Row specific colors based on CTO status */
         .cto-expired {
             background-color: #ffe0e0; /* Light Red */
@@ -93,9 +95,11 @@
             <div class="success">{{ session('success') }}</div>
         @endif
 
+
         @if(session('error'))
             <div class="error">{{ session('error') }}</div>
         @endif
+
 
         @include('partials.header', [
             'pageTitle' => 'Leave Credit System - CTO',
@@ -106,6 +110,7 @@
             <a href="{{ route('leave.customer.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('leave.customer.index') || request()->routeIs('leave.customer.index') ? ' active' : '' }}">Leave</a>
             <a href="{{ route('cto.index') }}{{ $customer ? '?customer_id=' . $customer->id : '' }}" class="tab-link{{ request()->routeIs('cto.index') ? ' active' : '' }}">CTO</a>
         </div>
+
 
         {{-- Add Customer Modal --}}
         <div class="modal-bg" id="addCustomerModal">
@@ -127,11 +132,13 @@
                             <input type="text" name="designation" required>
                         </div>
 
+
                         <div class="form-right">
                             <label>Original Appointment:</label>
                             <input type="date" name="original_appointment">
                             <label>Salary:</label>
                             <input type="number" step="0.01" name="salary" required>
+
 
                             <label>Vacation Leave Forwarded Balance:</label>
                             <input type="number" step="0.01" name="balance_forwarded_vl" required>
@@ -141,12 +148,14 @@
                             <input type="number" step="0.01" name="balance_forwarded_cto" required>
                             <div style="height: 1rem;"></div>
 
+
                             <button type="submit">Add Customer</button>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
+
 
         {{-- Employee Details Table --}}
         @if($customer)
@@ -160,31 +169,39 @@
                         <input type="hidden" name="_method" id="activity_form_method" value="POST">
                         <input type="hidden" name="is_cto_earned" value="1">
 
+
                         <div class="emp-form">
                             <label>Special Order:</label>
                             <input type="text" name="special_order" id="special_order" >
 
+
                             <label>Activity:</label>
                             <input type="text" name="activity" id="activity" >
 
+
                             <label>Credits Earned:</label>
                             <input type="number" name="hours_earned" id="hours_earned" step="0.01" required>
+
 
                             <label>
                                 <input type="checkbox" name="is_single_day_activity" id="single-day-activity"> Single Day Activity
                             </label>
 
+
                             <label>Date of Activity (Start):</label>
                             <input type="date" name="date_of_activity_start" id="date_of_activity_start" required>
 
+
                             <label id="end-date-label">Date of Activity (End):</label>
                             <input type="date" name="date_of_activity_end" id="activity-end-date">
+
 
                             <button type="submit" id="submit-activity-btn">Add CTO Activity</button>
                             <button type="button" id="cancel-activity-edit-btn" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                         </div>
                     </form>
                 </div>
+
 
                 <div class="form-section">
                     <h4>Add CTO Usage (Credits Deducted)</h4>
@@ -195,16 +212,23 @@
                         <input type="hidden" name="_method" id="usage_form_method" value="POST">
                         <input type="hidden" name="is_cto_application" value="1">
 
+
                         <div class="emp-form">
                             <label>
                                 <input type="checkbox" name="is_single_day_absence" id="single-day-absence"> Single Day Absence
                             </label>
 
+
                             <label>Date Filed:</label>
                             <input type="date" name="date_filed" id="usage_date_filed" required>
 
+
+
+
                             <label>Inclusive Date Start:</label>
                             <input type="date" id="inclusive_date_start_usage" name="inclusive_date_start" required>
+
+
 
 
                             <!-- Under Start Date -->
@@ -213,9 +237,10 @@
                                 <button type="button" class="toggle-button" id="start-pm-btn-usage" data-value="PM">PM</button>
                             </span>
 
+
                             <label id="absence-end-date-label">Inclusive Date End:</label>
                             <input type="date" id="inclusive_date_end_usage" name="inclusive_date_end">
-                            
+                           
                             <!-- Under End Date -->
                             <span class="halfday-controls" id="end-halfday-span-usage">
                                 <button type="button" class="toggle-button" id="end-am-btn-usage" data-value="AM">AM</button>
@@ -224,8 +249,42 @@
 
 
 
+
+                           
                             <label>Credits Used:</label>
                             <input type="number" name="hours_applied" id="hours_applied_usage" step="0.01" required>
+
+
+                            {{-- Manual SO Deduction --}}
+                            <div class="form-group" style="margin-top: 1rem;">
+                                <label>Deduct from the following SOs:</label>
+                                @foreach ($customer->ctoApplications->where('is_activity', true)->sortBy('date_of_activity_start') as $activity)
+                                    @if ($activity->remaining_credits > 0 && !$activity->isExpired())
+                                        <div style="margin-bottom: 4px;">
+                                            <label>
+                                        <input type="number"
+                                            class="so-deduction-input"
+                                            data-remaining="{{ $activity->remaining_credits }}"
+                                            name="so_deductions[{{ $activity->id }}]"
+                                            step="0.01"
+                                            max="{{ $activity->remaining_credits }}"
+                                            placeholder="0.00"
+                                            style="width: 80px;"
+                                            readonly>
+
+
+                                                from SO {{ $activity->special_order ?? '(No SO)' }} —
+                                                Balance: {{ number_format($activity->remaining_credits, 2) }} hrs
+                                            </label>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+
+
+                            <input type="hidden" name="start_halfday_usage" id="start_halfday_usage">
+                            <input type="hidden" name="end_halfday_usage" id="end_halfday_usage">
+
 
                             <button type="submit" id="submit-usage-btn">Add CTO Usage</button>
                             <button type="button" id="cancel-usage-edit-btn" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
@@ -234,9 +293,11 @@
                 </div>
             </div>
 
+
             <div style="text-align: center; margin: 2rem 0;">
                 <h3 style="margin: 0; padding: 0.5rem; background-color: #90EE90; border: 2px solid #000; font-weight: bold;">COMPENSATORY TIME-OFF (CTO)</h3>
             </div>
+
 
             <table class="cto-table">
                 <thead>
@@ -268,18 +329,22 @@
                                 $rowClass = 'cto-absence';
                             }
 
+
                             // --- Start: More Robust Data Preparation for JSON encoding ---
+
 
                             // Sanitize string fields by explicitly casting to string and using null coalesce
                             $specialOrder = (string)($cto->special_order ?? '');
                             $activityName = (string)($cto->activity ?? '');
                             $ctoDetails = (string)($cto->cto_details ?? ''); // Ensure cto_details is handled if it exists
 
+
                             // Sanitize numeric fields by explicitly casting to float and using null coalesce
                             $creditsEarnedValue = (float)($cto->credits_earned ?? 0.00);
                             $noOfDaysUsageValue = (float)($cto->no_of_days ?? 0.00);
                             $creditsEarnedFormatted = number_format($creditsEarnedValue, 2);
                             $noOfDaysUsageFormatted = number_format($noOfDaysUsageValue, 2);
+
 
                             // Safely format dates for passing to JavaScript (empty string if null/invalid)
                             // This checks if it's already a Carbon instance, then if it's not null/empty but not Carbon, attempts to parse.
@@ -296,6 +361,7 @@
                                 }
                             }
 
+
                             $dateOfActivityEndFormatted = '';
                             if ($cto->date_of_activity_end instanceof \Carbon\Carbon) {
                                 $dateOfActivityEndFormatted = $cto->date_of_activity_end->format('Y-m-d');
@@ -306,6 +372,7 @@
                                     \Illuminate\Support\Facades\Log::warning("Could not parse date_of_activity_end for CTO ID {$cto->id}: {$cto->date_of_activity_end}");
                                 }
                             }
+
 
                             $dateOfAbsenceStartFormatted = '';
                             if ($cto->date_of_absence_start instanceof \Carbon\Carbon) {
@@ -318,6 +385,7 @@
                                 }
                             }
 
+
                             $dateOfAbsenceEndFormatted = '';
                             if ($cto->date_of_absence_end instanceof \Carbon\Carbon) {
                                 $dateOfAbsenceEndFormatted = $cto->date_of_absence_end->format('Y-m-d');
@@ -329,6 +397,8 @@
                                 }
                             }
                             // --- End: More Robust Data Preparation for JSON encoding ---
+
+
 
 
                             // Create data objects for JSON encoding
@@ -344,6 +414,7 @@
                                 'date_of_absence_start' => '', // Not applicable for activity
                                 'date_of_absence_end' => '',   // Not applicable for activity
                             ];
+
 
                             $usageData = [
                                 'id' => $cto->id,
@@ -407,6 +478,7 @@
                                     </button>
                                 @endif
 
+
                                 {{-- Delete Button --}}
                                 <button type="button" class="delete-btn" onclick="deleteCtoRecord({{ $cto->id }})">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -419,6 +491,26 @@
                                 </button>
                             </td>
                         </tr>
+
+                                @if(!$cto->is_activity)
+                                <tr>
+                                    <td colspan="8" style="padding-left: 2rem; font-size: 0.9em;">
+                                        <strong>Deducted From:</strong>
+                                        @php
+                                            $deductions = $cto->consumedActivities;
+                                        @endphp
+                                    @forelse($deductions as $deduct)
+                                        @php
+                                            $so = $deduct->ctoActivity;
+                                        @endphp
+                                        SO: {{ $so->special_order ?? '(No SO)' }},
+                                        {{ number_format($deduct->days_used, 2) }} hrs<br>
+                                    @empty
+                                        <em>No deduction records found.</em>
+                                    @endforelse
+                                    </td>
+                                </tr>
+                            @endif
                     @empty
                         <tr>
                             <td colspan="8" style="text-align: center; color: #6c757d;">No CTO records found</td>
@@ -427,8 +519,12 @@
                 </tbody>
             </table>
         @endif
+
+
+
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 
     <script>
         // Make Laravel routes and customer ID available to external JavaScript
@@ -441,12 +537,13 @@
         window.csrfToken = '{{ csrf_token() }}';
         // FIX: Add cto.index route for JavaScript redirection
         window.ctoIndexRoute = '{{ route("cto.index") }}';
-        
+       
         @if($customer)
             window.customerId = {{ $customer->id }};
         @else
             window.customerId = null;
         @endif
+
 
         // This script block handles toast messages from URL parameters on page load
         $(document).ready(function() {
@@ -455,14 +552,15 @@
             const message = urlParams.get('message');
             const customer_id_param_from_url = urlParams.get('customer_id'); // Get original customer_id from URL if present
 
+
             if (status && message) {
-                displayMessage(message, status); 
-                
+                displayMessage(message, status);
+               
                 // Optional: Clean up URL parameters after displaying message
                 // This prevents the message from reappearing on subsequent manual refreshes
                 urlParams.delete('status');
                 urlParams.delete('message');
-                
+               
                 // Reconstruct URL, preserving customer_id if it was there
                 let newUrl = window.location.pathname;
                 if (customer_id_param_from_url) {
@@ -479,4 +577,6 @@
     </script>
     <script src="{{ asset('js/cto-form.js') }}"></script>
 </body>
-</html> 
+</html>
+
+

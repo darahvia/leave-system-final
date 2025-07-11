@@ -313,7 +313,7 @@ $(document).ready(function () {
                 if (startHalfDayUsage) days -= 0.5;
                 if (endHalfDayUsage) days -= 0.5;
               }
-              hoursAppliedUsageField.value = days;
+              $('#hours_applied_usage').val(days).trigger('input');
             } else {
               console.error('Error calculating days:', data.message);
               displayMessage('Error calculating days: ' + data.message, 'error');
@@ -520,7 +520,7 @@ $(document).ready(function () {
     if (!messageBox) {
       messageBox = document.createElement('div');
       messageBox.id = 'custom-message-box';
-      messageBox.style.cssText = "\n                position: fixed;\n                top: 20px;\n                left: 50%;\n                transform: translateX(-50%);\n                padding: 15px 25px;\n                border-radius: 8px;\n                font-weight: bold;\n                color: white;\n                z-index: 1000;\n                display: none; \n                opacity: 0;\n                transition: opacity 0.3s ease-in-out;\n            ";
+      messageBox.style.cssText = "\n                position: fixed;\n                top: 20px;\n                left: 50%;\n                transform: translateX(-50%);\n                padding: 15px 25px;\n                border-radius: 8px;\n                font-weight: bold;\n                color: white;\n                z-index: 1000;\n                display: none;\n                opacity: 0;\n                transition: opacity 0.3s ease-in-out;\n            ";
       document.body.appendChild(messageBox);
     }
     messageBox.textContent = message;
@@ -619,6 +619,41 @@ $(document).ready(function () {
       endHalfdaySpan.style.display = 'inline-block';
     }
   }
+
+  // --- AUTO-FILL FIFO DEDUCTIONS WHEN CREDITS USED CHANGES ---
+  $('#hours_applied_usage').on('input', function () {
+    var totalToDeduct = parseFloat(this.value);
+    if (isNaN(totalToDeduct) || totalToDeduct <= 0) return;
+    var remaining = totalToDeduct;
+
+    // Clear all SO fields first
+    $('.so-deduction-input').each(function () {
+      $(this).val('');
+    });
+
+    // Fill using FIFO
+    $('.so-deduction-input').each(function () {
+      var available = parseFloat($(this).data('remaining'));
+      if (remaining > 0 && available > 0) {
+        var toUse = Math.min(available, remaining);
+        $(this).val(toUse.toFixed(2));
+        remaining -= toUse;
+      }
+    });
+  });
+
+  // --- VALIDATE THAT SO DEDUCTIONS MATCH CREDITS USED ---
+  $('#usage-form').on('submit', function (e) {
+    var totalToDeduct = parseFloat($('#hours_applied_usage').val() || 0);
+    var totalFromSOs = 0;
+    $('.so-deduction-input').each(function () {
+      totalFromSOs += parseFloat($(this).val() || 0);
+    });
+    if (Math.abs(totalToDeduct - totalFromSOs) > 0.01) {
+      e.preventDefault();
+      displayMessage('Total SO deductions must match the Credits Used field.', 'error');
+    }
+  });
 }); // End of document.ready
 
 /***/ }),
@@ -630,7 +665,7 @@ $(document).ready(function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! /Users/darahvia/leave-system-final/resources/js/cto-form.js */"./resources/js/cto-form.js");
+module.exports = __webpack_require__(/*! C:\xampp\htdocs\leave-system-final\resources\js\cto-form.js */"./resources/js/cto-form.js");
 
 
 /***/ })

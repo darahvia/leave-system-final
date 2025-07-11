@@ -373,7 +373,7 @@ function cancelEdit() {
     formContainer.classList.remove('editing');
     formContainer.classList.remove('cancelling');
   }
-  if (submitBtn) submitBtn.textContent = 'Add Leave';
+  if (submitBtn) submitBtn.textContent = 'Use Leave Credits';
   if (cancelBtn) cancelBtn.style.display = 'none';
 
   // Remove cancellation mode title

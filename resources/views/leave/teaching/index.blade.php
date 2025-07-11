@@ -192,7 +192,7 @@
                     <input type="number" name="working_days" step="0.01" id="working_days_old" >
                     <label>Remarks:</label>
                     <input type="text" name="remarks" id="remarks" >
-                    <button type="submit" id="submit-btn-old">Add Leave Application</button>
+                    <button type="submit" id="submit-btn-old">Use Leave Credits</button>
                     <button type="button" id="cancel-edit-btn-old" onclick="cancelEdit('old')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                     <label>
                         <input type="checkbox" name="is_leavewopay" id="is_leavewopay_old" value="1"> Leave Without Pay
@@ -416,7 +416,7 @@
                     <input type="number" name="working_days" step="0.01" id="working_days_new" >
                     <label>Remarks:</label>
                     <input type="text" name="remarks" id="remarks" >
-                        <button type="submit" id="submit-btn-new">Add Leave Application</button>
+                        <button type="submit" id="submit-btn-new">Use Leave Credits</button>
                         <button type="button" id="cancel-edit-btn-new" onclick="cancelEdit('new')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                     </div>
                         <label>
@@ -864,7 +864,7 @@ function cancelEdit(tab) {
     document.getElementById('edit_id_' + tab).value = '';
     document.getElementById('form_method_' + tab).value = 'POST';
     document.getElementById('leave-form-' + tab).reset();
-    document.getElementById('submit-btn-' + tab).textContent = 'Add Leave Application';
+    document.getElementById('submit-btn-' + tab).textContent = 'Use Leave Credits';
     document.getElementById('cancel-edit-btn-' + tab).style.display = 'none';
     
     // Reset half day selections

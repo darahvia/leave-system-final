@@ -96,7 +96,7 @@
                     <input type="number" name="working_days" step="0.01" id="working_days">
                     <label>Remarks:</label>
                     <input type="text" name="leave_details" id="leave_details">
-                    <button type="submit" id="submit-btn">Add Leave</button>
+                    <button type="submit" id="submit-btn">Use Leave Credits</button>
                     <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                     <label>
                     <input type="checkbox" name="is_leavewopay" id="is_leavewopay" value="1"> Leave Without Pay

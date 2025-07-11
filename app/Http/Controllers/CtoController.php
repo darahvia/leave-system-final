@@ -178,6 +178,14 @@ class CtoController extends Controller
 
 
             $hoursToDeduct = (float)$request->hours_applied;
+
+            $sumOfDeductions = array_sum($request->input('so_deductions', []));
+            if ($sumOfDeductions < $hoursToDeduct) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Total SO deductions do not match requested credits.');
+            }
+
            
 
 
@@ -218,10 +226,10 @@ class CtoController extends Controller
 
 
             if ($remaining < $deductedHours) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'SO ' . ($activity->special_order ?? '(No SO)') . ' has insufficient balance.');
+                Log::warning("SO ID {$activity->id} has only {$remaining} credits, but {$deductedHours} requested. Adjusting to available.");
+                $deductedHours = $remaining; // Soft fallback, only deduct what is left
             }
+
 
 
             \App\CtoCreditUsage::create([

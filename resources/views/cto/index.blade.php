@@ -262,12 +262,17 @@
                                     @if ($activity->remaining_credits > 0 && !$activity->isExpired())
                                         <div style="margin-bottom: 4px;">
                                             <label>
-                                                <input type="number"
-                                                    name="so_deductions[{{ $activity->id }}]"
-                                                    step="0.01"
-                                                    max="{{ $activity->remaining_credits }}"
-                                                    placeholder="0.00"
-                                                    style="width: 80px;">
+                                        <input type="number"
+                                            class="so-deduction-input"
+                                            data-remaining="{{ $activity->remaining_credits }}"
+                                            name="so_deductions[{{ $activity->id }}]"
+                                            step="0.01"
+                                            max="{{ $activity->remaining_credits }}"
+                                            placeholder="0.00"
+                                            style="width: 80px;"
+                                            readonly>
+
+
                                                 from SO {{ $activity->special_order ?? '(No SO)' }} —
                                                 Balance: {{ number_format($activity->remaining_credits, 2) }} hrs
                                             </label>
@@ -486,6 +491,26 @@
                                 </button>
                             </td>
                         </tr>
+
+                                @if(!$cto->is_activity)
+                                <tr>
+                                    <td colspan="8" style="padding-left: 2rem; font-size: 0.9em;">
+                                        <strong>Deducted From:</strong>
+                                        @php
+                                            $deductions = $cto->consumedActivities;
+                                        @endphp
+                                    @forelse($deductions as $deduct)
+                                        @php
+                                            $so = $deduct->ctoActivity;
+                                        @endphp
+                                        SO: {{ $so->special_order ?? '(No SO)' }},
+                                        {{ number_format($deduct->days_used, 2) }} hrs<br>
+                                    @empty
+                                        <em>No deduction records found.</em>
+                                    @endforelse
+                                    </td>
+                                </tr>
+                            @endif
                     @empty
                         <tr>
                             <td colspan="8" style="text-align: center; color: #6c757d;">No CTO records found</td>
@@ -495,26 +520,6 @@
             </table>
         @endif
 
-
-        @if(!$cto->is_activity)
-        <tr>
-            <td colspan="8" style="padding-left: 2rem; font-size: 0.9em;">
-                <strong>Deducted From:</strong>
-                @php
-                    $deductions = $cto->consumedActivities;
-                @endphp
-            @forelse($deductions as $deduct)
-                @php
-                    $so = $deduct->ctoActivity;
-                @endphp
-                SO: {{ $so->special_order ?? '(No SO)' }},
-                {{ number_format($deduct->days_used, 2) }} hrs<br>
-            @empty
-                <em>No deduction records found.</em>
-            @endforelse
-            </td>
-        </tr>
-    @endif
 
 
     </div>

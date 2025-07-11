@@ -11,7 +11,8 @@ class TeachingEarnedCredits extends Model
 
     protected $fillable = [
         'customer_id',
-        'earned_date',
+        'earned_date_start',
+        'earned_date_end',
         'event',
         'special_order',
         'days',

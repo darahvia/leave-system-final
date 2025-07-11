@@ -11,10 +11,20 @@ class TeachingLeaveApplications extends Model
 
     protected $fillable = [
         'customer_id',
-        'leave_incurred_date',
-        'leave_incurred_days',
+        'leave_start_date',
+        'leave_end_date',
+        'working_days',
+        'remarks',
+        'is_leavewopay',
     ];
 
+
+    protected $casts = [
+    'leave_start_date' => 'date',
+    'leave_end_date' => 'date',
+    'is_leavewopay' => 'boolean',
+    'working_days' => 'float',
+    ];
 
     public function customer()
     {

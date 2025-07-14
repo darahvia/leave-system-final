@@ -86,6 +86,95 @@
             color: #28a745;
             font-weight: bold;
         }
+
+        /* Accordion-style Expired SO Button */
+        .expired-so-accordion-btn {
+            display: block;
+            margin: 2rem auto 0 auto; /* Top margin for spacing, auto for horizontal centering */
+            float: none;
+            padding: 0.6rem 2rem 0.6rem 1.2rem;
+            background: #fff;
+            color: #dc3545;
+            border: 2px solid #dc3545;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(220,53,69,0.08);
+            transition: background 0.2s, color 0.2s;
+            position: relative;
+        }
+
+        .expired-so-accordion-btn:hover {
+            background: #ffe0e0;
+            color: #fff;
+        }
+
+        .expired-so-accordion-btn .arrow {
+            position: absolute;
+            top: 48%;
+            transform: translateY(-50%) rotate(0deg);
+            transition: transform 0.3s;
+            font-size: 1.1em;
+            margin-left: 8px; /* Add this line for spacing */
+        }
+
+        .expired-so-accordion-btn.active .arrow {
+            transform: translateY(-50%) rotate(90deg);
+        }
+
+        /* Expired SO Table Styling */
+        .expired-so-table-wrapper {
+            background: #fff5f5;
+            border: 2px solid #dc3545;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            box-shadow: 0 2px 12px rgba(220,53,69,0.07);
+            transition: max-height 0.4s cubic-bezier(.4,0,.2,1), opacity 0.3s;
+            opacity: 1;
+        }
+
+        .expired-so-table-wrapper[aria-hidden="true"] {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            padding: 0 1.5rem;
+        }
+
+        .expired-so-table-wrapper[aria-hidden="false"] {
+            max-height: 800px;
+            opacity: 1;
+        }
+
+        .expired-so-table-wrapper h4 {
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+
+        .expired-so-table-wrapper table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .expired-so-table-wrapper th {
+            background: #ffd6d6;
+            color: #dc3545;
+            font-weight: bold;
+            border-bottom: 2px solid #dc3545;
+        }
+
+        .expired-so-table-wrapper td {
+            border-bottom: 1px solid #f5c2c7;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .expired-so-table-wrapper tr:last-child td {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -313,8 +402,11 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{-- Loop through all CTO Applications for the customer --}}
+                    {{-- Loop through all CTO Applications for the customer, SKIP expired SOs --}}
                     @forelse($customer->ctoApplications->sortBy('effective_date') as $cto)
+                        @if($cto->is_activity && $cto->isExpired())
+                            @continue
+                        @endif
                         @php
                             $rowClass = '';
                             if ($cto->is_activity) {
@@ -521,6 +613,60 @@
         @endif
 
 
+
+        <!-- View Expired SO History Button -->
+        <button id="viewExpiredSOBtn" class="expired-so-accordion-btn">
+            View Expired S.O. History
+            <span class="arrow">&#9654;</span>
+        </button>
+
+        <!-- Expired SO Table (hidden by default) -->
+        <div id="expiredSOTableWrapper" class="expired-so-table-wrapper" aria-hidden="true">
+            <h4>Expired Special Order History</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>SPECIAL ORDER</th>
+                        <th>DATE OF ACTIVITY</th>
+                        <th>ACTIVITY</th>
+                        <th>EARNED HOURS</th>
+                        <th>BALANCE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        $expiredSOs = $customer->ctoApplications->filter(function($cto) {
+                            return $cto->is_activity && $cto->isExpired();
+                        });
+                    @endphp
+                    @forelse($expiredSOs as $expired)
+                        <tr>
+                            <td>{{ $expired->special_order }}</td>
+                            <td>{{ $expired->formatted_activity_date }}</td>
+                            <td>{{ $expired->activity }}</td>
+                            <td>{{ number_format($expired->credits_earned ?? 0, 2) }}</td>
+                            <td>{{ number_format($expired->balance ?? 0, 2) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#6c757d;">No expired SOs found</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Make sure jQuery is loaded first -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <script>
+            $('#viewExpiredSOBtn').on('click', function() {
+                var $wrapper = $('#expiredSOTableWrapper');
+                var isHidden = $wrapper.attr('aria-hidden') === 'true';
+                $wrapper.attr('aria-hidden', isHidden ? 'false' : 'true');
+                $(this).toggleClass('active');
+            });
+        </script>
 
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

@@ -425,7 +425,6 @@ $(document).ready(function () {
     }
 
     // Set the checkbox state
-    var singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
     var endHalfdaySpan = document.getElementById('end-halfday-span-usage');
     if (singleDayAbsenceCheckbox && endHalfdaySpan) {
       if (data.date_of_absence_start && (!data.date_of_absence_end || data.date_of_absence_start === data.date_of_absence_end)) {

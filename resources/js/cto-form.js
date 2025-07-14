@@ -377,7 +377,6 @@ $(document).ready(function() {
 
 
         // Set the checkbox state
-        const singleDayAbsenceCheckbox = document.getElementById('single-day-absence');
         const endHalfdaySpan = document.getElementById('end-halfday-span-usage');
 
 

@@ -614,48 +614,49 @@
 
 
 
-        <!-- View Expired SO History Button -->
-        <button id="viewExpiredSOBtn" class="expired-so-accordion-btn">
-            View Expired S.O. History
-            <span class="arrow">&#9654;</span>
-        </button>
+        @if($customer)
+    <!-- View Expired S.O. History Button -->
+    <button id="viewExpiredSOBtn" class="expired-so-accordion-btn">
+        View Expired S.O. History
+        <span class="arrow">&#9654;</span>
+    </button>
 
-        <!-- Expired SO Table (hidden by default) -->
-        <div id="expiredSOTableWrapper" class="expired-so-table-wrapper" aria-hidden="true">
-            <h4>Expired Special Order History</h4>
-            <table>
-                <thead>
+    <!-- Expired SO Table (hidden by default) -->
+    <div id="expiredSOTableWrapper" class="expired-so-table-wrapper" aria-hidden="true">
+        <h4>Expired Special Order History</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>SPECIAL ORDER</th>
+                    <th>DATE OF ACTIVITY</th>
+                    <th>ACTIVITY</th>
+                    <th>EARNED HOURS</th>
+                    <th>BALANCE</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    $expiredSOs = $customer->ctoApplications->filter(function($cto) {
+                        return $cto->is_activity && $cto->isExpired();
+                    });
+                @endphp
+                @forelse($expiredSOs as $expired)
                     <tr>
-                        <th>SPECIAL ORDER</th>
-                        <th>DATE OF ACTIVITY</th>
-                        <th>ACTIVITY</th>
-                        <th>EARNED HOURS</th>
-                        <th>BALANCE</th>
+                        <td>{{ $expired->special_order }}</td>
+                        <td>{{ $expired->formatted_activity_date }}</td>
+                        <td>{{ $expired->activity }}</td>
+                        <td>{{ number_format($expired->credits_earned ?? 0, 2) }}</td>
+                        <td>{{ number_format($expired->balance ?? 0, 2) }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @php
-                        $expiredSOs = $customer->ctoApplications->filter(function($cto) {
-                            return $cto->is_activity && $cto->isExpired();
-                        });
-                    @endphp
-                    @forelse($expiredSOs as $expired)
-                        <tr>
-                            <td>{{ $expired->special_order }}</td>
-                            <td>{{ $expired->formatted_activity_date }}</td>
-                            <td>{{ $expired->activity }}</td>
-                            <td>{{ number_format($expired->credits_earned ?? 0, 2) }}</td>
-                            <td>{{ number_format($expired->balance ?? 0, 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" style="text-align:center; color:#6c757d;">No expired SOs found</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
+                @empty
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#6c757d;">No expired SOs found</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+@endif
         <!-- Make sure jQuery is loaded first -->
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -724,5 +725,3 @@
     <script src="{{ asset('js/cto-form.js') }}"></script>
 </body>
 </html>
-
-

@@ -91,7 +91,6 @@ $latestCtoApp = $customer->ctoApplications
                 <td class="value">
                     <form style="display: inline;" method="GET" action="{{ route('customers.edit', $customer->id) }}">
                         <button type="button" id="editBtn" onclick="window.location.href='{{ route('customers.edit', $customer->id) }}'" class="edit-button">Edit</button>
-                        <button class="close" onclick="showPrevious()">Archive;</button>
                     </form>
                 </td>
             </tr>

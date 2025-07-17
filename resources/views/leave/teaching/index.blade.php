@@ -492,12 +492,14 @@
                         <button type="submit">Convert to Nonteaching</button>
                     </div>
                 </form>
+                <div class="emp-form">
                 <form method="POST" action="{{ route('customers.remarks') }}">
                         @csrf
                         <input type="hidden" name="id" value="{{ $customer->id }}">
                         <textarea name="remarks" id="remarks" placeholder="Enter remarks...">{{ $customer->remarks ?? '' }}</textarea>
                         <button type="submit">Save</button>
                 </form> 
+</div>
             </div>
 
             <!-- Leave Records Tables - Side by Side -->

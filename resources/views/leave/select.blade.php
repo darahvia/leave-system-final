@@ -55,7 +55,7 @@
         
         <h3>Non-Teaching Employees</h3>
         <div class="accordion-container">
-            @foreach($teachingByOffice as $officeId => $officeCustomers)
+            @foreach($nonTeachingByOffice as $officeId => $officeCustomers)
                 @php
                     $office = $offices->find($officeId);
                 @endphp
@@ -83,7 +83,7 @@
         
         <h3>Teaching Employees</h3>
         <div class="accordion-container">
-            @foreach($nonTeachingByOffice as $officeId => $officeCustomers)
+            @foreach($teachingByOffice as $officeId => $officeCustomers)
                 @php
                     $office = $offices->find($officeId);
                 @endphp

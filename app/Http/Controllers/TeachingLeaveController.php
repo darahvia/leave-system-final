@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Customer; 
+use App\Position;
 use App\TeachingLeaveApplications; 
 use App\TeachingEarnedCredits;
 use Carbon\Carbon;
@@ -15,6 +16,7 @@ class TeachingLeaveController extends Controller
         $customer = null;
         $teachingLeaveApplications = collect();
         $teachingEarnedCredits = collect();
+        $positions = Position::all();
 
         if ($request->has('customer_id')) {
             $customer = Customer::find($request->customer_id);
@@ -43,7 +45,7 @@ class TeachingLeaveController extends Controller
             }
         }
 
-        return view('leave.teaching.index', compact('customer', 'teachingLeaveApplications', 'teachingEarnedCredits'));
+        return view('leave.teaching.index', compact('customer', 'positions', 'teachingLeaveApplications', 'teachingEarnedCredits'));
     }
 
     public function findCustomer(Request $request)

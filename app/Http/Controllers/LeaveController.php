@@ -3,9 +3,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Customer; 
+use App\Position; 
+
 use App\LeaveApplication; 
 use App\Services\LeaveService;
 use Carbon\Carbon;
+
 
 
 class LeaveController extends Controller
@@ -23,12 +26,13 @@ class LeaveController extends Controller
             $leaveTypes = LeaveService::getLeaveTypes();
             $message = '';
 
-            if ($request->has('customer_id')) {
+            if ($request->filled('customer_id')) {
                 $customer = Customer::with('office')->find($request->customer_id);
             }
             $ctoService = app(\App\Services\CtoService::class);
             return view('leave.customer.index', [
                 'customer' => $customer,
+                'positions' => Position::all(),
                 'leaveTypes' => $leaveTypes,
                 'message' => $message,
                 'ctoService' => $ctoService,

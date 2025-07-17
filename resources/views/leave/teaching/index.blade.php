@@ -142,6 +142,11 @@
                     @csrf
                     <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                     <div class="emp-form">
+                        <div class="single-day-check">
+                            <label>
+                                <input type="checkbox" name="is_single_day_earned" id="single-day-earned-old"> Single Day Activity
+                            </label>
+                        </div>
                         <div class="date-row">
                             <div class="date-col">
                                 <label>Earned Date Start:</label>
@@ -172,6 +177,11 @@
                     <div class="emp-form" id="leave-form-container-old">
                     <label>Date Filed:</label>
                     <input type="date" name="date_filed" id="date_filed_old" required>
+                        <div class="single-day-check">
+                            <label>
+                                <input type="checkbox" name="is_single_day_leave" id="single-day-leave-old"> Single Day Activity
+                            </label>
+                        </div>
                     <div class="date-row">
                         <div class="date-col">
                             <label>Leave Start Date:</label>
@@ -204,6 +214,14 @@
                     </label>
                     </div>
                 </form>
+                <div class="emp-form">
+                    <form method="POST" action="{{ route('customers.remarks') }}">
+                            @csrf
+                            <input type="hidden" name="id" value="{{ $customer->id }}">
+                            <textarea name="remarks" id="remarks" placeholder="Enter remarks...">{{ $customer->remarks ?? '' }}</textarea>
+                            <button type="submit">Save</button>
+                    </form> 
+                 </div>
             </div>
 
             <!-- Leave Records Tables - Side by Side -->
@@ -226,7 +244,7 @@
                             @if($teachingEarnedCredits && $teachingEarnedCredits->count())
                                 @foreach($teachingEarnedCredits->filter(function($credit) {
                                     return \Carbon\Carbon::parse($credit->earned_date_start)->lt(\Carbon\Carbon::parse('2024-10-01'));
-                                })->sortBy('earned_date_start') as $credit)
+                                })->sortByDesc('earned_date_start') as $credit)
                                     <tr>
                                         <td data-label="EARNED DATE">
                                             @if($credit->earned_date_start && $credit->earned_date_end)
@@ -291,7 +309,7 @@
 @if($teachingLeaveApplications && $teachingLeaveApplications->count())
     @foreach($teachingLeaveApplications->filter(function($app) {
         return \Carbon\Carbon::parse($app->date_filed)->lt(\Carbon\Carbon::parse('2024-10-01'));
-    })->sortBy(function($app) {
+    })->sortByDesc(function($app) {
         return $app->date_filed ?: $app->created_at;
     }) as $app)
                                     <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
@@ -378,12 +396,17 @@
                     @csrf
                     <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                     <div class="emp-form">
+                        <div class="single-day-check">
+                            <label>
+                                <input type="checkbox" name="is_single_day_earned" id="single-day-earned-new"> Single Day Activity
+                            </label>
+                        </div>
                         <div class="date-row">
                             <div class="date-col">
                                 <label>Earned Date Start:</label>
                                 <input type="date" name="earned_date_start" required>
                             </div>  
-                            <div class="date-col" id="end-date-col-old">
+                            <div class="date-col" id="end-date-col-new">
                                 <label>Earned Date End:</label>
                                 <input type="date" name="earned_date_end" required>
                             </div>
@@ -408,6 +431,11 @@
                     <div class="emp-form" id="leave-form-container-new">
                         <label>Date Filed:</label>
                         <input type="date" name="date_filed" id="date_filed_new" required>
+                        <div class="single-day-check">
+                            <label>
+                                <input type="checkbox" name="is_single_day_leave" id="single-day-leave-new"> Single Day Activity
+                            </label>
+                        </div>
                         <div class="date-row">
                             <div class="date-col">
                                 <label>Leave Start Date:</label>
@@ -440,6 +468,36 @@
                         </label>
                     </div>  
                 </form>
+                <form method="POST" action="{{ route('customers.convert') }}">
+                    @csrf
+                    <input type="hidden" name="id" value="{{ $customer->id }}">
+                    <div class="emp-form">
+                        <label>Date</label>
+                        <input type="date" name="convert_date" required>
+                        <label for="position_id">Position</label>
+                        <select id="position_id" name="position_id">
+                            <option value="">Select Position</option>
+                            @foreach($positions->whereBetween('id', [0, 39]) as $position)
+                                <option value="{{ $position->id }}" {{ old('position_id', $customer->position_id ?? '') == $position->id ? 'selected' : '' }}>
+                                    {{ $position->position }}
+                                </option>
+                            @endforeach
+                        </select>
+                    <label for="balance_forwarded_vl">Vacation Leave Forwarded Balance:</label>
+                    <input type="number" id="balance_forwarded_vl" step="0.001" name="balance_forwarded_vl" />
+                    <label for="balance_forwarded_sl">Sick Leave Forwarded Balance:</label>
+                    <input type="number" id="balance_forwarded_sl" step="0.001" name="balance_forwarded_sl" />
+                        <label for="remarks" name="remarks">Remarks:</label>
+                        <input type="text" id="remarks" name="remarks" value="{{ old('remarks') }}" />
+                        <button type="submit">Convert to Nonteaching</button>
+                    </div>
+                </form>
+                <form method="POST" action="{{ route('customers.remarks') }}">
+                        @csrf
+                        <input type="hidden" name="id" value="{{ $customer->id }}">
+                        <textarea name="remarks" id="remarks" placeholder="Enter remarks...">{{ $customer->remarks ?? '' }}</textarea>
+                        <button type="submit">Save</button>
+                </form> 
             </div>
 
             <!-- Leave Records Tables - Side by Side -->
@@ -463,7 +521,7 @@
                             @if($teachingEarnedCredits && $teachingEarnedCredits->count())
                                 @foreach($teachingEarnedCredits->filter(function($credit) {
                                     return \Carbon\Carbon::parse($credit->earned_date_start)->gte(\Carbon\Carbon::parse('2024-10-01'));
-                                })->sortBy('earned_date_start') as $credit)
+                                })->sortByDesc('earned_date_start') as $credit)
                                     <tr>
                                         <td data-label="EARNED DATE">
                                             @if($credit->earned_date_start && $credit->earned_date_end)
@@ -528,7 +586,7 @@
 @if($teachingLeaveApplications && $teachingLeaveApplications->count())
     @foreach($teachingLeaveApplications->filter(function($app) {
         return \Carbon\Carbon::parse($app->date_filed)->gte(\Carbon\Carbon::parse('2024-10-01'));
-    })->sortBy(function($app) {
+    })->sortByDesc(function($app) {
         return $app->date_filed ?: $app->created_at;
     }) as $app)
        <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
@@ -608,6 +666,52 @@
     
     <!-- Pass Laravel routes to JavaScript -->
 <script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    const singleDayCheckboxes = document.querySelectorAll('[id*="single-day"]');
+    
+    singleDayCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const form = this.closest('form');
+            const endDateCol = form.querySelector('[id*="end-date-col"]');
+            const startDateInput = form.querySelector('input[name*="start"], input[name*="earned_date_start"]');
+            const endDateInput = form.querySelector('input[name*="end"], input[name*="earned_date_end"]');
+            
+            if (this.checked) {
+                // Copy start date to end date
+                if (startDateInput && endDateInput) {
+                    endDateInput.value = startDateInput.value;
+                }
+                if (endDateCol) {
+                    endDateCol.style.display = 'none';
+                }
+                if (endDateInput) {
+                    endDateInput.removeAttribute('required');
+                }
+            } else {
+                if (endDateCol) {
+                    endDateCol.style.display = 'block';
+                }
+                if (endDateInput) {
+                    endDateInput.setAttribute('required', 'required');
+                }
+            }
+        });
+        
+        // Listen for start date changes when checkbox is checked
+        const form = checkbox.closest('form');
+        const startDateInput = form.querySelector('input[name*="start"], input[name*="earned_date_start"]');
+        const endDateInput = form.querySelector('input[name*="end"], input[name*="earned_date_end"]');
+        
+        if (startDateInput && endDateInput) {
+            startDateInput.addEventListener('change', function() {
+                if (checkbox.checked) {
+                    endDateInput.value = this.value;
+                }
+            });
+        }
+    });
+});
 // Make Laravel routes available to JavaScript
 window.autocompleteRoute = '{{ route("teaching.autocomplete") }}';
 window.leaveUpdateRoute = '{{ route("teaching.leave.update") }}';

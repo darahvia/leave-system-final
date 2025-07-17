@@ -382,6 +382,12 @@
                 </div>
             </div>
 
+            <form method="GET" action="{{ route('cto.export.pdf') }}" style="text-align: right; margin-bottom: 1rem;">
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                <button type="submit" style="background:#0056b3;color:#fff;padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-weight:600;" onmouseover="this.style.background='#0069d9'" onmouseout="this.style.background='#007bff'">
+                    Export as PDF
+                </button>
+            </form>
 
             <div style="text-align: center; margin: 2rem 0;">
                 <h3 style="margin: 0; padding: 0.5rem; background-color: #90EE90; border: 2px solid #000; font-weight: bold;">COMPENSATORY TIME-OFF (CTO)</h3>
@@ -394,9 +400,9 @@
                         <th>SPECIAL ORDER</th>
                         <th>DATE OF ACTIVITY</th>
                         <th>ACTIVITY</th>
-                        <th>EARNED HOURS</th>
+                        <th>EARNED CREDITS</th>
                         <th>DATE OF ABSENCES</th>
-                        <th>HOURS USED</th>
+                        <th>LEAVE INCURRED</th>
                         <th>BALANCE</th>
                         <th>ACTIONS</th>
                     </tr>

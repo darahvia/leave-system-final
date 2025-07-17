@@ -80,4 +80,7 @@ Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name
         Route::post('/calculate-days', [CtoController::class, 'calculateDays'])->name('cto.calculate-days');
     });
 
+    Route::get('/cto/export-pdf', [CtoController::class, 'exportPdf'])->name('cto.export.pdf');
+
+
 }); // End of web middleware group //for pull request 

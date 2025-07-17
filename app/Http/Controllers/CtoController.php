@@ -14,6 +14,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use PDF; // Add at top if not yet there
+
 
 
 class CtoController extends Controller
@@ -232,11 +234,16 @@ class CtoController extends Controller
 
 
 
-            \App\CtoCreditUsage::create([
-                'cto_activity_id' => $activity->id,
-                'cto_absence_id' => $ctoApplication->id,
-                'days_used' => $deductedHours,
-            ]);
+            \App\CtoCreditUsage::updateOrCreate(
+                [
+                    'cto_activity_id' => $activity->id,
+                    'cto_absence_id' => $ctoApplication->id,
+                ],
+                [
+                    'days_used' => $deductedHours,
+                ]
+            );
+
         }
 
 
@@ -432,6 +439,24 @@ class CtoController extends Controller
 
         return response()->json(['days' => $days]);
     }
+
+
+    public function exportPdf(Request $request)
+    {
+        $customer = Customer::with('ctoApplications')->findOrFail($request->customer_id);
+
+        $ctoApplications = $customer->ctoApplications->sortBy('effective_date');
+
+        // Filter only SOs (earned entries) and group them
+        $specialOrders = $ctoApplications->where('is_activity', true);
+
+        $pdf = Pdf::loadView('cto.pdf_report', compact('customer', 'ctoApplications', 'specialOrders'));
+
+        return $pdf->download('cto_report_' . now()->format('Ymd_His') . '.pdf');
+    }
+
+
+
 }
  // for pull request
 

@@ -14,8 +14,8 @@ class Customer extends Model
         'vl', 'sl', 'spl', 'fl', 'solo_parent', 'ml', 'pl',
         'ra9710', 'rl', 'sel', 'study_leave', 'vawc', 'adopt',
         'balance_forwarded_vl', 'balance_forwarded_sl',
-        'balance_forwarded_cto', 
-        'cto', 
+        'balance_forwarded_cto', 'leave_credits_old', 'leave_credits_new', 'convert_dates', 'remarks',
+        'cto', 'sex', 'civil_status', 
         'salary', 
         'status',
         'surname', 'given_name', 'middle_name', 'division', 'designation', 
@@ -26,6 +26,7 @@ class Customer extends Model
     protected $casts = [
         'step_array' => 'array',
         'loyalty_array' => 'array',
+        'convert_dates' => 'array',
     ];
 
     public function office()

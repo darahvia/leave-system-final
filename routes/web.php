@@ -5,18 +5,21 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\TeachingLeaveController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CtoController;
-
+use App\Customer;
 use App\Office;
 use App\Position;
 
 // All web-related routes should be wrapped in the 'web' middleware group
-Route::middleware('web')->group(function () {
 
-    Route::get('/', function () {
-        $offices = Office::all();
-        $positions = Position::all();
-        return view('leave.select', compact('offices', 'positions'));
-    })->name('leave.select');
+
+
+Route::get('/', function () {
+	return view('auth.login');
+});
+Auth::routes();
+
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/select', [CustomerController::class, 'index'])->name('leave.select');
 
     Route::any('/find-customer', [LeaveController::class, 'findCustomer'])->name('customer.find');
 
@@ -24,8 +27,10 @@ Route::middleware('web')->group(function () {
     // Customer management routes
     Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
     Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
-Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+    Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');  // used para mag pass data
+    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update'); // used para mag update
+    Route::post('/customers/convert', [CustomerController::class, 'convert'])->name('customers.convert');
+    Route::post('/customers/remarks', [CustomerController::class, 'updateRemarks'])->name('customers.remarks');
 
     // Non-teaching (customer) routes
     Route::prefix('leave/customer')->group(function () {
@@ -37,9 +42,7 @@ Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name
         Route::post('/add-credits', [LeaveController::class, 'addCreditsEarned'])->name('leave.credits');
         Route::post('/add-leave-row', [LeaveController::class, 'addLeaveRow'])->name('leave.row');
         Route::post('/add-otherCredits', [LeaveController::class, 'addOtherCreditsEarned'])->name('leave.otherCredits');
-
         Route::get('/customer-autocomplete', [LeaveController::class, 'customerAutocomplete'])->name('customer.autocomplete');
-        
     });
 
     // Teaching routes
@@ -79,6 +82,7 @@ Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name
         // Route for calculating days (AJAX)
         Route::post('/calculate-days', [CtoController::class, 'calculateDays'])->name('cto.calculate-days');
     });
+
 
     Route::get('/cto/export-pdf', [CtoController::class, 'exportPdf'])->name('cto.export.pdf');
 

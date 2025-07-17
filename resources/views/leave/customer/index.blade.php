@@ -48,101 +48,138 @@
 
     @if($customer)
         <div class="bottom-section">
-            
-            <form method="POST" action="{{ route('leave.submit') }}" id="leave-form" class="leave-form">
-                @csrf
-                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
-                <input type="hidden" name="edit_id" id="edit_id" value="">
-                <input type="hidden" name="_method" id="form_method" value="POST">
-                <input type="hidden" name="is_cancellation" id="is_cancellation" value="0">
-                <div class="emp-form" id="leave-form-container">
-                    <label>Leave Type:</label>
-                    <select name="leave_type" class="form-control" required>
-                        @foreach ($leaveTypes as $code => $label)
-                            <option value="{{ $code }}" {{ old('leave_type') == $code ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
-                        @endforeach
-                    </select>
-
-                    <label>Date Filed:</label>
-                    <input type="date" name="date_filed" id="date_filed" required>
-
-                    <div class="single-day-check">
-                        <label>
-                            <input type="checkbox" name="is_single_day_activity" id="single-day-activity"> Single Day Activity
-                        </label>
-                    </div>
-                    
-                    <div class="date-row">
-                        <div class="date-col">
-                            <label>Leave Start Date:</label>
-                            <input type="date" name="inclusive_date_start" id="inclusive_date_start" required>
-                            <span class="halfday-controls" id="start-halfday-span">
-                                <button type="button" class="toggle-button" id="start-am-btn" data-value="AM">AM</button>
-                                <button type="button" class="toggle-button" id="start-pm-btn" data-value="PM">PM</button>
-                            </span>
-                        </div>
-                        <div class="date-col" id="end-date-col">
-                            <label>Leave End Date:</label>
-                            <input type="date" name="inclusive_date_end" id="inclusive_date_end" required>
-                            <span class="halfday-controls" id="end-halfday-span">
-                                <button type="button" class="toggle-button" id="end-am-btn" data-value="AM">AM</button>
-                                <button type="button" class="toggle-button" id="end-pm-btn" data-value="PM">PM</button>
-                            </span>
-                        </div>
-                    </div>
-                    <label>Working Days:</label>
-                    <input type="number" name="working_days" step="0.01" id="working_days">
-                    <label>Remarks:</label>
-                    <input type="text" name="leave_details" id="leave_details">
-                    <button type="submit" id="submit-btn">Use Leave Credits</button>
-                    <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
-                    <label>
-                    <input type="checkbox" name="is_leavewopay" id="is_leavewopay" value="1"> Leave Without Pay
-                    </label>                   <label>
-                    <input type="checkbox" name="is_leavepay" id="is_leavepay" value="1"> Leave With Pay
-                    </label>
-                </div>
-            </form>
-            <form method="POST" action="{{ route('leave.credits') }}">
-                @csrf
-                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
-                <div class="emp-form">
-                    <label>Earned Date:</label>
-                    <input type="date" name="earned_date" required>
-                    <div class="form-group">
-                        <label for="earned_vl">VL Credits:</label>
-                        <input type="number" name="earned_vl" id="earned_vl" value="1.25" step="0.001" min="0" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="earned_sl">SL Credits:</label>
-                        <input type="number" name="earned_sl" id="earned_sl" value="1.25" step="0.001" min="0" class="form-control" required>
-                    </div>
-                    <button type="submit">Add Credits Earned</button>
-                </div>
-            </form>
-            <form method="POST" action="{{ route('leave.otherCredits') }}">
-                @csrf
-                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
-                <div class="emp-form">
-                    <label>Leave Type:</label>
-                    <select name="leave_type" class="form-control" required>
-                        @foreach ($leaveTypes as $code => $label)
-                             @if (!in_array($code, ['VL', 'SL']))
+            <div class="emp-form">
+                <form method="POST" action="{{ route('leave.submit') }}" id="leave-form" class="leave-form">
+                    @csrf
+                    <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                    <input type="hidden" name="edit_id" id="edit_id" value="">
+                    <input type="hidden" name="_method" id="form_method" value="POST">
+                    <input type="hidden" name="is_cancellation" id="is_cancellation" value="0">
+                    <div class="emp-form" id="leave-form-container">
+                        <label>Leave Type:</label>
+                        <select name="leave_type" class="form-control" required>
+                            @foreach ($leaveTypes as $code => $label)
                                 <option value="{{ $code }}" {{ old('leave_type') == $code ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
-                            @endif
-                        @endforeach
-                    </select>
+                            @endforeach
+                        </select>
 
-                    <label>Credits to Add:</label>
-                    <input type="number" name="credits" step="0.01" required>
+                        <label>Date Filed:</label>
+                        <input type="date" name="date_filed" id="date_filed" required>
 
-                    <button type="submit">Add Other Credits</button>
-                </div>
-            </form>
+                        <div class="single-day-check">
+                            <label>
+                                <input type="checkbox" name="is_single_day_activity" id="single-day-activity"> Single Day Activity
+                            </label>
+                        </div>
+                        
+                        <div class="date-row">
+                            <div class="date-col">
+                                <label>Leave Start Date:</label>
+                                <input type="date" name="inclusive_date_start" id="inclusive_date_start" required>
+                                <span class="halfday-controls" id="start-halfday-span">
+                                    <button type="button" class="toggle-button" id="start-am-btn" data-value="AM">AM</button>
+                                    <button type="button" class="toggle-button" id="start-pm-btn" data-value="PM">PM</button>
+                                </span>
+                            </div>
+                            <div class="date-col" id="end-date-col">
+                                <label>Leave End Date:</label>
+                                <input type="date" name="inclusive_date_end" id="inclusive_date_end" required>
+                                <span class="halfday-controls" id="end-halfday-span">
+                                    <button type="button" class="toggle-button" id="end-am-btn" data-value="AM">AM</button>
+                                    <button type="button" class="toggle-button" id="end-pm-btn" data-value="PM">PM</button>
+                                </span>
+                            </div>
+                        </div>
+                        <label>Working Days:</label>
+                        <input type="number" name="working_days" step="0.001" id="working_days">
+                        <label>Remarks:</label>
+                        <input type="text" name="leave_details" id="leave_details">
+                        <button type="submit" id="submit-btn">Use Leave Credits</button>
+                        <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
+                        <label>
+                        <input type="checkbox" name="is_leavewopay" id="is_leavewopay" value="1"> Leave Without Pay
+                        </label>                   <label>
+                        <input type="checkbox" name="is_leavepay" id="is_leavepay" value="1"> Leave With Pay
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="emp-form">
+                <form method="POST" action="{{ route('leave.credits') }}">
+                    @csrf
+                    <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                    <div class="emp-form">
+                        <label>Earned Date:</label>
+                        <input type="date" name="earned_date" required>
+                        <div class="form-group">
+                            <label for="earned_vl">VL Credits:</label>
+                            <input type="number" name="earned_vl" id="earned_vl" value="1.25" step="0.001" min="0" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="earned_sl">SL Credits:</label>
+                            <input type="number" name="earned_sl" id="earned_sl" value="1.25" step="0.001" min="0" class="form-control" required>
+                        </div>
+                        <button type="submit">Add Credits Earned</button>
+                    </div>
+                </form>
+                <form method="POST" action="{{ route('leave.otherCredits') }}">
+                    @csrf
+                    <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                    <div class="emp-form">
+                        <label>Leave Type:</label>
+                        <select name="leave_type" class="form-control" required>
+                            @foreach ($leaveTypes as $code => $label)
+                                @if (!in_array($code, ['VL', 'SL']))
+                                    <option value="{{ $code }}" {{ old('leave_type') == $code ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <label>Credits to Add:</label>
+                        <input type="number" name="credits" step="0.01" required>
+
+                        <button type="submit">Add Other Credits</button>
+                    </div>
+                </form>
+             </div>
+
+             <div class = "emp-form">
+                <form method="POST" action="{{ route('customers.convert') }}">
+                    @csrf
+                    <input type="hidden" name="id" value="{{ $customer->id }}">
+                    <div class="emp-form">
+                        <label>Date</label>
+                        <input type="date" name="convert_date" required>
+                        <label for="position_id">Position</label>
+                        <select id="position_id" name="position_id">
+                            <option value="">Select Position</option>
+                            @foreach($positions->whereBetween('id', [40, 52]) as $position)
+                                <option value="{{ $position->id }}" {{ old('position_id', $customer->position_id ?? '') == $position->id ? 'selected' : '' }}>
+                                    {{ $position->position }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <label for="leave_credits_old">Initial Leave Credits (old):</label>
+                        <input type="number" id="leave_credits_old" step="0.001" name="leave_credits_old" value="0"/>
+                        <label for="leave_credits_new">Initial Leave Credits (new):</label>
+                        <input type="number" id="leave_credits_new" step="0.001" name="leave_credits_new" value="0"/>
+                        <label for="remarks" name="remarks">Remarks:</label>
+                        <input type="text" id="remarks" name="remarks"/>
+                        <button type="submit">Convert to Teaching</button>
+                    </div>
+                </form>
+             </div>
+            <div class="emp-form">
+                <form method="POST" action="{{ route('customers.remarks') }}">
+                        @csrf
+                        <input type="hidden" name="id" value="{{ $customer->id }}">
+                        <textarea name="remarks" id="remarks" placeholder="Enter remarks...">{{ $customer->remarks ?? '' }}</textarea>
+                        <button type="submit">Save</button>
+                </form> 
+             </div>       
         </div>
     @endif
 
@@ -187,13 +224,13 @@
                     <td data-label="SL BALANCE">{{ number_format($customer->balance_forwarded_sl, 3) }}</td>
                     <td data-label="ACTIONS"></td>
                 </tr>
-@if($customer->leaveApplications && $customer->leaveApplications->count())
-@php
-    $sortedApplications = $customer->leaveApplications->sortBy(function($app) {
-        return $app->earned_date ?? $app->date_filed ?? '1900-01-01';
-    });
-@endphp
-@foreach($sortedApplications as $app)
+                    @if($customer->leaveApplications && $customer->leaveApplications->count())
+                    @php
+                        $sortedApplications = $customer->leaveApplications->sortBy(function($app) {
+                            return $app->earned_date ?? $app->date_filed ?? '1900-01-01';
+                        });
+                    @endphp
+                    @foreach($sortedApplications as $app)
                         <tr class="{{ ($app->is_leavewopay) ? 'leave-without-pay' : '' }}">
                             <td data-label="PERIOD">{{ $app->earned_date ? \Carbon\Carbon::parse($app->earned_date)->format('F j, Y') : '' }}</td>
                             <td data-label="VL EARNED">
@@ -310,8 +347,6 @@
                                             <path d="M12 12l7-7 3 3-7 7-3 0 0-3z"></path>
                                         </svg>
                                     </button>
-
-
                                 @else
                                     {{-- Regular leave → Edit, Delete, Cancel --}}
                                     <button type="button" class="edit-btn" onclick="editLeaveApplication(
@@ -367,7 +402,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // Make Laravel routes available to JavaScript
         window.autocompleteRoute = '{{ route("customer.autocomplete") }}';
         window.leaveUpdateRoute = '{{ route("leave.update") }}';
         window.deleteRoute = '{{ route("leave.delete") }}';

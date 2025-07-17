@@ -16,6 +16,22 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeDeleteFunctionality();
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('remarks');
+    
+    function adjustHeight() {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';
+    }
+    
+    textarea.addEventListener('input', adjustHeight);
+    textarea.addEventListener('paste', function() {
+        setTimeout(adjustHeight, 0);
+    });
+    
+    adjustHeight(); // Initial adjustment
+});
+
 // Modal functionality for Add Customer
 function initializeModal() {
     const showModal = document.getElementById('showAddEmpModal');

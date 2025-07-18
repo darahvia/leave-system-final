@@ -161,7 +161,7 @@
             width: 30%;
         }
         
-        .footer {
+        .generated {
             margin-top: 30px;
             text-align: center;
             font-size: 8px;
@@ -404,10 +404,6 @@
     </div>
 
     <!-- Footer -->
-    <div class="footer">
-        <p>This report was generated on {{ \Carbon\Carbon::now()->format('F j, Y \a\t g:i A') }}</p>
-        <p>Department of Education - Schools Division of Cadiz City</p>
-        <p>Leave Credit Management System</p>
-    </div>
+
 </body>
 </html>

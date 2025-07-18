@@ -183,6 +183,11 @@
         </div>
     @endif
 
+        <form action="{{ route('nonteaching.export-pdf', $customer->id) }}" method="GET">
+            <button type="submit" style="background:#0056b3;color:#fff;padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-weight:600;">
+                Export as PDF
+            </button>
+        </form>
     @if($customer)
         <table class="leave-table">
             <thead>

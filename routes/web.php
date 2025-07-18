@@ -43,7 +43,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/add-leave-row', [LeaveController::class, 'addLeaveRow'])->name('leave.row');
         Route::post('/add-otherCredits', [LeaveController::class, 'addOtherCreditsEarned'])->name('leave.otherCredits');
         Route::get('/customer-autocomplete', [LeaveController::class, 'customerAutocomplete'])->name('customer.autocomplete');
-    });
+        Route::get('/nonteaching/{id}/export-pdf', [LeaveController::class, 'exportPDF'])->name('nonteaching.export-pdf');    });
 
     // Teaching routes
     Route::prefix('leave/teaching')->group(function () {

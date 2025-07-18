@@ -8,6 +8,7 @@ use App\Position;
 use App\LeaveApplication; 
 use App\Services\LeaveService;
 use Carbon\Carbon;
+use PDF;
 
 
 
@@ -39,6 +40,35 @@ class LeaveController extends Controller
             ]);
         }
 
+    public function exportPDF($id)
+    {
+        $customer = Customer::with(['leaveApplications', 'office', 'position'])->findOrFail($id);
+        
+        // Get sorted applications
+        $sortedApplications = $customer->leaveApplications->sortBy(function($app) {
+            return $app->earned_date ?? $app->date_filed ?? '1900-01-01';
+        });
+        
+        // Get latest application and CTO data
+        $latestApp = $customer->leaveApplications->sortByDesc('created_at')->first();
+        $ctoService = app(\App\Services\CtoService::class);
+        $leaveService = app(\App\Services\LeaveService::class);
+        $latestCtoApp = null; // Add your CTO logic here
+        
+        $data = [
+            'customer' => $customer,
+            'sortedApplications' => $sortedApplications,
+            'latestApp' => $latestApp,
+            'latestCtoApp' => $latestCtoApp,
+            'ctoService' => $ctoService,
+            'leaveService' => $leaveService,
+        ];
+        
+        $pdf = PDF::loadView('pdf.nonteaching-report', $data);
+        $pdf->setPaper('A4', 'landscape');
+        
+        return $pdf->download('nonteaching-report-' . $customer->surname . '.pdf');
+    }
 
 public function findCustomer(Request $request)
 {

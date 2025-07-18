@@ -43,7 +43,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/add-leave-row', [LeaveController::class, 'addLeaveRow'])->name('leave.row');
         Route::post('/add-otherCredits', [LeaveController::class, 'addOtherCreditsEarned'])->name('leave.otherCredits');
         Route::get('/customer-autocomplete', [LeaveController::class, 'customerAutocomplete'])->name('customer.autocomplete');
-        Route::get('/nonteaching/{id}/export-pdf', [LeaveController::class, 'exportPDF'])->name('nonteaching.export-pdf');    });
+        Route::get('/nonteaching/{id}/export-pdf', [LeaveController::class, 'exportPDF'])->name('nonteaching.export-pdf');    
+    });
 
     // Teaching routes
     Route::prefix('leave/teaching')->group(function () {
@@ -55,6 +56,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::delete('/delete-leave', [TeachingLeaveController::class, 'deleteLeave'])->name('teaching.leave.delete');
         Route::post('/add-credits', [TeachingLeaveController::class, 'addCreditsEarned'])->name('teaching.credits.add');
         Route::get('/customer-autocomplete', [TeachingLeaveController::class, 'customerAutocomplete'])->name('teaching.autocomplete');
+        Route::get('/teaching/{id}/export-pdf', [TeachingLeaveController::class, 'exportPDF'])->name('teaching.export-pdf'); 
     });
 
     // CTO routes - Unified around 'customer' concept

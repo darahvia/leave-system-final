@@ -48,6 +48,14 @@ class Customer extends Model
     {
         return $this->hasMany(LeaveApplication::class);
     }
+    public function teachingLeaveApplications()
+    {
+        return $this->hasMany(TeachingLeaveApplications::class);
+    }
+    public function teachingEarnedCredits()
+    {
+        return $this->hasMany(TeachingEarnedCredits::class);
+    }
     
     public function ctoApplications()
     {

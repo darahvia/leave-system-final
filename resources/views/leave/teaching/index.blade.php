@@ -122,6 +122,11 @@
 
     <!-- Tabs Section -->
     @if($customer)
+        <form action="{{ route('teaching.export-pdf', $customer->id) }}" method="GET">
+            <button type="submit" style="background:#0056b3;color:#fff;padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-weight:600;">
+                Export as PDF
+            </button>
+        </form>
         <div class="tabs-container">
             <div class="tabs">
                 <button class="tab-button active" onclick="switchTab('old')">Old (Before October 1
@@ -298,7 +303,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td data-label="DATE FILED">INITIAL BALANCE</td>
+                                <td data-label="DATE FILED"></td>
                                 <td data-label="DATE"></td>
                                 <td data-label="DAYS"></td>
                                 <td data-label="BALANCE">{{ $customer->leave_credits_old }}</td>
@@ -575,7 +580,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td data-label="DATE FILED">INITIAL BALANCE</td>
+                                <td data-label="DATE FILED"></td>
                                 <td data-label="DATE"></td>
                                 <td data-label="DAYS"></td>
                                 <td data-label="BALANCE">{{ $customer->leave_credits_new }}</td>

@@ -8,7 +8,7 @@ use App\TeachingLeaveApplications;
 use App\TeachingEarnedCredits;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
-
+use PDF;
 class TeachingLeaveController extends Controller
 {
     public function index(Request $request)
@@ -46,6 +46,39 @@ class TeachingLeaveController extends Controller
         }
 
         return view('leave.teaching.index', compact('customer', 'positions', 'teachingLeaveApplications', 'teachingEarnedCredits'));
+    }
+
+     public function exportPDF($id)
+    {
+        $customer = Customer::with(['teachingLeaveApplications', 'office', 'position'])->findOrFail($id);
+        
+        // Get sorted applications
+            $teachingLeaveApplications = TeachingLeaveApplications::where('customer_id', $id)
+                ->orderBy('date_filed', 'desc')
+                ->get();
+
+            $teachingEarnedCredits = TeachingEarnedCredits::where('customer_id', $id)
+                ->orderBy('earned_date_start', 'desc')
+                ->get();
+
+        
+        // Get latest application and CTO data
+        $latestApp = $customer->teachingLeaveApplications->sortByDesc('created_at')->first();
+        $ctoService = app(\App\Services\CtoService::class);
+        $leaveService = app(\App\Services\LeaveService::class);
+        $latestCtoApp = null; // Add your CTO logic here
+        
+            $data = [
+                'customer' => $customer,
+                'teachingLeaveApplications' => $teachingLeaveApplications,
+                'teachingEarnedCredits' => $teachingEarnedCredits,
+                'generatedDate' => Carbon::now()->format('F j, Y - g:i A')
+            ];
+        
+        $pdf = PDF::loadView('pdf.teaching-report', $data);
+        $pdf->setPaper('A4', 'landscape');
+        
+        return $pdf->download('teaching-report-' . $customer->surname . '.pdf');
     }
 
     public function findCustomer(Request $request)

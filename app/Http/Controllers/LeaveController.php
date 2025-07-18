@@ -8,7 +8,8 @@ use App\Position;
 use App\LeaveApplication; 
 use App\Services\LeaveService;
 use Carbon\Carbon;
-use PDF;
+use Barryvdh\DomPDF\Facade as PDF;
+
 
 
 
@@ -66,7 +67,8 @@ class LeaveController extends Controller
         
         $pdf = PDF::loadView('pdf.nonteaching-report', $data);
         $pdf->setPaper('A4', 'landscape');
-        
+        $pdf->getDomPDF()->set_option('isPhpEnabled', true);
+
         return $pdf->download('nonteaching-report-' . $customer->surname . '.pdf');
     }
 

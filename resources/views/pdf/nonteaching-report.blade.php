@@ -4,9 +4,13 @@
     <meta charset="utf-8">
     <title>Leave Credit Report</title>
     <style>
-        @page { 
+    @page { 
             size: A4 landscape; 
             margin: 0.5in; 
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10px;
+            }
         }
         
         body { 
@@ -161,7 +165,7 @@
             width: 30%;
         }
         
-        .generated {
+        .footer {
             margin-top: 30px;
             text-align: center;
             font-size: 8px;
@@ -187,6 +191,7 @@
 <body>
     <!-- Header Section -->
     <div class="header-section">
+        <img src="file://{{ public_path('/images/deped-logo.png') }}" class="footer-logo-deped" style="height: 60px; width: auto;">
         <div class="header-title">Republic of the Philippines</div>
         <div class="header-subtitle">Department of Education</div>
         <div class="header-subtitle">NEGROS ISLAND REGION</div>
@@ -216,14 +221,6 @@
             <tr>
                 <td class="label">MIDDLE NAME</td>
                 <td class="value">{{ strtoupper($customer->middle_name) }}</td>
-                <td class="label">VACATION LEAVE BALANCE</td>
-                <td class="value">{{ $latestApp ? $latestApp->current_vl : ($customer->balance_forwarded_vl ?? 0) }}</td>
-                <td class="label">SICK LEAVE BALANCE</td>
-                <td class="value">{{ $latestApp ? $latestApp->current_sl : ($customer->balance_forwarded_sl ?? 0) }}</td>
-            </tr>
-            <tr>
-                <td class="label">CTO BALANCE</td>
-                <td class="value">{{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : (isset($ctoService) ? number_format($ctoService->getEligibleCtoBalance($customer), 1) : '0.0') }}</td>
                 <td class="label">REPORT GENERATED</td>
                 <td class="value">{{ \Carbon\Carbon::now()->format('F j, Y - g:i A') }}</td>
                 <td class="label">EMPLOYEE ID</td>
@@ -381,8 +378,6 @@
             <tr>
                 <td class="summary-label">COMPENSATORY TIME OFF (CTO)</td>
                 <td>{{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : (isset($ctoService) ? number_format($ctoService->getEligibleCtoBalance($customer), 1) : '0.0') }}</td>
-                <td class="summary-label">TOTAL LEAVE APPLICATIONS</td>
-                <td>{{ $customer->leaveApplications ? $customer->leaveApplications->where('is_credit_earned', false)->count() : 0 }}</td>
             </tr>
         </table>
 
@@ -402,8 +397,19 @@
             </div>
         @endif
     </div>
-
     <!-- Footer -->
-
+        <p style="font-size: 12px; text-align:left;">Certified by:</p>
+        <p style="font-size: 12px; margin-top: 50px; text-align: left;">__________________________</p>
+<script type="text/php">
+    if (isset($pdf)) {
+        $pdf->page_script('
+            $font = $fontMetrics->get_font("Arial", "normal");
+            $size = 8;
+            $y = 570; // Adjust this for vertical position
+            $x = 780; // Adjust this for horizontal position (landscape A4 is about 842px wide)
+            $pdf->text($x, $y, "Page $PAGE_NUM of $PAGE_COUNT", $font, $size);
+        ');
+    }
+</script>
 </body>
 </html>

@@ -8,7 +8,7 @@ use App\TeachingLeaveApplications;
 use App\TeachingEarnedCredits;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
-use PDF;
+use Barryvdh\DomPDF\Facade as PDF;
 class TeachingLeaveController extends Controller
 {
     public function index(Request $request)
@@ -77,7 +77,8 @@ class TeachingLeaveController extends Controller
         
         $pdf = PDF::loadView('pdf.teaching-report', $data);
         $pdf->setPaper('A4', 'landscape');
-        
+        $pdf->getDomPDF()->set_option('isPhpEnabled', true);
+
         return $pdf->download('teaching-report-' . $customer->surname . '.pdf');
     }
 

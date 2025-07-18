@@ -7,6 +7,10 @@
         @page { 
             size: A4 landscape; 
             margin: 0.5in; 
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10px;
+            }
         }
         
         body { 
@@ -171,7 +175,7 @@
             width: 30%;
         }
         
-        .generated {
+        .footer {
             margin-top: 30px;
             text-align: center;
             font-size: 8px;
@@ -200,7 +204,7 @@
 <body>
     <!-- Header Section -->
     <div class="header-section">
-        <img src="/images/deped-logo.png" alt="DepEd Logo" class="header-logo">
+        <img src="file://{{ public_path('/images/deped-logo.png') }}" class="footer-logo-deped" style="height: 60px; width: auto;">
         <div class="header-title">Republic of the Philippines</div>
         <div class="header-subtitle">Department of Education</div>
         <div class="header-subtitle">NEGROS ISLAND REGION</div>
@@ -367,11 +371,12 @@
             </tbody>
         </table>
     </div>
+        <p class="generated">This report was generated on {{ \Carbon\Carbon::now()->format('F j, Y \a\t g:i A') }}</p>
 
     <!-- NEW LEAVE CREDITS SECTION (After October 1, 2024) -->
     <div class="page-break"></div>
     <div class="header-section">
-        <img src="/images/deped-logo.png" alt="DepEd Logo" class="header-logo">
+        <img src="file://{{ public_path('/images/deped-logo.png') }}" class="footer-logo-deped" style="height: 60px; width: auto;">
         <div class="header-title">Republic of the Philippines</div>
         <div class="header-subtitle">Department of Education</div>
         <div class="header-subtitle">NEGROS ISLAND REGION</div>
@@ -563,10 +568,18 @@
     </div>
 
     <!-- Footer -->
-    <div class="footer">
-        <p>This report was generated on {{ \Carbon\Carbon::now()->format('F j, Y \a\t g:i A') }}</p>
-        <p>Department of Education - Schools Division of Cadiz City</p>
-        <p>Teaching Leave Credit Management System</p>
-    </div>
+        <p style="font-size: 12px; text-align:left;">Certified by:</p>
+        <p style="font-size: 12px; margin-top: 50px; text-align: left;">__________________________</p>
+<script type="text/php">
+    if (isset($pdf)) {
+        $pdf->page_script('
+            $font = $fontMetrics->get_font("Arial", "normal");
+            $size = 8;
+            $y = 570; // Adjust this for vertical position
+            $x = 780; // Adjust this for horizontal position (landscape A4 is about 842px wide)
+            $pdf->text($x, $y, "Page $PAGE_NUM of $PAGE_COUNT", $font, $size);
+        ');
+    }
+</script>
 </body>
-</html>s
+</html>

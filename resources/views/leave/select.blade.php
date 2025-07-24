@@ -235,6 +235,8 @@
                             <option value="Permanent" {{ old('status', $editingCustomer->status ?? '') == 'Permanent' ? 'selected' : '' }}>Permanent</option>
                             <option value="Retired" {{ old('status', $editingCustomer->status ?? '') == 'Retired' ? 'selected' : '' }}>Retired</option>
                             <option value="Resigned" {{ old('status', $editingCustomer->status ?? '') == 'Resigned' ? 'selected' : '' }}>Resigned</option>
+                                                        <option value="Transferred" {{ old('status', $editingCustomer->status ?? '') == 'Transferred' ? 'selected' : '' }}>Transferred</option>
+
                         </select>
                     </div>
                 </div>
@@ -306,9 +308,9 @@
                     </div>
                     <div class="form-group">
                         <h4>For Teaching Employees</h4>
-                        <label for="leave_credits_old">Initial Leave Credits (old):</label>
+                        <label for="leave_credits_old">Initial Vacation Service Credits (old):</label>
                         <input type="number" id="leave_credits_old" step="0.001" name="leave_credits_old" value="{{ old('leave_credits_old', $editingCustomer->leave_credits_old ?? 0) }}" />
-                        <label for="leave_credits_new">Initial Leave Credits (new):</label>
+                        <label for="leave_credits_new">Initial Vacation Service Credits (new):</label>
                         <input type="number" id="leave_credits_new" step="0.001" name="leave_credits_new" value="{{ old('leave_credits_new', $editingCustomer->leave_credits_new ?? 0) }}" />
                     </div>
                     <h3>Remarks</h3>

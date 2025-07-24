@@ -98,7 +98,7 @@
                     <td class="value">{{ strtoupper($customer->given_name)?? ''  }}</td>
                     <td class="label">POSITION</td>
                     <td class="value">{{ strtoupper($customer->position->position) ?? '' }}</td>
-                    <td class="label">LEAVE CREDITS</td>
+                    <td class="label">VACATION SERVICE CREDITS</td>
                   <td class="value">
                         OLD: {{ $customer->leave_credits_old ?? 0 }}<br>
                         NEW: {{ $customer->leave_credits_new ?? 0 }}

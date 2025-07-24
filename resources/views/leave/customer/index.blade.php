@@ -162,9 +162,9 @@
                                 </option>
                             @endforeach
                         </select>
-                        <label for="leave_credits_old">Initial Leave Credits (old):</label>
+                        <label for="leave_credits_old">Initial Vacation Service Credits (old):</label>
                         <input type="number" id="leave_credits_old" step="0.001" name="leave_credits_old" value="0"/>
-                        <label for="leave_credits_new">Initial Leave Credits (new):</label>
+                        <label for="leave_credits_new">Initial Vacation Service Credits (new):</label>
                         <input type="number" id="leave_credits_new" step="0.001" name="leave_credits_new" value="0"/>
                         <label for="remarks" name="remarks">Remarks:</label>
                         <input type="text" id="remarks" name="remarks"/>

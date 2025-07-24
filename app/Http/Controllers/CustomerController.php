@@ -64,7 +64,7 @@ class CustomerController extends Controller
             'position_id' => 'required|exists:positions,id',
             'origappnt_date' => 'required|date',
             'lastprmtn_date' => 'nullable|date',
-            'status' => 'nullable|in:Casual,Permanent,Retired,Resigned',
+            'status' => 'nullable|in:Casual,Permanent,Retired,Resigned,Transferred',
             'balance_forwarded_vl' => 'nullable|numeric|min:0',
             'balance_forwarded_sl' => 'nullable|numeric|min:0',
             'leave_credits_old' => 'nullable|numeric|min:0',

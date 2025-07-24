@@ -228,7 +228,7 @@
                 <td class="value">{{ strtoupper($customer->given_name ?? '') }}</td>
                 <td class="label">POSITION</td>
                 <td class="value">{{ strtoupper($customer->position->position ?? '') }}</td>
-                <td class="label">LEAVE CREDITS (OLD)</td>
+                <td class="label">VACATION SERVICE CREDITS (OLD)</td>
                 <td class="value">{{ $customer->leave_credits_old ?? 0 }}</td>
             </tr>
             <tr>
@@ -236,7 +236,7 @@
                 <td class="value">{{ strtoupper($customer->middle_name ?? '') }}</td>
                 <td class="label">ORIGINAL APPOINTMENT</td>
                 <td class="value">{{ $customer->origappnt_date ? \Carbon\Carbon::parse($customer->origappnt_date)->format('F j, Y') : '' }}</td>
-                <td class="label">LEAVE CREDITS (NEW)</td>
+                <td class="label">VACATION SERVICE CREDITS (NEW)</td>
                 <td class="value">{{ $customer->leave_credits_new ?? 0 }}</td>
             </tr>
             <tr>
@@ -400,7 +400,7 @@
                 <td class="value">{{ strtoupper($customer->given_name ?? '') }}</td>
                 <td class="label">POSITION</td>
                 <td class="value">{{ strtoupper($customer->position->position ?? '') }}</td>
-                <td class="label">LEAVE CREDITS (OLD)</td>
+                <td class="label">VACATION SERVICE CREDITS (OLD)</td>
                 <td class="value">{{ $customer->leave_credits_old ?? 0 }}</td>
             </tr>
             <tr>
@@ -408,7 +408,7 @@
                 <td class="value">{{ strtoupper($customer->middle_name ?? '') }}</td>
                 <td class="label">ORIGINAL APPOINTMENT</td>
                 <td class="value">{{ $customer->origappnt_date ? \Carbon\Carbon::parse($customer->origappnt_date)->format('F j, Y') : '' }}</td>
-                <td class="label">LEAVE CREDITS (NEW)</td>
+                <td class="label">VACATION SERVICE CREDITS (NEW)</td>
                 <td class="value">{{ $customer->leave_credits_new ?? 0 }}</td>
             </tr>
             <tr>
@@ -551,18 +551,6 @@
                 <td>{{ $customer->leave_credits_old ?? 0 }}</td>
                 <td class="summary-label">NEW LEAVE CREDITS (After Oct 1, 2024)</td>
                 <td>{{ $customer->leave_credits_new ?? 0 }}</td>
-            </tr>
-            <tr>
-                <td class="summary-label">TOTAL LEAVE APPLICATIONS (OLD)</td>
-                <td>
-                    @if($teachingLeaveApplications)
-                        {{ $teachingLeaveApplications->filter(function($app) {
-                            return \Carbon\Carbon::parse($app->date_filed)->lt(\Carbon\Carbon::parse('2024-10-01'));
-                        })->count() }}
-                    @else
-                        0
-                    @endif
-                </td>
             </tr>
         </table>
     </div>

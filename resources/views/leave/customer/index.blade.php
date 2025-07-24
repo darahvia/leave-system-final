@@ -307,6 +307,7 @@
                                 @endif
                             </td>
                             <td data-label="REMARKS">
+<<<<<<< Updated upstream
                             @if(!$app->is_credit_earned)
                                 @if($app->is_leavewopay || $app->is_leavepay)
                                     Leave {{ $app->is_leavewopay ? 'Without' : 'With' }} Pay
@@ -315,6 +316,17 @@
                                     @endif
                                 @else
                                     {{ $app->leave_details ?? '' }}
+=======
+                                @if(!$app->is_credit_earned)
+                                    @if($app->is_leavewopay)
+                                        Leave Without Pay
+                                        @if($app->leave_details)
+                                            - {{ $app->leave_details }}
+                                        @endif
+                                    @else
+                                        {{ $app->leave_details ?? '' }}
+                                    @endif
+>>>>>>> Stashed changes
                                 @endif
                             @endif
 
@@ -344,8 +356,12 @@
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
                                         '{{ $app->working_days }}',
                                         '{{ $app->leave_details ?? '' }}',
+<<<<<<< Updated upstream
                                         @json($app->is_leavewopay),
                                         @json($app->is_leavepay)
+=======
+                                        {{ $app->is_leavewopay ? 'true' : 'false' }}
+>>>>>>> Stashed changes
                                         
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -363,8 +379,12 @@
                                         '{{ \Carbon\Carbon::parse($app->inclusive_date_end)->format('Y-m-d') }}',
                                         '{{ $app->working_days }}',
                                         '{{ $app->leave_details ?? '' }}',
+<<<<<<< Updated upstream
                                         @json($app->is_leavewopay),
                                         @json($app->is_leavepay)
+=======
+                                        {{ $app->is_leavewopay ? 'true' : 'false' }}
+>>>>>>> Stashed changes
                                     )">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>

@@ -89,13 +89,6 @@
   padding: 15px;
 }
 
-.classification {
-  font-weight: bold;
-  font-size: 25px;
-  color: var(--dark-blue);
-  margin-bottom: 10px;
-}
-
 .accordion-icon {
   font-size: 18px;
   color: var(--dark-blue);

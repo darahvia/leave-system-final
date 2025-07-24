@@ -206,6 +206,7 @@
                         </div>
                     </div>
                     <label>Working Days:</label>
+<<<<<<< Updated upstream
                     <input type="number" name="working_days" step="0.01" id="working_days_old" >
                     <label>Remarks:</label>
                     <input type="text" name="remarks" id="remarks" >
@@ -217,6 +218,14 @@
                     <label>
                         <input type="checkbox" name="is_leavepay" id="is_leavepay_old" value="1"> Leave With Pay
                     </label>
+=======
+                    <input type="number" name="working_days" id="working_days_old" readonly>
+                        <button type="submit" id="submit-btn-old">Add Leave Application</button>
+                        <button type="button" id="cancel-edit-btn-old" onclick="cancelEdit('old')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
+                        <label>
+                        <input type="checkbox" name="is_leavewopay" id="is_leavewopay_old" value="1"> Leave Without Pay
+                        </label>
+>>>>>>> Stashed changes
                     </div>
                 </form>
                 <div class="emp-form">
@@ -339,7 +348,11 @@
                                         </td>
                                         <td data-label="DAYS">
                                         <span style="{{ $app->is_leavewopay ? '' : 'color: red;' }}">
+<<<<<<< Updated upstream
                                             {{ $app->is_leavewopay || $app->is_leavepay ? $app->working_days : '-' . $app->working_days }}
+=======
+                                            {{ $app->is_leavewopay ? $app->working_days : '-' . $app->working_days }}
+>>>>>>> Stashed changes
                                         </span>
 
                                         </td>
@@ -365,8 +378,12 @@
                                                 '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
                                                 'old',
+<<<<<<< Updated upstream
                                                 @json($app->is_leavewopay),
                                                 @json($app->is_leavepay)
+=======
+                                                 {{ $app->is_leavewopay ? 'true' : 'false' }}
+>>>>>>> Stashed changes
                                             )">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -434,6 +451,7 @@
                     <input type="hidden" name="edit_id" id="edit_id_new" value="">
                     <input type="hidden" name="_method" id="form_method_new" value="POST">
                     <div class="emp-form" id="leave-form-container-new">
+<<<<<<< Updated upstream
                         <label>Date Filed:</label>
                         <input type="date" name="date_filed" id="date_filed_new" required>
                         <div class="single-day-check">
@@ -464,6 +482,29 @@
                         <label>Remarks:</label>
                         <input type="text" name="remarks" id="remarks" >
                         <button type="submit" id="submit-btn-new">Use Leave Credits</button>
+=======
+                    <div class="date-row">
+                        <div class="date-col">
+                            <label>Leave Start Date:</label>
+                            <input type="date" name="leave_start_date" id="leave_start_date_new" required>
+                            <span class="halfday-controls">
+                                <button type="button" class="toggle-button" id="start-am-btn-new" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="start-pm-btn-new" data-value="PM">PM</button>
+                            </span>
+                        </div>
+                        <div class="date-col" id="end-date-col-new">
+                            <label>Leave End Date:</label>
+                            <input type="date" name="leave_end_date" id="leave_end_date_new" required>
+                            <span class="halfday-controls">
+                                <button type="button" class="toggle-button" id="end-am-btn-new" data-value="AM">AM</button>
+                                <button type="button" class="toggle-button" id="end-pm-btn-new" data-value="PM">PM</button>
+                            </span>
+                        </div>
+                    </div>
+                    <label>Working Days:</label>
+                    <input type="number" name="working_days" id="working_days_new" readonly>
+                        <button type="submit" id="submit-btn-new">Add Leave Application</button>
+>>>>>>> Stashed changes
                         <button type="button" id="cancel-edit-btn-new" onclick="cancelEdit('new')" style="display: none; margin-left: 10px; background-color: #6c757d;">Cancel</button>
                         <label>
                         <input type="checkbox" name="is_leavewopay" id="is_leavewopay_new" value="1"> Leave Without Pay
@@ -496,6 +537,9 @@
                         <input type="text" id="remarks" name="remarks" value="{{ old('remarks') }}" />
                         <button type="submit">Convert to Nonteaching</button>
                     </div>
+                        <label>
+                        <input type="checkbox" name="is_leavewopay" id="is_leavewopay_new" value="1"> Leave Without Pay
+                        </label>
                 </form>
                 <div class="emp-form">
                 <form method="POST" action="{{ route('customers.remarks') }}">
@@ -615,8 +659,13 @@
                                         {{ \Carbon\Carbon::parse($app->created_at)->format('F j, Y') }}
                                     @endif</td>
                                         <td data-label="DAYS">
+<<<<<<< Updated upstream
                                     <span style="{{ $app->is_leavewopay || $app->is_leavepay ? '' : 'color: red;' }}">
                                         {{ $app->is_leavewopay || $app->is_leavepay ? $app->working_days : '-' . $app->working_days }}
+=======
+                                    <span style="{{ $app->is_leavewopay ? '' : 'color: red;' }}">
+                                        {{ $app->is_leavewopay ? $app->working_days : '-' . $app->working_days }}
+>>>>>>> Stashed changes
                                     </span>
                                     </td>
                                         <td data-label="BALANCE"></td>
@@ -640,8 +689,12 @@
                                                 '{{ \Carbon\Carbon::parse($app->leave_end_date)->format('Y-m-d') }}',
                                                 {{ $app->working_days }},
                                                 'new',
+<<<<<<< Updated upstream
                                                 @json($app->is_leavewopay),
                                                 @json($app->is_leavepay)
+=======
+                                                {{ $app->is_leavewopay ? 'true' : 'false' }}
+>>>>>>> Stashed changes
                                             )">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -974,12 +1027,18 @@ window.addEventListener('click', function(event) {
     }
 });
 
+<<<<<<< Updated upstream
 function editLeaveApplication(id, dateFiled, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false, isLeaveWPay = false) {
     const isLeaveWithoutPayBool = isLeaveWOPay === true || isLeaveWOPay === 'true';
     const isLeavePayBool = isLeaveWPay === true || isLeaveWPay === 'true';
 
     document.getElementById('is_leavewopay_' + tab).checked = isLeaveWithoutPayBool;
     document.getElementById('is_leavepay_' + tab).checked = isLeavePayBool;
+=======
+// Updated edit leave application function with tab parameter
+function editLeaveApplication(id, leaveStartDate, leaveEndDate, workingDays, tab = 'old', isLeaveWOPay = false) {
+    document.getElementById('is_leavewopay_' + tab).checked = !!isLeaveWOPay;
+>>>>>>> Stashed changes
 
     document.getElementById('edit_id_' + tab).value = id;
     document.getElementById('form_method_' + tab).value = 'PUT';

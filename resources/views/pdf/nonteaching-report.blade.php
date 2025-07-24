@@ -378,6 +378,8 @@
             <tr>
                 <td class="summary-label">COMPENSATORY TIME OFF (CTO)</td>
                 <td>{{ $latestCtoApp ? number_format($latestCtoApp->balance, 1) : (isset($ctoService) ? number_format($ctoService->getEligibleCtoBalance($customer), 1) : '0.0') }}</td>
+                <td class="summary-label"></td>
+                <td></td>
             </tr>
         </table>
 
@@ -398,7 +400,7 @@
         @endif
     </div>
     <!-- Footer -->
-        <p style="font-size: 12px; text-align:left;">Certified by:</p>
+        <p style="font-size: 12px; text-align:left;">Certified correct by:</p>
         <p style="font-size: 12px; margin-top: 50px; text-align: left;">__________________________</p>
 <script type="text/php">
     if (isset($pdf)) {

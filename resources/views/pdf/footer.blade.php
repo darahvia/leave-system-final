@@ -1,6 +1,5 @@
  
-    <div class="footer-row">
-        <p class="generated">This report was generated on {{ \Carbon\Carbon::now()->format('F j, Y \a\t g:i A') }}</p>
+    <!-- <div class="footer-row"> -->
 
         <!--
         
@@ -23,4 +22,4 @@
         <div style="display: table-cell; width: 15%; vertical-align: middle; text-align: center;">
             <img src="file://{{ public_path('/images/form6-qr.png') }}" class="footer-logo-qr" style="height: 60px; width: auto;">
         </div> -->
-    </div>
+    <!-- </div> -->
